@@ -139,22 +139,44 @@ export class GlassBoxInspector extends HTMLElement {
   }
 
   private _showOverlayLabels (): void {
+    const LABEL_HEIGHT = 20
+    const GAP = 4
+    const TYPE_COLORS: Record<string, string> = {
+      CLICK: 'hsl(215, 60%, 55%)',
+      SCROLL: 'hsl(280, 50%, 55%)',
+      VIEWPORT_INTERSECT: 'hsl(180, 50%, 45%)',
+      FORM_INPUT: 'hsl(45, 80%, 50%)',
+      INTENT_NAVIGATE: 'hsl(150, 50%, 45%)',
+      INTENT_CALL: 'hsl(340, 60%, 55%)',
+      INTENT_BOOK: 'hsl(25, 70%, 50%)',
+      INTENT_LEAD: 'hsl(100, 50%, 45%)'
+    }
+
     const targets = document.querySelectorAll('[data-telemetry-type]')
     for (const target of targets) {
       const type = target.getAttribute('data-telemetry-type') ?? ''
-      const tgt = target.getAttribute('data-telemetry-target') ?? ''
+      const tgt = target.getAttribute('data-telemetry-target') ?? type
 
       const label = document.createElement('span')
       label.setAttribute('data-overlay-label', '')
-      label.textContent = tgt ? `${type} / ${tgt}` : type
-      label.style.cssText = 'position:absolute;z-index:10000;font-family:var(--font-mono,monospace);font-size:10px;background:hsl(215,60%,55%/0.9);color:white;padding:2px 4px;border-radius:2px;pointer-events:none;white-space:nowrap;'
+      label.textContent = tgt
+      const borderColor = TYPE_COLORS[type] ?? 'hsl(215, 60%, 55%)'
+      label.style.cssText = `position:absolute;z-index:10000;font-family:var(--font-mono,monospace);font-size:10px;background:hsl(215,60%,55%/0.85);color:white;padding:2px 6px;border-radius:3px;pointer-events:none;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;border-left:2px solid ${borderColor};`
 
       const rect = target.getBoundingClientRect()
-      label.style.left = `${rect.left + window.scrollX}px`
-      label.style.top = `${rect.top + window.scrollY}px`
+      const left = rect.left + window.scrollX
+      let top = rect.top + window.scrollY - LABEL_HEIGHT - GAP
 
       document.body.appendChild(label)
       this._overlayLabels.push(label)
+
+      // Flip below if label would go above viewport
+      if (top < window.scrollY) {
+        top = rect.bottom + window.scrollY + GAP
+      }
+
+      label.style.left = `${left}px`
+      label.style.top = `${top}px`
     }
   }
 
