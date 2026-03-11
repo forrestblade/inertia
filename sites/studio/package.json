@@ -4,8 +4,23 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "echo 'studio build not configured yet'",
-    "dev": "echo 'studio dev not configured yet'",
-    "test": "echo 'no tests yet'"
+    "build": "tsc",
+    "dev": "node --watch server/entry.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@inertia/core": "workspace:*",
+    "@inertia/ingestion": "workspace:*",
+    "@inertia/db": "workspace:*",
+    "@inertia/tokens": "workspace:*",
+    "@inertia/components": "workspace:*",
+    "@inertia/hud": "workspace:*",
+    "neverthrow": "^8.2.0",
+    "zod": "^4.3.6",
+    "postgres": "^3.4.8"
+  },
+  "devDependencies": {
+    "@types/node": "^25.4.0",
+    "vitest": "^4.0.18"
   }
 }
