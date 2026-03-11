@@ -187,4 +187,43 @@ describe('scheduleAutoFlush', () => {
       configurable: true
     })
   })
+
+  it('calls onFlush callback with count after successful interval flush', () => {
+    const onFlush = vi.fn()
+    buffer.write(IntentType.CLICK, 'a', 0, 0, 1)
+    buffer.write(IntentType.CLICK, 'b', 0, 0, 2)
+    flushHandle = scheduleAutoFlush(buffer, '/api/t', 5000, onFlush)
+
+    vi.advanceTimersByTime(5000)
+    expect(onFlush).toHaveBeenCalledTimes(1)
+    expect(onFlush).toHaveBeenCalledWith(2)
+  })
+
+  it('does not call onFlush when flush has no dirty entries', () => {
+    const onFlush = vi.fn()
+    flushHandle = scheduleAutoFlush(buffer, '/api/t', 5000, onFlush)
+
+    vi.advanceTimersByTime(5000)
+    expect(onFlush).not.toHaveBeenCalled()
+  })
+
+  it('calls onFlush on visibilitychange flush', () => {
+    const onFlush = vi.fn()
+    buffer.write(IntentType.CLICK, 'a', 0, 0, 1)
+    flushHandle = scheduleAutoFlush(buffer, '/api/t', 30000, onFlush)
+
+    Object.defineProperty(document, 'visibilityState', {
+      value: 'hidden',
+      writable: true,
+      configurable: true
+    })
+    document.dispatchEvent(new Event('visibilitychange'))
+    expect(onFlush).toHaveBeenCalledWith(1)
+
+    Object.defineProperty(document, 'visibilityState', {
+      value: 'visible',
+      writable: true,
+      configurable: true
+    })
+  })
 })
