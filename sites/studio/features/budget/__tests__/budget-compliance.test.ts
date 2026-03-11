@@ -5,7 +5,6 @@ import { renderHome } from '../../home/templates/home.js'
 import { renderPrinciples } from '../../principles/templates/principles.js'
 import { renderServices } from '../../services/templates/services.js'
 import { renderAbout } from '../../about/templates/about.js'
-import { renderContactForm } from '../../contact/templates/contact.js'
 import { getStudioCSS } from '../../theme/config/studio-css.js'
 import { createCriticalCSSPipeline } from '../critical-css-pipeline.js'
 
@@ -27,7 +26,7 @@ const pages: Record<string, () => string> = {
   '/principles': renderPrinciples,
   '/services': renderServices,
   '/about': renderAbout,
-  '/contact': () => renderContactForm()
+  '/contact': () => '<p>Redirecting to <a href="/about#contact">/about#contact</a>...</p>'
 }
 
 describe('14kB budget compliance', () => {

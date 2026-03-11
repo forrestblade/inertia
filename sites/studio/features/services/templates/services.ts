@@ -36,6 +36,6 @@ export function renderServices (): string {
 
 <section class="section container cta-section">
   <h2>Ready to get started?</h2>
-  <a href="/contact" class="btn btn-primary" data-telemetry-type="INTENT_NAVIGATE" data-telemetry-target="services-contact-cta">Contact Us</a>
+  <a href="/about#contact" class="btn btn-primary" data-telemetry-type="INTENT_NAVIGATE" data-telemetry-target="services-contact-cta">Contact Us</a>
 </section>`
 }

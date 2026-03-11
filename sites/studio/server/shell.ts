@@ -15,8 +15,7 @@ const NAV_LINKS: ReadonlyArray<{ readonly href: string; readonly label: string }
   { href: '/principles', label: 'Principles' },
   { href: '/services', label: 'Services' },
   { href: '/audit', label: 'Audit' },
-  { href: '/about', label: 'About' },
-  { href: '/contact', label: 'Contact' }
+  { href: '/about', label: 'About' }
 ]
 
 function renderNav (currentPath: string): string {
@@ -58,7 +57,7 @@ export function renderShell (options: ShellOptions): string {
   <footer>
     <div class="footer-inner">
       <p>&copy; ${new Date().getFullYear()} Inertia Web Solutions. All rights reserved.</p>
-      <p class="footer-hardware">Served from a Raspberry Pi 5 — your website can too. <a href="https://github.com/forrestblade/inertia" data-telemetry-type="INTENT_NAVIGATE" data-telemetry-target="footer-github">View source on GitHub</a></p>
+      <p class="footer-hardware">Served from a dedicated server appliance — your website can too. <a href="https://github.com/forrestblade/inertia" data-telemetry-type="INTENT_NAVIGATE" data-telemetry-target="footer-github">View source on GitHub</a></p>
     </div>
   </footer>
   <script src="/js/boot.js?v=${BOOT_VERSION}" defer></script>

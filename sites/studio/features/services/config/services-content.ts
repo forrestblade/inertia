@@ -1,18 +1,18 @@
 export const APPLIANCE_MODEL = {
   headline: 'The Web Appliance Model',
-  body: 'We don\'t rent you server space. We build a physical web server, install your website on it, and hand it to you. It sits in your office, connects to the internet, and serves your website to the world through Cloudflare\'s global network.'
+  body: 'Your website actually lives on a computer inside your business. The internet just needs a doorway so visitors can reach it. That doorway costs about five dollars a month and it\'s registered in your name. If you ever want to switch providers, your website is still sitting in your office — we just move the doorway.'
 } as const
 
 export const SERVICE_TIERS = [
   {
     id: 'build-deploy',
     name: 'Build & Deploy',
-    description: 'We design and build your website using the Inertia framework, install it on a micro server, and deliver the hardware. You own everything.',
+    description: 'We design and build your website using the Inertia framework, install it on a dedicated server appliance, and deliver the hardware. You own everything.',
     includes: [
       'Custom website built on Inertia framework',
-      'Raspberry Pi 5 or ZimaBoard hardware',
+      'Dedicated server appliance hardware',
       'PostgreSQL database, self-hosted',
-      'Cloudflare Tunnel setup',
+      'Secure tunnel to disposable relay (~$5/mo)',
       'First-party analytics dashboard',
       'Source code handover',
       '30-day post-launch support'
