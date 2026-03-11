@@ -32,4 +32,12 @@ describe('renderServices', () => {
     const html = renderServices()
     expect(html).toContain('services-contact-cta')
   })
+
+  it('uses internet doorway analogy, not Cloudflare', () => {
+    const html = renderServices()
+    expect(html).toContain('doorway')
+    expect(html).not.toContain('Cloudflare')
+    expect(html).not.toContain('Raspberry Pi')
+    expect(html).not.toContain('ZimaBoard')
+  })
 })
