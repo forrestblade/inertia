@@ -23,11 +23,20 @@ export function bootTelemetry (): void {
   // Init event delegation on document.body
   initEventDelegation(buffer, document.body)
 
-  // Schedule auto-flush
+  // Schedule auto-flush with visual feedback
+  function onFlush (count: number): void {
+    const strip = document.querySelector('inertia-buffer-strip') as
+      (HTMLElement & { showFlushMessage?: (n: number) => void }) | null
+    if (strip?.showFlushMessage) {
+      strip.showFlushMessage(count)
+    }
+  }
+
   const flushHandle = scheduleAutoFlush(
     buffer,
     TELEMETRY_CONFIG.endpoint,
-    TELEMETRY_CONFIG.flushIntervalMs
+    TELEMETRY_CONFIG.flushIntervalMs,
+    onFlush
   )
 
   // Expose for Glass Box components
