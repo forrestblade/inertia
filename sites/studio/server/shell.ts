@@ -58,7 +58,7 @@ export function renderShell (options: ShellOptions): string {
   <footer>
     <div class="footer-inner">
       <p>&copy; ${new Date().getFullYear()} Inertia Web Solutions. All rights reserved.</p>
-      <p class="footer-hardware">Served from a Raspberry Pi 5 — your website can too.</p>
+      <p class="footer-hardware">Served from a Raspberry Pi 5 — your website can too. <a href="https://github.com/forrestblade/inertia" data-telemetry-type="INTENT_NAVIGATE" data-telemetry-target="footer-github">View source on GitHub</a></p>
     </div>
   </footer>
   <script src="/js/boot.js?v=${BOOT_VERSION}" defer></script>
