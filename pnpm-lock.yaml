@@ -94,7 +94,42 @@ importers:
         specifier: ^4.3.6
         version: 4.3.6
 
-  sites/studio: {}
+  sites/studio:
+    dependencies:
+      '@inertia/components':
+        specifier: workspace:*
+        version: link:../../packages/components
+      '@inertia/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@inertia/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@inertia/hud':
+        specifier: workspace:*
+        version: link:../../packages/hud
+      '@inertia/ingestion':
+        specifier: workspace:*
+        version: link:../../packages/ingestion
+      '@inertia/tokens':
+        specifier: workspace:*
+        version: link:../../packages/tokens
+      neverthrow:
+        specifier: ^8.2.0
+        version: 8.2.0
+      postgres:
+        specifier: ^3.4.8
+        version: 3.4.8
+      zod:
+        specifier: ^4.3.6
+        version: 4.3.6
+    devDependencies:
+      '@types/node':
+        specifier: ^25.4.0
+        version: 25.4.0
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@types/node@25.4.0)(happy-dom@20.8.3)
 
   tools/build: {}
 
