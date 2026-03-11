@@ -54,9 +54,10 @@ describe('renderContactForm layout', () => {
     expect(html).toContain('mail@forrestblade.com')
   })
 
-  it('uses grid-2 class for side-by-side layout', () => {
+  it('uses contact-info class for horizontal info bar', () => {
     const html = renderContactForm()
-    expect(html).toContain('grid-2')
+    expect(html).toContain('contact-info')
+    expect(html).not.toContain('grid-2')
   })
 
   it('has telemetry on phone link', () => {
