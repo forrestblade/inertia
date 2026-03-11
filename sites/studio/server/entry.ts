@@ -1,5 +1,6 @@
 import { createServer } from 'node:http'
 import { join } from 'node:path'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { createPool, closePool, loadMigrations, runMigrations } from '@inertia/db'
 import type { DbPool } from '@inertia/db'
 import { loadConfig } from './config.js'
@@ -7,6 +8,8 @@ import { createRouter } from './router.js'
 import type { RouteContext } from './types.js'
 import { applySecurityHeaders, tryServeStatic } from './middleware.js'
 import { registerRoutes } from './register-routes.js'
+import { getStudioCSS } from '../features/theme/config/studio-css.js'
+import { bundleClientJS, bundleAdminJS } from '../features/client/bundle-client.js'
 
 const config = loadConfig()
 
@@ -33,6 +36,21 @@ async function boot (): Promise<void> {
   } else {
     console.error('Failed to load migrations:', migrationsResult.error.message)
   }
+
+  // Generate CSS to public directory
+  const publicCSS = join(import.meta.dirname ?? '.', '..', 'public', 'css')
+  await mkdir(publicCSS, { recursive: true })
+  await writeFile(join(publicCSS, 'studio.css'), getStudioCSS())
+  console.log('Generated public/css/studio.css')
+
+  // Generate client JS bundles
+  const studioRoot = join(import.meta.dirname ?? '.', '..')
+  const publicJS = join(studioRoot, 'public', 'js')
+  await mkdir(publicJS, { recursive: true })
+  await bundleClientJS(studioRoot)
+  console.log('Generated public/js/boot.js')
+  await bundleAdminJS(studioRoot)
+  console.log('Generated public/js/admin.js')
 
   // Build router
   const router = createRouter()

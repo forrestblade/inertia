@@ -61,7 +61,9 @@ export function renderShell (options: ShellOptions): string {
       <p class="footer-hardware">Served from a Raspberry Pi 5 — your website can too.</p>
     </div>
   </footer>
-
+  <script src="/js/boot.js?v=${BOOT_VERSION}" defer></script>
+  <inertia-buffer-strip hardware-label="PI5"></inertia-buffer-strip>
+  <inertia-telemetry-infobox></inertia-telemetry-infobox>
 </body>
 </html>`
 }
