@@ -16,15 +16,9 @@ const shellOptions = {
   currentPath: '/contact'
 }
 
-export const contactGetHandler: RouteHandler = async (req, res) => {
-  const mainContent = renderContactForm()
-
-  if (isFragmentRequest(req)) {
-    sendHtml(res, renderFragment(mainContent))
-    return
-  }
-
-  sendHtml(res, renderShell({ ...shellOptions, mainContent }))
+export const contactGetHandler: RouteHandler = async (_req, res) => {
+  res.writeHead(301, { Location: '/about#contact' })
+  res.end()
 }
 
 export const contactPostHandler: RouteHandler = async (req, res, ctx) => {

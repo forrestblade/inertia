@@ -47,11 +47,11 @@ describe('renderShell', () => {
     expect(html).toContain('<h1>Hello</h1>')
   })
 
-  it('includes navigation with 6 links plus footer github', () => {
+  it('includes navigation with 5 links plus footer github', () => {
     const html = renderShell(defaultOptions)
     expect(html).toContain('aria-label="Main navigation"')
     const navLinks = html.match(/data-telemetry-type="INTENT_NAVIGATE"/g)
-    expect(navLinks).toHaveLength(7)
+    expect(navLinks).toHaveLength(6)
   })
 
   it('marks current page as active', () => {
@@ -61,7 +61,8 @@ describe('renderShell', () => {
 
   it('includes footer with hardware message', () => {
     const html = renderShell(defaultOptions)
-    expect(html).toContain('Raspberry Pi 5')
+    expect(html).toContain('dedicated server appliance')
+    expect(html).not.toContain('Raspberry Pi')
   })
 
   it('includes favicon link', () => {

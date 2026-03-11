@@ -52,6 +52,6 @@ export function renderHome (): string {
 
 <section class="section container cta-section">
   <h2>Ready to own your web presence?</h2>
-  <a href="/contact" class="btn btn-primary" data-telemetry-type="INTENT_NAVIGATE" data-telemetry-target="bottom-cta">Contact Us</a>
+  <a href="/about#contact" class="btn btn-primary" data-telemetry-type="INTENT_NAVIGATE" data-telemetry-target="bottom-cta">Contact Us</a>
 </section>`
 }
