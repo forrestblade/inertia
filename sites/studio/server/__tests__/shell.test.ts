@@ -47,11 +47,11 @@ describe('renderShell', () => {
     expect(html).toContain('<h1>Hello</h1>')
   })
 
-  it('includes navigation with 6 links', () => {
+  it('includes navigation with 6 links plus footer github', () => {
     const html = renderShell(defaultOptions)
     expect(html).toContain('aria-label="Main navigation"')
     const navLinks = html.match(/data-telemetry-type="INTENT_NAVIGATE"/g)
-    expect(navLinks).toHaveLength(6)
+    expect(navLinks).toHaveLength(7)
   })
 
   it('marks current page as active', () => {

@@ -171,6 +171,12 @@ footer {
   font-family: var(--font-mono);
   font-size: ${TYPOGRAPHY.scale.xs};
 }
+.footer-hardware a {
+  color: var(--primary);
+  text-decoration: none;
+  margin-left: ${SPACING.scale[2]};
+}
+.footer-hardware a:hover { text-decoration: underline; }
 
 /* Hero */
 .hero {
