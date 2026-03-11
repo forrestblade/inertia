@@ -1,4 +1,4 @@
-import type { Result } from 'neverthrow'
+import type { Result, ResultAsync } from 'neverthrow'
 import { safeJsonParse } from './safe-json-parse.js'
 import type { ParseFailure } from './safe-json-parse.js'
 import { validateTelemetryPayload } from './schemas.js'
@@ -13,6 +13,8 @@ export type IngestionError = ParseFailure | ValidationFailure | PersistFailure
 
 export type PersistFn = (payload: ValidatedTelemetryPayload) => Result<number, PersistFailure>
 
+export type AsyncPersistFn = (payload: ValidatedTelemetryPayload) => ResultAsync<number, PersistFailure>
+
 export interface PipelineResult {
   readonly persisted: number
 }
@@ -24,5 +26,15 @@ export function createIngestionPipeline (
     safeJsonParse(raw)
       .andThen(validateTelemetryPayload)
       .andThen(persist)
+      .map((count): PipelineResult => ({ persisted: count }))
+}
+
+export function createAsyncIngestionPipeline (
+  persist: AsyncPersistFn
+): (raw: string) => ResultAsync<PipelineResult, IngestionError> {
+  return (raw: string): ResultAsync<PipelineResult, IngestionError> =>
+    safeJsonParse(raw)
+      .andThen(validateTelemetryPayload)
+      .asyncAndThen(persist)
       .map((count): PipelineResult => ({ persisted: count }))
 }
