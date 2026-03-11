@@ -205,6 +205,11 @@ describe('getStudioCSS', () => {
     expect(css).toContain('.contact-info')
   })
 
+  it('hero section uses clamped viewport height', () => {
+    const css = getStudioCSS()
+    expect(css).toContain('clamp(600px, 100vh, 900px)')
+  })
+
   it('contains glass-box inspector styles', () => {
     const css = getStudioCSS()
     expect(css).toContain('.gb-row')
