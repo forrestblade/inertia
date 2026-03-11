@@ -197,6 +197,26 @@ footer {
   padding: ${SPACING.scale[6]};
 }
 
+/* Proof metrics (Total Ownership section) */
+.proof-grid { margin-top: ${SPACING.scale[8]}; }
+.proof-metric {
+  text-align: center;
+  padding: ${SPACING.scale[6]};
+}
+.proof-value {
+  display: block;
+  font-size: ${TYPOGRAPHY.scale['3xl']};
+  font-weight: ${TYPOGRAPHY.fontWeight.bold};
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+.proof-label {
+  display: block;
+  font-size: ${TYPOGRAPHY.scale.sm};
+  color: var(--muted-foreground);
+  margin-top: ${SPACING.scale[2]};
+}
+
 /* Buttons */
 .btn {
   display: inline-flex;
