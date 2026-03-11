@@ -169,4 +169,39 @@ describe('getStudioCSS', () => {
     expect(css).toContain('DankMono-Italic.woff2')
     expect(css).toContain('font-display: swap')
   })
+
+  it('sets viewport-filling flex layout on body', () => {
+    const css = getStudioCSS()
+    expect(css).toContain('min-height: 100vh')
+    expect(css).toContain('flex-direction: column')
+    expect(css).toMatch(/main\s*\{[^}]*flex:\s*1/)
+  })
+
+  it('contains spec-list and spec-row styles', () => {
+    const css = getStudioCSS()
+    expect(css).toContain('.spec-list')
+    expect(css).toContain('.spec-row')
+    expect(css).toMatch(/\.spec-row dt\s*\{/)
+    expect(css).toMatch(/\.spec-row dd\s*\{/)
+  })
+
+  it('contains hero-cta utility class', () => {
+    const css = getStudioCSS()
+    expect(css).toContain('.hero-cta')
+  })
+
+  it('contains eliminate-list utility class', () => {
+    const css = getStudioCSS()
+    expect(css).toContain('.eliminate-list')
+  })
+
+  it('contains cta-section utility class', () => {
+    const css = getStudioCSS()
+    expect(css).toContain('.cta-section')
+  })
+
+  it('contains contact-info styles', () => {
+    const css = getStudioCSS()
+    expect(css).toContain('.contact-info')
+  })
 })
