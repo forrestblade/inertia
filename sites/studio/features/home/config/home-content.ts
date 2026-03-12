@@ -34,7 +34,7 @@ export const PILLARS = [
 
 export const ELIMINATES = [
   'WordPress update anxiety',
-  'Monthly hosting invoices',
+  'Overpriced shared hosting',
   'Third-party analytics tracking your visitors',
   'Shared server neighbors tanking your speed',
   'Framework vendor lock-in',
