@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { renderAuditForm } from '../templates/audit.js'
 import { renderAuditResults } from '../templates/audit-results.js'
 import type { LighthouseResult } from '../types/audit-types.js'
 
@@ -10,6 +11,13 @@ function makeResult (performance: number): LighthouseResult {
     fetchedAt: '2026-03-12T00:00:00Z'
   }
 }
+
+describe('renderAuditForm', () => {
+  it('has context sentence explaining what the audit measures', () => {
+    const html = renderAuditForm()
+    expect(html).toContain('industry standards')
+  })
+})
 
 describe('renderAuditResults CTA', () => {
   it('shows consultation CTA after results', () => {
