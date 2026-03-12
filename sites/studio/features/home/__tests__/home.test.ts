@@ -54,6 +54,11 @@ describe('renderHome', () => {
     expect(html).not.toContain('href="/contact"')
   })
 
+  it('does NOT claim zero monthly costs when optional tiers exist', () => {
+    expect(ELIMINATES).not.toContain('Monthly hosting invoices')
+    expect(OWNERSHIP.body).not.toContain('No subscriptions')
+  })
+
   it('does NOT reference hardware brand names in public-facing copy', () => {
     const html = renderHome()
     expect(html).not.toContain(' Pi,')
