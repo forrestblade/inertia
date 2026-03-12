@@ -171,7 +171,7 @@ export function generateDailySummary (
 
       const row = rows[0]
       if (!row) {
-        throw new Error('Upsert returned no rows')
+        return Promise.reject(new Error('Upsert returned no rows'))
       }
       return row
     })(),
