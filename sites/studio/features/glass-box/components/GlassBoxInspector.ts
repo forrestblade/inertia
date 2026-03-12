@@ -11,6 +11,7 @@ export class GlassBoxInspector extends HTMLElement {
   private _targetEl: Element | null = null
   private _overlayActive = false
   private _overlayLabels: HTMLElement[] = []
+  private _savedMargins: Map<Element, string> = new Map()
   private _boundMouseOver: ((e: Event) => void) | null = null
   private _boundMouseOut: ((e: Event) => void) | null = null
   private _boundKeyDown: ((e: Event) => void) | null = null
@@ -158,6 +159,7 @@ export class GlassBoxInspector extends HTMLElement {
   }
 
   private _showOverlayLabels (): void {
+    const OVERLAY_MARGIN_PX = 24
     const LABEL_HEIGHT = 20
     const GAP = 4
     const TYPE_COLORS: Record<string, string> = {
@@ -171,7 +173,19 @@ export class GlassBoxInspector extends HTMLElement {
       INTENT_LEAD: 'hsl(100, 50%, 45%)'
     }
 
+    document.body.setAttribute('data-glass-box-active', '')
+
     const targets = document.querySelectorAll('[data-telemetry-type]')
+
+    // Save current margins and apply layout shift
+    for (const target of targets) {
+      const el = target as HTMLElement
+      this._savedMargins.set(target, el.style.marginTop)
+      const current = parseFloat(getComputedStyle(el).marginTop) || 0
+      el.style.marginTop = `${current + OVERLAY_MARGIN_PX}px`
+    }
+
+    // Create labels and position after layout settles
     for (const target of targets) {
       const type = target.getAttribute('data-telemetry-type') ?? ''
       const tgt = target.getAttribute('data-telemetry-target') ?? type
@@ -182,12 +196,12 @@ export class GlassBoxInspector extends HTMLElement {
       const borderColor = TYPE_COLORS[type] ?? 'hsl(215, 60%, 55%)'
       label.style.cssText = `position:absolute;z-index:10000;font-family:var(--font-mono,monospace);font-size:10px;background:hsl(215,60%,55%/0.85);color:white;padding:2px 6px;border-radius:3px;pointer-events:none;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;border-left:2px solid ${borderColor};`
 
+      document.body.appendChild(label)
+      this._overlayLabels.push(label)
+
       const rect = target.getBoundingClientRect()
       const left = rect.left + window.scrollX
       let top = rect.top + window.scrollY - LABEL_HEIGHT - GAP
-
-      document.body.appendChild(label)
-      this._overlayLabels.push(label)
 
       // Flip below if label would go above viewport
       if (top < window.scrollY) {
@@ -200,6 +214,11 @@ export class GlassBoxInspector extends HTMLElement {
   }
 
   private _removeOverlayLabels (): void {
+    for (const [el, saved] of this._savedMargins) {
+      (el as HTMLElement).style.marginTop = saved
+    }
+    this._savedMargins.clear()
+    document.body.removeAttribute('data-glass-box-active')
     for (const label of this._overlayLabels) {
       label.remove()
     }
