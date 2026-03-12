@@ -17,3 +17,7 @@ export type { DailySummaryPayload } from './daily-summary-schema.js'
 // HMAC (fleet push authentication)
 export { signPayload, verifySignature, HmacErrorCode } from './hmac.js'
 export type { HmacError } from './hmac.js'
+
+// Aggregation pipeline (fleet data receive)
+export { createAggregationPipeline } from './aggregation-pipeline.js'
+export type { AggregationAuditEntry, AggregationAuditFn, AggregationResult } from './aggregation-pipeline.js'
