@@ -386,6 +386,50 @@ describe('GlassBoxInspector engineer mode copy swap', () => {
   })
 })
 
+describe('GlassBoxStrip mobile long-press toggle', () => {
+  beforeAll(async () => {
+    if (customElements.get('inertia-buffer-strip') === undefined) {
+      await import('../components/GlassBoxStrip.js')
+    }
+  })
+
+  it('dispatches engineer-mode-toggle on 300ms long-press', async () => {
+    const el = document.createElement('inertia-buffer-strip') as HTMLElement
+    const mockBuffer = { count: 1, capacity: 64, head: 1, slotAt: () => ({ isDirty: false }) }
+    ;(el as unknown as { buffer: unknown }).buffer = mockBuffer
+    document.body.appendChild(el)
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+
+    let toggled = false
+    document.addEventListener('engineer-mode-toggle', () => { toggled = true }, { once: true })
+
+    el.dispatchEvent(new TouchEvent('touchstart', { bubbles: true }))
+    await new Promise(resolve => setTimeout(resolve, 350))
+    el.dispatchEvent(new TouchEvent('touchend', { bubbles: true }))
+
+    expect(toggled).toBe(true)
+    el.remove()
+  })
+
+  it('does NOT dispatch on short tap (< 300ms)', async () => {
+    const el = document.createElement('inertia-buffer-strip') as HTMLElement
+    const mockBuffer = { count: 1, capacity: 64, head: 1, slotAt: () => ({ isDirty: false }) }
+    ;(el as unknown as { buffer: unknown }).buffer = mockBuffer
+    document.body.appendChild(el)
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+
+    let toggled = false
+    document.addEventListener('engineer-mode-toggle', () => { toggled = true }, { once: true })
+
+    el.dispatchEvent(new TouchEvent('touchstart', { bubbles: true }))
+    await new Promise(resolve => setTimeout(resolve, 100))
+    el.dispatchEvent(new TouchEvent('touchend', { bubbles: true }))
+
+    expect(toggled).toBe(false)
+    el.remove()
+  })
+})
+
 describe('GlassBoxStrip engineer mode indicator', () => {
   beforeAll(async () => {
     if (customElements.get('inertia-buffer-strip') === undefined) {
