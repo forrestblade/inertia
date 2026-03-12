@@ -107,6 +107,31 @@ describe('renderShell', () => {
     const html = renderShell(defaultOptions)
     expect(html).toContain('content="Test description"')
   })
+
+  it('includes Open Graph meta tags', () => {
+    const html = renderShell(defaultOptions)
+    expect(html).toContain('og:type')
+    expect(html).toContain('og:site_name')
+    expect(html).toContain('og:title')
+    expect(html).toContain('og:description')
+    expect(html).toContain('og:image')
+    expect(html).toContain('og:url')
+  })
+
+  it('includes Twitter Card meta tags', () => {
+    const html = renderShell(defaultOptions)
+    expect(html).toContain('twitter:card')
+    expect(html).toContain('summary_large_image')
+    expect(html).toContain('twitter:title')
+    expect(html).toContain('twitter:description')
+    expect(html).toContain('twitter:image')
+  })
+
+  it('uses page title and description in OG tags', () => {
+    const html = renderShell(defaultOptions)
+    expect(html).toContain('content="Test | Inertia Web Solutions"')
+    expect(html).toContain('content="Test description"')
+  })
 })
 
 describe('renderFragment', () => {
