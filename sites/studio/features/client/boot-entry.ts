@@ -1,12 +1,14 @@
 // Client-side boot — loads telemetry, router, and Glass Box components
 import { bootTelemetry } from '../telemetry/telemetry-boot.js'
 import { initRouter } from '@inertia/core'
+import { initNavActive } from './nav-active.js'
 // Side-effect imports: each calls customElements.define()
 import '../glass-box/components/GlassBoxStrip.js'
 import '../glass-box/components/GlassBoxInspector.js'
 
 function boot (): void {
   bootTelemetry()
+  initNavActive()
 
   const routerResult = initRouter({ contentSelector: '#main-content' })
   routerResult.match(
