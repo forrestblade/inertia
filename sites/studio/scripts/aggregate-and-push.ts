@@ -4,29 +4,22 @@
 // 2. Push unsynced summaries to studio endpoint
 
 import { createPool, closePool, generateDailySummary, getUnsyncedDailySummaries, markSynced } from '@inertia/db'
-import type { DbConfig } from '@inertia/db'
+import { loadConfig } from '../server/config.js'
 import { pushDailySummary } from '../features/admin/server/push-client.js'
 import type { PushConfig } from '../features/admin/server/push-client.js'
 
-const dbConfig: DbConfig = {
-  host: process.env['DB_HOST'] ?? 'localhost',
-  port: Number(process.env['DB_PORT'] ?? 5432),
-  database: process.env['DB_NAME'] ?? 'inertia_studio',
-  username: process.env['DB_USER'] ?? 'inertia_app',
-  password: process.env['DB_PASSWORD'] ?? 'changeme',
+const config = loadConfig()
+
+const dbConfig = {
+  ...config.db,
   max: 5,
   idle_timeout: 10,
   connect_timeout: 5
 }
 
-const siteId = process.env['SITE_ID'] ?? 'studio'
-const businessType = process.env['BUSINESS_TYPE'] ?? 'other'
-const siteSecret = process.env['SITE_SECRET'] ?? ''
-const studioEndpoint = process.env['STUDIO_ENDPOINT'] ?? ''
-
 const pushConfig: PushConfig = {
-  studioEndpoint,
-  siteSecret
+  studioEndpoint: config.studioEndpoint,
+  siteSecret: config.siteSecret
 }
 
 async function run (): Promise<void> {
@@ -34,22 +27,22 @@ async function run (): Promise<void> {
   const today = new Date()
 
   // Step 1: Generate today's daily summary
-  const genResult = await generateDailySummary(pool, siteId, businessType, today)
+  const genResult = await generateDailySummary(pool, config.siteId, config.businessType, today)
   if (genResult.isErr()) {
     console.error(`[aggregate] Failed to generate daily summary: ${genResult.error.message}`)
     await closePool(pool)
     process.exit(1)
   }
-  console.log(`[aggregate] Generated daily summary for ${siteId} on ${today.toISOString().slice(0, 10)}`)
+  console.log(`[aggregate] Generated daily summary for ${config.siteId} on ${today.toISOString().slice(0, 10)}`)
 
   // Step 2: Push unsynced summaries
-  if (studioEndpoint.length === 0 || siteSecret.length === 0) {
+  if (config.studioEndpoint.length === 0 || config.siteSecret.length === 0) {
     console.log('[aggregate] No STUDIO_ENDPOINT or SITE_SECRET configured, skipping push')
     await closePool(pool)
     return
   }
 
-  const unsyncedResult = await getUnsyncedDailySummaries(pool, siteId)
+  const unsyncedResult = await getUnsyncedDailySummaries(pool, config.siteId)
   if (unsyncedResult.isErr()) {
     console.error(`[aggregate] Failed to get unsynced summaries: ${unsyncedResult.error.message}`)
     await closePool(pool)
