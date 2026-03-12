@@ -88,17 +88,14 @@ export class ClientDashboard extends HTMLElement {
     topPagesTable.setAttribute('rows', '[]')
     topPagesPanel.appendChild(topPagesTable)
 
-    // Panel 4: Lead Actions
+    // Panel 4: Lead Actions (bars created dynamically from API response)
     const actionsPanel = document.createElement('hud-panel')
     actionsPanel.setAttribute('label', 'Lead Actions')
-    const actionTypes = ['Phone', 'Map', 'Book']
-    for (const action of actionTypes) {
-      const bar = document.createElement('hud-bar')
-      bar.setAttribute('label', action)
-      bar.setAttribute('value', '--')
-      bar.setAttribute('percent', '0')
-      actionsPanel.appendChild(bar)
-    }
+    const actionsPlaceholder = document.createElement('hud-bar')
+    actionsPlaceholder.setAttribute('label', 'Loading')
+    actionsPlaceholder.setAttribute('value', '--')
+    actionsPlaceholder.setAttribute('percent', '0')
+    actionsPanel.appendChild(actionsPlaceholder)
 
     // Panel 5: Traffic Sources
     const sourcesPanel = document.createElement('hud-panel')
@@ -225,15 +222,16 @@ export class ClientDashboard extends HTMLElement {
   }
 
   private _updateBars (panel: HTMLElement, items: ReadonlyArray<{ label: string; value: string; percent: string }>): void {
-    const bars = panel.querySelectorAll('hud-bar')
-    // Update existing bars by label match
-    for (const bar of bars) {
-      const barLabel = bar.getAttribute('label') ?? ''
-      const match = items.find(i => i.label === barLabel)
-      if (match) {
-        bar.setAttribute('value', match.value)
-        bar.setAttribute('percent', match.percent)
-      }
+    // Clear existing bars and rebuild from data
+    const existing = panel.querySelectorAll('hud-bar')
+    for (const bar of existing) bar.remove()
+
+    for (const item of items) {
+      const bar = document.createElement('hud-bar')
+      bar.setAttribute('label', item.label)
+      bar.setAttribute('value', item.value)
+      bar.setAttribute('percent', item.percent)
+      panel.appendChild(bar)
     }
   }
 }
