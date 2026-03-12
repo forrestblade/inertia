@@ -118,7 +118,7 @@ export class FleetDashboard extends HTMLElement {
       if (row === null || row.closest('thead') !== null) return
       const cells = row.querySelectorAll('td')
       const siteIdCell = cells[1]
-      if (siteIdCell === null) return
+      if (siteIdCell === undefined) return
       const siteId = siteIdCell.textContent?.trim() ?? ''
       if (siteId !== '') {
         window.history.pushState({}, '', `/admin/hud?site=${siteId}`)

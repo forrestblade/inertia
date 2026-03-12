@@ -1,3 +1,4 @@
+import type { IncomingMessage } from 'node:http'
 import { getDailyBreakdowns } from '@inertia/db'
 import { aggregateByCategory } from '@inertia/hud'
 import type { RouteHandler } from '../../../server/types.js'
@@ -10,7 +11,7 @@ const PERIOD_DAYS: Record<string, number> = {
   '90D': 90
 }
 
-function parsePeriodRange (req: { url?: string; headers: { host?: string } }): { start: Date; end: Date } {
+function parsePeriodRange (req: IncomingMessage): { start: Date; end: Date } {
   const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`)
   const periodParam = url.searchParams.get('period') ?? '7D'
   const days = PERIOD_DAYS[periodParam] ?? 7
