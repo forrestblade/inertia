@@ -1,24 +1,14 @@
 import type { RouteHandler } from '../../../server/types.js'
-import { isFragmentRequest, sendHtml } from '../../../server/router.js'
-import { renderShell, renderFragment } from '../../../server/shell.js'
+import { respondWithPage } from '../../../server/page-helpers.js'
 import { renderServices } from '../templates/services.js'
 import { PAGE_META } from '../../seo/config/page-meta.js'
 
-export const servicesHandler: RouteHandler = async (req, res) => {
-  const mainContent = renderServices()
-
-  if (isFragmentRequest(req)) {
-    sendHtml(res, renderFragment(mainContent))
-    return
-  }
-
-  const html = renderShell({
+export const servicesHandler: RouteHandler = async (req, res, ctx) => {
+  respondWithPage(req, res, ctx, {
     title: 'Pricing',
     description: PAGE_META.pricing.description,
-    criticalCSS: '',
     deferredCSSPath: '/css/studio.css',
-    mainContent,
+    mainContent: renderServices(),
     currentPath: '/pricing'
   })
-  sendHtml(res, html)
 }

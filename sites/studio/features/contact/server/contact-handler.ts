@@ -3,15 +3,14 @@ import { ResultAsync } from 'neverthrow'
 import type { DbPool, DbError } from '@inertia/db'
 import { mapPostgresError } from '@inertia/db'
 import type { RouteHandler } from '../../../server/types.js'
-import { isFragmentRequest, sendHtml, readBody } from '../../../server/router.js'
-import { renderShell, renderFragment } from '../../../server/shell.js'
+import { respondWithPage } from '../../../server/page-helpers.js'
 import { renderContactForm, renderContactSuccess } from '../templates/contact.js'
 import { validateContact } from '../schemas/contact-schema.js'
+import { readBody } from '../../../server/router.js'
 
-const shellOptions = {
+const pageBase = {
   title: 'Contact',
   description: 'Get in touch with Inertia Web Solutions.',
-  criticalCSS: '',
   deferredCSSPath: '/css/studio.css',
   currentPath: '/contact'
 }
@@ -36,14 +35,10 @@ export const contactPostHandler: RouteHandler = async (req, res, ctx) => {
   const validation = validateContact(values)
 
   if (validation.isErr()) {
-    const mainContent = renderContactForm(validation.error, values)
-
-    if (isFragmentRequest(req)) {
-      sendHtml(res, renderFragment(mainContent), 422)
-      return
-    }
-
-    sendHtml(res, renderShell({ ...shellOptions, mainContent }), 422)
+    respondWithPage(req, res, ctx, {
+      ...pageBase,
+      mainContent: renderContactForm(validation.error, values)
+    }, 422)
     return
   }
 
@@ -55,14 +50,11 @@ export const contactPostHandler: RouteHandler = async (req, res, ctx) => {
     console.error('Contact insert failed:', insertResult.error.message)
   }
 
-  const mainContent = renderContactSuccess()
-
-  if (isFragmentRequest(req)) {
-    sendHtml(res, renderFragment(mainContent))
-    return
-  }
-
-  sendHtml(res, renderShell({ ...shellOptions, title: 'Message Sent', mainContent }))
+  respondWithPage(req, res, ctx, {
+    ...pageBase,
+    title: 'Message Sent',
+    mainContent: renderContactSuccess()
+  })
 }
 
 function insertContactSubmission (

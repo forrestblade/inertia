@@ -1,23 +1,13 @@
 import type { RouteHandler } from '../../../server/types.js'
-import { isFragmentRequest, sendHtml } from '../../../server/router.js'
-import { renderShell, renderFragment } from '../../../server/shell.js'
+import { respondWithPage } from '../../../server/page-helpers.js'
 import { renderNotFound } from '../templates/not-found.js'
 
-export const notFoundHandler: RouteHandler = async (req, res) => {
-  const mainContent = renderNotFound()
-
-  if (isFragmentRequest(req)) {
-    sendHtml(res, renderFragment(mainContent), 404)
-    return
-  }
-
-  const html = renderShell({
+export const notFoundHandler: RouteHandler = async (req, res, ctx) => {
+  respondWithPage(req, res, ctx, {
     title: '404 — Not Found',
     description: 'Page not found.',
-    criticalCSS: '',
     deferredCSSPath: '/css/studio.css',
-    mainContent,
+    mainContent: renderNotFound(),
     currentPath: ''
-  })
-  sendHtml(res, html, 404)
+  }, 404)
 }

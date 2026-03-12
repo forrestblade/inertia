@@ -2,19 +2,18 @@ import { parse as parseQs } from 'node:querystring'
 import { execFile } from 'node:child_process'
 import { safeJsonParse } from '@inertia/ingestion'
 import type { RouteHandler } from '../../../server/types.js'
-import { isFragmentRequest, sendHtml, readBody } from '../../../server/router.js'
-import { renderShell, renderFragment } from '../../../server/shell.js'
+import { respondWithPage } from '../../../server/page-helpers.js'
 import { renderAuditForm } from '../templates/audit.js'
 import { renderAuditResults } from '../templates/audit-results.js'
 import { validateAuditUrl } from '../schemas/audit-schema.js'
 import { AuditErrorCode } from '../types/audit-types.js'
 import type { AuditError, LighthouseResult, LighthouseScore, LighthouseMetric } from '../types/audit-types.js'
 import { PAGE_META } from '../../seo/config/page-meta.js'
+import { readBody } from '../../../server/router.js'
 
-const shellOptions = {
+const pageBase = {
   title: 'Free Site Audit',
   description: PAGE_META['free-site-audit'].description,
-  criticalCSS: '',
   deferredCSSPath: '/css/studio.css',
   currentPath: '/free-site-audit'
 }
@@ -46,18 +45,14 @@ function checkRateLimit (ip: string): AuditError | null {
   return null
 }
 
-export const auditGetHandler: RouteHandler = async (req, res) => {
-  const mainContent = renderAuditForm()
-
-  if (isFragmentRequest(req)) {
-    sendHtml(res, renderFragment(mainContent))
-    return
-  }
-
-  sendHtml(res, renderShell({ ...shellOptions, mainContent }))
+export const auditGetHandler: RouteHandler = async (req, res, ctx) => {
+  respondWithPage(req, res, ctx, {
+    ...pageBase,
+    mainContent: renderAuditForm()
+  })
 }
 
-export const auditPostHandler: RouteHandler = async (req, res) => {
+export const auditPostHandler: RouteHandler = async (req, res, ctx) => {
   const raw = await readBody(req)
   const parsed = parseQs(raw)
   const urlInput = String(parsed['url'] ?? '')
@@ -65,12 +60,10 @@ export const auditPostHandler: RouteHandler = async (req, res) => {
   // Validate URL
   const validation = validateAuditUrl(urlInput)
   if (validation.isErr()) {
-    const mainContent = renderAuditForm(validation.error, urlInput)
-    if (isFragmentRequest(req)) {
-      sendHtml(res, renderFragment(mainContent), 422)
-      return
-    }
-    sendHtml(res, renderShell({ ...shellOptions, mainContent }), 422)
+    respondWithPage(req, res, ctx, {
+      ...pageBase,
+      mainContent: renderAuditForm(validation.error, urlInput)
+    }, 422)
     return
   }
 
@@ -80,12 +73,10 @@ export const auditPostHandler: RouteHandler = async (req, res) => {
   const ip = getClientIp(req)
   const rateLimitError = checkRateLimit(ip)
   if (rateLimitError) {
-    const mainContent = renderAuditForm(rateLimitError, url)
-    if (isFragmentRequest(req)) {
-      sendHtml(res, renderFragment(mainContent), 429)
-      return
-    }
-    sendHtml(res, renderShell({ ...shellOptions, mainContent }), 429)
+    respondWithPage(req, res, ctx, {
+      ...pageBase,
+      mainContent: renderAuditForm(rateLimitError, url)
+    }, 429)
     return
   }
 
@@ -95,12 +86,10 @@ export const auditPostHandler: RouteHandler = async (req, res) => {
       code: AuditErrorCode.AUDIT_IN_PROGRESS,
       message: 'An audit is already in progress. Please try again in a minute.'
     }
-    const mainContent = renderAuditForm(error, url)
-    if (isFragmentRequest(req)) {
-      sendHtml(res, renderFragment(mainContent), 503)
-      return
-    }
-    sendHtml(res, renderShell({ ...shellOptions, mainContent }), 503)
+    respondWithPage(req, res, ctx, {
+      ...pageBase,
+      mainContent: renderAuditForm(error, url)
+    }, 503)
     return
   }
 
@@ -117,21 +106,18 @@ export const auditPostHandler: RouteHandler = async (req, res) => {
       code: AuditErrorCode.AUDIT_FAILED,
       message: 'Lighthouse audit failed or timed out. The target site may be unreachable.'
     }
-    const mainContent = renderAuditForm(error, url)
-    if (isFragmentRequest(req)) {
-      sendHtml(res, renderFragment(mainContent), 500)
-      return
-    }
-    sendHtml(res, renderShell({ ...shellOptions, mainContent }), 500)
+    respondWithPage(req, res, ctx, {
+      ...pageBase,
+      mainContent: renderAuditForm(error, url)
+    }, 500)
     return
   }
 
-  const mainContent = renderAuditResults(lighthouseResult)
-  if (isFragmentRequest(req)) {
-    sendHtml(res, renderFragment(mainContent))
-    return
-  }
-  sendHtml(res, renderShell({ ...shellOptions, title: `Audit: ${url}`, mainContent }))
+  respondWithPage(req, res, ctx, {
+    ...pageBase,
+    title: `Audit: ${url}`,
+    mainContent: renderAuditResults(lighthouseResult)
+  })
 }
 
 function runLighthouse (url: string): Promise<LighthouseResult | null> {
