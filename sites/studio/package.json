@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx --watch server/entry.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "budget": "tsx scripts/budget-audit.ts"
   },
   "dependencies": {
     "@inertia/components": "workspace:*",
