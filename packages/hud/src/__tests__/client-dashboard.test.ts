@@ -85,12 +85,12 @@ describe('ClientDashboard', () => {
     expect(topPages?.querySelector('hud-table')).not.toBeNull()
   })
 
-  it('has hud-bar components in Lead Actions panel', () => {
+  it('has placeholder hud-bar in Lead Actions panel before data loads', () => {
     const el = attach(createElement())
     const panels = el.querySelectorAll('hud-panel')
     const actions = Array.from(panels).find(p => p.getAttribute('label') === 'Lead Actions')
     const bars = actions?.querySelectorAll('hud-bar')
-    expect(bars?.length).toBeGreaterThanOrEqual(3)
+    expect(bars?.length).toBeGreaterThanOrEqual(1)
   })
 
   it('has hud-bar components in Traffic Sources panel', () => {
@@ -400,15 +400,21 @@ describe('ClientDashboard breakdown wiring', () => {
     expect(searchBar?.getAttribute('value')).not.toBe('--')
   })
 
-  it('updates Lead Actions bars after fetch', async () => {
+  it('renders Lead Actions bars dynamically from API, not hardcoded', async () => {
     mockFetchWithBreakdowns()
     const el = attach(createElement())
     await new Promise(resolve => setTimeout(resolve, 50))
     const panels = el.querySelectorAll('hud-panel')
     const actions = Array.from(panels).find(p => p.getAttribute('label') === 'Lead Actions')
     const bars = actions?.querySelectorAll('hud-bar')
+    const labels = Array.from(bars ?? []).map(b => b.getAttribute('label'))
+    // API returns LEAD_PHONE and LEAD_EMAIL — should see Phone and Email, not Map/Book
+    expect(labels).toContain('Phone')
+    expect(labels).toContain('Email')
+    expect(labels).not.toContain('Map')
+    expect(labels).not.toContain('Book')
+    // Phone bar should have real data
     const phoneBar = Array.from(bars ?? []).find(b => b.getAttribute('label') === 'Phone')
-    expect(phoneBar).toBeDefined()
     expect(phoneBar?.getAttribute('value')).not.toBe('--')
   })
 
