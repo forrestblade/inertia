@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { renderShell, renderFragment } from '../shell.js'
+import { renderShell, renderFragment, BOOT_VERSION } from '../shell.js'
 
 const defaultOptions = {
   title: 'Test',
@@ -196,6 +196,20 @@ describe('renderShell canonical URL', () => {
   it('canonical URL uses currentPath', () => {
     const html = renderShell({ ...defaultOptions, currentPath: '/about' })
     expect(html).toContain('href="https://inertiawebsolutions.com/about"')
+  })
+})
+
+describe('BOOT_VERSION', () => {
+  it('is a non-empty string', () => {
+    expect(typeof BOOT_VERSION).toBe('string')
+    expect(BOOT_VERSION.length).toBeGreaterThan(0)
+  })
+})
+
+describe('renderShell data-inertia-version', () => {
+  it('includes data-inertia-version on html element', () => {
+    const html = renderShell(defaultOptions)
+    expect(html).toContain(`data-inertia-version="${BOOT_VERSION}"`)
   })
 })
 

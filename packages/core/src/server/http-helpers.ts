@@ -1,11 +1,18 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { ServerError } from './server-types.js'
 
-export function sendHtml (res: ServerResponse, html: string, statusCode: number = 200): void {
-  res.writeHead(statusCode, {
+export function sendHtml (
+  res: ServerResponse,
+  html: string,
+  statusCode: number = 200,
+  extraHeaders?: Record<string, string>
+): void {
+  const headers: Record<string, string | number> = {
     'Content-Type': 'text/html; charset=utf-8',
-    'Content-Length': Buffer.byteLength(html)
-  })
+    'Content-Length': Buffer.byteLength(html),
+    ...extraHeaders
+  }
+  res.writeHead(statusCode, headers)
   res.end(html)
 }
 

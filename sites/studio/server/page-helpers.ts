@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { isFragmentRequest, sendHtml } from './router.js'
-import { renderShell, renderFragment } from './shell.js'
+import { renderShell, renderFragment, BOOT_VERSION } from './shell.js'
 import type { RouteContext } from './types.js'
 
 export interface PageOptions {
@@ -11,6 +11,13 @@ export interface PageOptions {
   readonly currentPath: string
 }
 
+function buildPageHeaders (title: string): Record<string, string> {
+  return {
+    'X-Inertia-Version': BOOT_VERSION,
+    'X-Inertia-Title': `${title} | Inertia Web Solutions`
+  }
+}
+
 export function respondWithPage (
   req: IncomingMessage,
   res: ServerResponse,
@@ -18,8 +25,10 @@ export function respondWithPage (
   options: PageOptions,
   statusCode?: number
 ): void {
+  const headers = buildPageHeaders(options.title)
+
   if (isFragmentRequest(req)) {
-    sendHtml(res, renderFragment(options.mainContent), statusCode)
+    sendHtml(res, renderFragment(options.mainContent), statusCode, headers)
     return
   }
 
@@ -32,5 +41,5 @@ export function respondWithPage (
     mainContent: options.mainContent,
     currentPath: options.currentPath
   })
-  sendHtml(res, html, statusCode)
+  sendHtml(res, html, statusCode, headers)
 }

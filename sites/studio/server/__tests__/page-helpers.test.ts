@@ -7,15 +7,23 @@ function makeReq (headers: Record<string, string> = {}): IncomingMessage {
   return { headers } as unknown as IncomingMessage
 }
 
-function makeRes (): ServerResponse & { writtenData: string; writtenStatus: number } {
-  const res = {
+function makeRes (): ServerResponse & { writtenData: string; writtenStatus: number; writtenHeaders: Record<string, string | number> } {
+  const state = {
     writtenData: '',
     writtenStatus: 200,
+    writtenHeaders: {} as Record<string, string | number>
+  }
+  const res = Object.assign(state, {
     setHeader: vi.fn(),
-    writeHead: vi.fn(function (this: { writtenStatus: number }, code: number) { this.writtenStatus = code }),
-    end: vi.fn(function (this: { writtenData: string }, data: string) { this.writtenData = data })
-  } as unknown as ServerResponse & { writtenData: string; writtenStatus: number }
-  return res
+    writeHead: vi.fn((code: number, headers?: Record<string, string | number>) => {
+      state.writtenStatus = code
+      if (headers) Object.assign(state.writtenHeaders, headers)
+    }),
+    end: vi.fn((data: string) => {
+      state.writtenData = data
+    })
+  })
+  return res as unknown as ServerResponse & { writtenData: string; writtenStatus: number; writtenHeaders: Record<string, string | number> }
 }
 
 function makeCtx (criticalCSS?: string): RouteContext {
@@ -86,6 +94,57 @@ describe('respondWithPage', () => {
     }, 404)
 
     expect(res.writtenStatus).toBe(404)
+  })
+
+  it('includes X-Inertia-Version header on full page response', () => {
+    const req = makeReq({})
+    const res = makeRes()
+    const ctx = makeCtx()
+
+    respondWithPage(req, res, ctx, {
+      title: 'Test',
+      description: 'desc',
+      deferredCSSPath: '/css/studio.css',
+      mainContent: '<p>hello</p>',
+      currentPath: '/'
+    })
+
+    expect(res.writtenHeaders['X-Inertia-Version']).toBeDefined()
+    expect(typeof res.writtenHeaders['X-Inertia-Version']).toBe('string')
+    expect((res.writtenHeaders['X-Inertia-Version'] as string).length).toBeGreaterThan(0)
+  })
+
+  it('includes X-Inertia-Title header on full page response', () => {
+    const req = makeReq({})
+    const res = makeRes()
+    const ctx = makeCtx()
+
+    respondWithPage(req, res, ctx, {
+      title: 'About',
+      description: 'desc',
+      deferredCSSPath: '/css/studio.css',
+      mainContent: '<p>about</p>',
+      currentPath: '/about'
+    })
+
+    expect(res.writtenHeaders['X-Inertia-Title']).toBe('About | Inertia Web Solutions')
+  })
+
+  it('includes version and title headers on fragment response', () => {
+    const req = makeReq({ 'x-inertia-fragment': '1' })
+    const res = makeRes()
+    const ctx = makeCtx()
+
+    respondWithPage(req, res, ctx, {
+      title: 'Home',
+      description: 'desc',
+      deferredCSSPath: '/css/studio.css',
+      mainContent: '<p>home</p>',
+      currentPath: '/'
+    })
+
+    expect(res.writtenHeaders['X-Inertia-Version']).toBeDefined()
+    expect(res.writtenHeaders['X-Inertia-Title']).toBe('Home | Inertia Web Solutions')
   })
 
   it('uses empty string when pipeline has no CSS for route', () => {

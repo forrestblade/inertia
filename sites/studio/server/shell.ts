@@ -1,5 +1,5 @@
 // Boot timestamp for cache busting — changes each server restart
-const BOOT_VERSION = Date.now().toString(36)
+export const BOOT_VERSION = Date.now().toString(36)
 
 export interface ShellOptions {
   readonly title: string
@@ -44,7 +44,7 @@ function renderNav (currentPath: string): string {
 
 export function renderShell (options: ShellOptions): string {
   return `<!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en" class="dark" data-inertia-version="${BOOT_VERSION}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
