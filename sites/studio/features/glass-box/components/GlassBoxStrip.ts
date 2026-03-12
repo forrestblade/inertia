@@ -19,6 +19,7 @@ export class GlassBoxStrip extends HTMLElement {
   private _hardwareLabel: string = 'PI5'
   private _demoInterval: ReturnType<typeof setInterval> | null = null
   private _engineerMode: boolean = false
+  private _longPressTimeout: ReturnType<typeof setTimeout> | null = null
 
   static get observedAttributes (): string[] {
     return ['hardware-label', 'engineer-mode']
@@ -64,6 +65,9 @@ export class GlassBoxStrip extends HTMLElement {
       color: var(--muted-foreground, #888);
     `
     this._startRaf()
+    this.addEventListener('touchstart', this._onTouchStart.bind(this))
+    this.addEventListener('touchend', this._onTouchEnd.bind(this))
+    this.addEventListener('touchcancel', this._onTouchEnd.bind(this))
   }
 
   disconnectedCallback (): void {
@@ -75,6 +79,9 @@ export class GlassBoxStrip extends HTMLElement {
     }
     if (this._demoInterval) {
       clearInterval(this._demoInterval)
+    }
+    if (this._longPressTimeout) {
+      clearTimeout(this._longPressTimeout)
     }
   }
 
@@ -91,6 +98,20 @@ export class GlassBoxStrip extends HTMLElement {
       this._flushMessageTimeout = setTimeout(() => {
         ;(msgEl as HTMLElement).style.opacity = '0'
       }, GLASS_BOX_CONFIG.flushMessageDurationMs)
+    }
+  }
+
+  private _onTouchStart (): void {
+    this._longPressTimeout = setTimeout(() => {
+      document.dispatchEvent(new CustomEvent('engineer-mode-toggle'))
+      this._longPressTimeout = null
+    }, 300)
+  }
+
+  private _onTouchEnd (): void {
+    if (this._longPressTimeout) {
+      clearTimeout(this._longPressTimeout)
+      this._longPressTimeout = null
     }
   }
 
