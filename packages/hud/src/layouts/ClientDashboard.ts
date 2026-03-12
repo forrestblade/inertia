@@ -1,12 +1,22 @@
 import { HUD_COLORS, HUD_TYPOGRAPHY, HUD_SPACING } from '../tokens/hud-tokens.js'
 import { fetchSessionSummary, fetchEventSummary, fetchConversionSummary } from '../data/fetch-summaries.js'
+import { fetchTopPages, fetchTrafficSources, fetchLeadActions } from '../data/fetch-breakdowns.js'
 import type { HudPeriod } from '../types.js'
 import { formatNumber } from '../data/format-number.js'
+
+const LEAD_ACTION_LABELS: Record<string, string> = {
+  LEAD_PHONE: 'Phone',
+  LEAD_EMAIL: 'Email',
+  LEAD_FORM: 'Form'
+}
 
 export class ClientDashboard extends HTMLElement {
   private _initialized = false
   private _visitorsMetric: HTMLElement | null = null
   private _leadsMetric: HTMLElement | null = null
+  private _topPagesTable: HTMLElement | null = null
+  private _actionsPanel: HTMLElement | null = null
+  private _sourcesPanel: HTMLElement | null = null
   private _periodChangeHandler: ((e: Event) => void) | null = null
 
   connectedCallback (): void {
@@ -117,6 +127,9 @@ export class ClientDashboard extends HTMLElement {
     // Store references for data updates
     this._visitorsMetric = visitorsMetric
     this._leadsMetric = leadsMetric
+    this._topPagesTable = topPagesTable
+    this._actionsPanel = actionsPanel
+    this._sourcesPanel = sourcesPanel
 
     // Listen for period changes
     this._periodChangeHandler = (e: Event) => {
@@ -162,6 +175,55 @@ export class ClientDashboard extends HTMLElement {
       () => {},
       () => {} // Hold placeholders on error
     )
+
+    fetchTopPages('', period).match(
+      (data) => {
+        if (this._topPagesTable && Array.isArray(data.pages)) {
+          this._topPagesTable.setAttribute('rows', JSON.stringify(data.pages))
+        }
+      },
+      () => {} // Hold placeholders on error
+    )
+
+    fetchTrafficSources('', period).match(
+      (data) => {
+        if (this._sourcesPanel && Array.isArray(data.sources)) {
+          this._updateBars(this._sourcesPanel, data.sources.map(s => ({
+            label: s.category,
+            value: String(s.count),
+            percent: String(s.percent)
+          })))
+        }
+      },
+      () => {} // Hold placeholders on error
+    )
+
+    fetchLeadActions('', period).match(
+      (data) => {
+        if (this._actionsPanel && Array.isArray(data.actions)) {
+          const total = data.actions.reduce((sum, x) => sum + x.count, 0)
+          this._updateBars(this._actionsPanel, data.actions.map(a => ({
+            label: LEAD_ACTION_LABELS[a.action] ?? a.action,
+            value: String(a.count),
+            percent: String(total > 0 ? Math.round((a.count / total) * 100) : 0)
+          })))
+        }
+      },
+      () => {} // Hold placeholders on error
+    )
+  }
+
+  private _updateBars (panel: HTMLElement, items: ReadonlyArray<{ label: string; value: string; percent: string }>): void {
+    const bars = panel.querySelectorAll('hud-bar')
+    // Update existing bars by label match
+    for (const bar of bars) {
+      const barLabel = bar.getAttribute('label') ?? ''
+      const match = items.find(i => i.label === barLabel)
+      if (match) {
+        bar.setAttribute('value', match.value)
+        bar.setAttribute('percent', match.percent)
+      }
+    }
   }
 }
 
