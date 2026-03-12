@@ -289,6 +289,52 @@ describe('getStudioCSS', () => {
   })
 })
 
+describe('mobile CSS: hamburger nav', () => {
+  it('hides nav-links below 768px', () => {
+    const css = getStudioCSS()
+    expect(css).toContain('.nav-links')
+    expect(css).toMatch(/@media\s*\(max-width:\s*767px\)[\s\S]*\.nav-links\s*\{[^}]*display:\s*none/)
+  })
+
+  it('shows nav-hamburger below 768px', () => {
+    const css = getStudioCSS()
+    expect(css).toContain('.nav-hamburger')
+    expect(css).toMatch(/@media\s*\(max-width:\s*767px\)[\s\S]*\.nav-hamburger\s*\{[^}]*display:\s*flex/)
+  })
+
+  it('nav-links.open displays as vertical flex below 768px', () => {
+    const css = getStudioCSS()
+    expect(css).toMatch(/@media\s*\(max-width:\s*767px\)[\s\S]*\.nav-links\.open\s*\{[^}]*display:\s*flex/)
+    expect(css).toMatch(/@media\s*\(max-width:\s*767px\)[\s\S]*\.nav-links\.open\s*\{[^}]*flex-direction:\s*column/)
+  })
+})
+
+describe('mobile CSS: contact form', () => {
+  it('increases form input font-size to 16px on mobile to prevent iOS zoom', () => {
+    const css = getStudioCSS()
+    expect(css).toMatch(/@media\s*\(max-width:\s*767px\)[\s\S]*\.form-input[\s\S]*font-size:\s*16px/)
+  })
+
+  it('stacks contact-info vertically on mobile', () => {
+    const css = getStudioCSS()
+    expect(css).toMatch(/@media\s*\(max-width:\s*767px\)[\s\S]*\.contact-info\s*\{[^}]*flex-direction:\s*column/)
+  })
+})
+
+describe('mobile CSS: hero responsive text', () => {
+  it('hero h1 uses clamp() or reduces font-size on mobile', () => {
+    const css = getStudioCSS()
+    expect(css).toMatch(/@media\s*\(max-width:\s*767px\)[\s\S]*\.hero h1\s*\{[^}]*font-size/)
+  })
+})
+
+describe('mobile CSS: footer strip clearance', () => {
+  it('footer has bottom padding to clear buffer strip', () => {
+    const css = getStudioCSS()
+    expect(css).toMatch(/footer\s*\{[^}]*padding-bottom/)
+  })
+})
+
 describe('a11y contrast compliance', () => {
   it('primary-foreground on primary meets WCAG AA 4.5:1 for dark mode', () => {
     const primary = studioTheme.colors?.dark?.primary ?? ''

@@ -73,6 +73,45 @@ describe('GlassBoxInspector', () => {
   })
 })
 
+describe('GlassBoxInspector mobile behavior', () => {
+  beforeAll(async () => {
+    if (customElements.get('inertia-telemetry-infobox') === undefined) {
+      await import('../components/GlassBoxInspector.js')
+    }
+  })
+
+  it('does NOT show infobox on hover after delay on mobile', async () => {
+    const originalWidth = window.innerWidth
+    Object.defineProperty(window, 'innerWidth', { value: 375, writable: true, configurable: true })
+
+    const el = document.createElement('inertia-telemetry-infobox')
+
+    const target = document.createElement('a')
+    target.setAttribute('data-telemetry-type', 'CLICK')
+    target.setAttribute('data-telemetry-target', 'mobile-link')
+    document.body.appendChild(target)
+    document.body.appendChild(el)
+
+    let opacity = '0'
+    try {
+      // Hover over a telemetry target
+      target.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }))
+
+      // Wait past the 400ms hover delay
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // On mobile, the infobox should remain hidden (opacity 0)
+      opacity = el.style.opacity
+    } finally {
+      el.remove()
+      target.remove()
+      Object.defineProperty(window, 'innerWidth', { value: originalWidth, writable: true, configurable: true })
+    }
+
+    expect(opacity).toBe('0')
+  })
+})
+
 describe('GlassBoxInspector overlay mode', () => {
   beforeAll(async () => {
     if (customElements.get('inertia-telemetry-infobox') === undefined) {
