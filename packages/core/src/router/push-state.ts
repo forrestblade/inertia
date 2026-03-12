@@ -46,6 +46,53 @@ interface NavigationResult {
   readonly title: string | null
 }
 
+function revalidateInBackground (
+  url: string,
+  config: ResolvedRouterConfig,
+  fetchFn: typeof fetch,
+  pageCacheHandle: PageCacheHandle,
+  cachedHtml: string
+): void {
+  const fetchPromise = config.enableFragmentProtocol
+    ? fetchFn(url, { headers: { 'X-Inertia-Fragment': '1' } })
+    : fetchFn(url)
+
+  fetchPromise
+    .then((response) => {
+      if (!response.ok) return
+      const version = response.headers.get('X-Inertia-Version')
+      return response.text().then((html) => ({ html, version }))
+    })
+    .then((result) => {
+      if (result === undefined) return
+
+      // Update version tracking
+      if (result.version !== null) {
+        pageCacheHandle.setVersion(result.version)
+      }
+
+      // Same content — no re-swap needed
+      if (result.html === cachedHtml) return
+
+      // User navigated away — don't re-swap
+      const currentPath = window.location.pathname
+      const urlPath = url.startsWith('/') ? url : new URL(url, window.location.origin).pathname
+      if (currentPath !== urlPath) return
+
+      // Content changed — update cache and re-swap
+      const titleHeader = null
+      pageCacheHandle.set(url, {
+        url,
+        html: result.html,
+        timestamp: Date.now(),
+        version: result.version,
+        title: titleHeader
+      })
+
+      processHtml(result.html, config.contentSelector)
+    })
+}
+
 function isNoCachePath (url: string, noCachePaths: ReadonlyArray<string>): boolean {
   for (const prefix of noCachePaths) {
     if (url.startsWith(prefix)) return true
@@ -62,12 +109,13 @@ function performNavigation (
 ): ResultAsync<NavigationResult, RouterError> {
   const skipCache = isNoCachePath(url, config.noCachePaths)
 
-  // 1. Check page cache first
+  // 1. Check page cache first — serve instantly, revalidate in background
   if (!skipCache) {
     const pageCached = pageCacheHandle.get(url)
     if (pageCached.isOk()) {
       const result = processHtml(pageCached.value.html, config.contentSelector)
       if (result.isOk()) {
+        revalidateInBackground(url, config, fetchFn, pageCacheHandle, pageCached.value.html)
         return ResultAsync.fromSafePromise(
           Promise.resolve({ source: 'cache' as const, version: pageCached.value.version, title: result.value })
         )

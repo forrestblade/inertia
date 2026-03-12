@@ -517,7 +517,7 @@ describe('initRouter', () => {
     expect(handle!.pageCacheSize()).toBe(1)
   })
 
-  it('cache hit skips network fetch on second visit', async () => {
+  it('cache hit serves instantly without blocking on network (SWR revalidates in background)', async () => {
     const mockFetch = createMockFetch('<html><head><title>Cached</title></head><body><main><p>Cached</p></main></body></html>')
 
     const result = initRouter({}, mockFetch)
@@ -530,9 +530,14 @@ describe('initRouter', () => {
     await handle!.navigate('/cached2')
     expect(mockFetch).toHaveBeenCalledTimes(1)
 
+    // Second visit serves from cache (instant) but SWR fires background fetch
     await handle!.navigate('/cached2')
-    // Should not fetch again — served from page cache
-    expect(mockFetch).toHaveBeenCalledTimes(1)
+    // Content served immediately from cache
+    expect(document.querySelector('main p')?.textContent).toBe('Cached')
+
+    // Background revalidation fires asynchronously
+    await new Promise(resolve => { setTimeout(resolve, 50) })
+    expect(mockFetch).toHaveBeenCalledTimes(2)
   })
 
   it('cache hit reports source as cache in navigated event', async () => {
@@ -555,6 +560,86 @@ describe('initRouter', () => {
 
     await handle!.navigate('/src-test')
     expect(lastSource).toBe('cache')
+  })
+
+  it('background revalidation fires after cache hit', async () => {
+    let fetchCount = 0
+    const mockFetch = vi.fn<typeof fetch>().mockImplementation(() => {
+      fetchCount++
+      return Promise.resolve(new Response('<html><head><title>BG</title></head><body><main><p>BG</p></main></body></html>', {
+        status: 200,
+        headers: { 'Content-Type': 'text/html' }
+      }))
+    })
+
+    const result = initRouter({}, mockFetch)
+    if (result.isOk()) handle = result.value
+
+    const main = document.createElement('main')
+    main.innerHTML = '<p>Home</p>'
+    document.body.appendChild(main)
+
+    // First visit — network fetch
+    await handle!.navigate('/bg-test')
+    expect(fetchCount).toBe(1)
+
+    // Second visit — cache hit, but background revalidation fires
+    await handle!.navigate('/bg-test')
+    // Allow background fetch to fire
+    await new Promise(resolve => { setTimeout(resolve, 50) })
+    expect(fetchCount).toBe(2)
+  })
+
+  it('background revalidation re-swaps DOM when content changed', async () => {
+    let callCount = 0
+    const mockFetch = vi.fn<typeof fetch>().mockImplementation(() => {
+      callCount++
+      const html = callCount === 1
+        ? '<html><head><title>V1</title></head><body><main><p>Version 1</p></main></body></html>'
+        : '<html><head><title>V2</title></head><body><main><p>Version 2</p></main></body></html>'
+      return Promise.resolve(new Response(html, {
+        status: 200,
+        headers: { 'Content-Type': 'text/html' }
+      }))
+    })
+
+    const result = initRouter({}, mockFetch)
+    if (result.isOk()) handle = result.value
+
+    const main = document.createElement('main')
+    main.innerHTML = '<p>Home</p>'
+    document.body.appendChild(main)
+
+    await handle!.navigate('/swr-test')
+    expect(document.querySelector('main p')?.textContent).toBe('Version 1')
+
+    // Second visit — cache serves V1, background fetches V2
+    await handle!.navigate('/swr-test')
+    // Wait for background revalidation
+    await new Promise(resolve => { setTimeout(resolve, 100) })
+    expect(document.querySelector('main p')?.textContent).toBe('Version 2')
+  })
+
+  it('background revalidation does NOT re-swap when content is same', async () => {
+    const mockFetch = createMockFetch('<html><head><title>Same</title></head><body><main><p>Same</p></main></body></html>')
+    let swapCount = 0
+
+    document.addEventListener('inertia:after-swap', () => { swapCount++ })
+
+    const result = initRouter({}, mockFetch)
+    if (result.isOk()) handle = result.value
+
+    const main = document.createElement('main')
+    main.innerHTML = '<p>Home</p>'
+    document.body.appendChild(main)
+
+    await handle!.navigate('/no-re-swap')
+    const afterFirst = swapCount
+
+    await handle!.navigate('/no-re-swap')
+    await new Promise(resolve => { setTimeout(resolve, 100) })
+    // Only the cache-hit swap should fire, background should not re-swap (same content)
+    expect(swapCount).toBe(afterFirst + 1)
   })
 
   it('admin paths are not cached', async () => {
