@@ -463,7 +463,7 @@ footer {
     padding: ${SPACING.scale[3]} 0;
     border-bottom: 1px solid var(--border);
   }
-  .nav-inner { position: relative; }
+  .nav-inner { position: relative; overflow-x: visible; }
   .hero h1 { font-size: 2rem; }
   .hero p { font-size: 1rem; }
   .hero { height: auto; min-height: 80vh; padding-block: 3rem; }
@@ -479,10 +479,12 @@ footer {
     margin-bottom: ${SPACING.scale[5]};
     padding: 0;
   }
-  .btn-primary {
+  form .btn-primary {
     width: 100%;
     padding: ${SPACING.scale[4]} ${SPACING.scale[6]};
   }
+  .cta-section { text-align: center; }
+  .cta-section .btn-primary { width: auto; }
   .contact-info {
     flex-direction: column;
     align-items: center;

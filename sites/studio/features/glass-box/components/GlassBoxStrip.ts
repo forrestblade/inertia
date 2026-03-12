@@ -45,6 +45,12 @@ export class GlassBoxStrip extends HTMLElement {
   }
 
   connectedCallback (): void {
+    // Hide entirely on mobile — no buffer strip for small screens
+    if (window.innerWidth < 768) {
+      this.style.display = 'none'
+      return
+    }
+
     this.setAttribute('role', 'status')
     this.setAttribute('aria-label', 'Telemetry buffer status')
     this.style.cssText = `

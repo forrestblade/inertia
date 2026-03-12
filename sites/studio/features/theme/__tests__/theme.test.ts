@@ -380,7 +380,7 @@ describe('mobile CSS: contact form improvements', () => {
 
   it('form submit button is full-width on mobile', () => {
     const css = getStudioCSS()
-    expect(css).toMatch(/@media\s*\(max-width:\s*767px\)[\s\S]*\.btn-primary[\s\S]*width:\s*100%/)
+    expect(css).toMatch(/@media\s*\(max-width:\s*767px\)[\s\S]*form .btn-primary[\s\S]*width:\s*100%/)
   })
 
   it('form group has no horizontal padding on mobile', () => {
