@@ -2,6 +2,7 @@ import type { RouteHandler } from '../../../server/types.js'
 import { isFragmentRequest, sendHtml } from '../../../server/router.js'
 import { renderShell, renderFragment } from '../../../server/shell.js'
 import { renderPrinciples } from '../templates/principles.js'
+import { PAGE_META } from '../../seo/config/page-meta.js'
 
 export const principlesHandler: RouteHandler = async (req, res) => {
   const mainContent = renderPrinciples()
@@ -13,7 +14,7 @@ export const principlesHandler: RouteHandler = async (req, res) => {
 
   const html = renderShell({
     title: 'Principles',
-    description: 'The four engineering principles behind Inertia — borrowed from aerospace, applied to web development.',
+    description: PAGE_META.principles.description,
     criticalCSS: '',
     deferredCSSPath: '/css/studio.css',
     mainContent,

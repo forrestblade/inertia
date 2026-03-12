@@ -9,10 +9,11 @@ import { renderAuditResults } from '../templates/audit-results.js'
 import { validateAuditUrl } from '../schemas/audit-schema.js'
 import { AuditErrorCode } from '../types/audit-types.js'
 import type { AuditError, LighthouseResult, LighthouseScore, LighthouseMetric } from '../types/audit-types.js'
+import { PAGE_META } from '../../seo/config/page-meta.js'
 
 const shellOptions = {
   title: 'Audit',
-  description: 'Free Lighthouse website audit powered by Inertia.',
+  description: PAGE_META.audit.description,
   criticalCSS: '',
   deferredCSSPath: '/css/studio.css',
   currentPath: '/audit'

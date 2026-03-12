@@ -2,6 +2,7 @@ import type { RouteHandler } from '../../../server/types.js'
 import { isFragmentRequest, sendHtml } from '../../../server/router.js'
 import { renderShell, renderFragment } from '../../../server/shell.js'
 import { renderHome } from '../templates/home.js'
+import { PAGE_META } from '../../seo/config/page-meta.js'
 
 export const homeHandler: RouteHandler = async (req, res) => {
   const mainContent = renderHome()
@@ -13,7 +14,7 @@ export const homeHandler: RouteHandler = async (req, res) => {
 
   const html = renderShell({
     title: 'Home',
-    description: 'Inertia Web Solutions — deterministic websites on dedicated hardware you own. No shared hosting. No bloated frameworks.',
+    description: PAGE_META.home.description,
     criticalCSS: '',
     deferredCSSPath: '/css/studio.css',
     mainContent,
