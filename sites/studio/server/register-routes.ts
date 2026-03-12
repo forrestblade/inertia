@@ -20,7 +20,7 @@ export function registerRoutes (router: Router): void {
   const config = loadConfig()
 
   // Infrastructure
-  router.register('/health', { GET: (_req, res) => sendHtml(res, 'OK') })
+  router.register('/health', { GET: async (_req, res) => sendHtml(res, 'OK') })
 
   // Content pages
   router.register('/', { GET: homeHandler })
