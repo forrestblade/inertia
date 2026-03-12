@@ -11,6 +11,7 @@ import { registerRoutes } from './register-routes.js'
 import { getStudioCSS } from '../features/theme/config/studio-css.js'
 import { bundleClientJS, bundleAdminJS } from '../features/client/bundle-client.js'
 import { createCriticalCSSPipeline } from '../features/budget/critical-css-pipeline.js'
+import { logBudgetReport } from '../features/budget/budget-logger.js'
 import { startAggregationCron } from '../features/admin/server/aggregation-cron.js'
 import { seedDemoSummaries } from '@inertia/db/seed'
 
@@ -72,6 +73,7 @@ async function boot (): Promise<void> {
   // Build critical CSS pipeline
   const cssPipeline = createCriticalCSSPipeline()
   console.log('Critical CSS pipeline cached')
+  logBudgetReport(cssPipeline)
 
   // Build router
   const router = createServerRouter<RouteContext>()
