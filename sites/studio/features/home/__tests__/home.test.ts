@@ -53,4 +53,13 @@ describe('renderHome', () => {
     const html = renderHome()
     expect(html).not.toContain('href="/contact"')
   })
+
+  it('does NOT reference hardware brand names in public-facing copy', () => {
+    const html = renderHome()
+    expect(html).not.toContain(' Pi,')
+    expect(html).not.toContain(' Pi.')
+    expect(html).not.toContain('Raspberry')
+    expect(html).not.toContain('ZimaBoard')
+    expect(html).not.toContain('N100')
+  })
 })
