@@ -1,6 +1,6 @@
 import type { IncomingMessage } from 'node:http'
 import { getDailyBreakdowns } from '@inertia/db'
-import { aggregateByCategory } from '@inertia/hud'
+import { aggregateByCategory } from '@inertia/hud/dist/data/classify-referrer.js'
 import type { RouteHandler } from '../../../server/types.js'
 import { sendJson } from '../../../server/router.js'
 
