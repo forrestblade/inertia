@@ -31,7 +31,9 @@ export function transformIntentToEvent (
       id: intent.id,
       timestamp: intent.timestamp,
       x_coord: intent.x_coord,
-      y_coord: intent.y_coord
+      y_coord: intent.y_coord,
+      ...(intent.path !== undefined && { path: intent.path }),
+      ...(intent.referrer !== undefined && { referrer: intent.referrer })
     }
   }
 }
