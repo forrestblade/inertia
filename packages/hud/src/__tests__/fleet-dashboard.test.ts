@@ -187,6 +187,60 @@ describe('FleetDashboard drill-down', () => {
   })
 })
 
+describe('FleetDashboard alerts', () => {
+  afterEach(() => {
+    document.body.innerHTML = ''
+    vi.restoreAllMocks()
+  })
+
+  it('renders alert rows above the table', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input)
+      if (url.includes('/api/fleet/alerts')) {
+        return new Response(JSON.stringify([
+          {
+            site_id: 'site_acme',
+            severity: 'red',
+            type: 'offline',
+            message: 'site_acme has not synced'
+          }
+        ]))
+      }
+      if (url.includes('/api/fleet/sites')) {
+        return new Response(JSON.stringify([]))
+      }
+      if (url.includes('/api/fleet/aggregates')) {
+        return new Response(JSON.stringify({
+          total_sites: 0,
+          total_sessions: 0,
+          total_conversions: 0
+        }))
+      }
+      return new Response('[]')
+    })
+    const el = attach(createElement())
+    await new Promise(resolve => setTimeout(resolve, 50))
+    const alertContainer = el.querySelector('[data-alerts]')
+    expect(alertContainer).not.toBeNull()
+    const alertItems = alertContainer?.querySelectorAll('[data-alert]')
+    expect(alertItems?.length).toBeGreaterThanOrEqual(1)
+  })
+
+  it('does not render alert container when no alerts', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input)
+      if (url.includes('/api/fleet/alerts')) {
+        return new Response(JSON.stringify([]))
+      }
+      return new Response(JSON.stringify([]))
+    })
+    const el = attach(createElement())
+    await new Promise(resolve => setTimeout(resolve, 50))
+    const alertItems = el.querySelectorAll('[data-alert]')
+    expect(alertItems.length).toBe(0)
+  })
+})
+
 describe('FleetDashboard data fetching', () => {
   afterEach(() => {
     document.body.innerHTML = ''
