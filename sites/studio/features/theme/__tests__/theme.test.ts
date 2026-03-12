@@ -356,3 +356,35 @@ describe('a11y contrast compliance', () => {
     expect(css).toMatch(/\.footer-hardware a\s*\{[^}]*text-decoration:\s*underline/)
   })
 })
+
+describe('mobile CSS: buffer strip hidden', () => {
+  it('hides inertia-buffer-strip on mobile', () => {
+    const css = getStudioCSS()
+    expect(css).toMatch(/@media\s*\(max-width:\s*767px\)[\s\S]*inertia-buffer-strip\s*\{[^}]*display:\s*none/)
+  })
+})
+
+describe('nav CTA button styles', () => {
+  it('has nav-cta class with accent styling', () => {
+    const css = getStudioCSS()
+    expect(css).toContain('.nav-cta')
+    expect(css).toMatch(/\.nav-cta\s*\{[^}]*background/)
+  })
+})
+
+describe('mobile CSS: contact form improvements', () => {
+  it('form has full-width inputs on mobile', () => {
+    const css = getStudioCSS()
+    expect(css).toMatch(/@media\s*\(max-width:\s*767px\)[\s\S]*\.form-input[\s\S]*width:\s*100%/)
+  })
+
+  it('form submit button is full-width on mobile', () => {
+    const css = getStudioCSS()
+    expect(css).toMatch(/@media\s*\(max-width:\s*767px\)[\s\S]*\.btn-primary[\s\S]*width:\s*100%/)
+  })
+
+  it('form group has no horizontal padding on mobile', () => {
+    const css = getStudioCSS()
+    expect(css).toMatch(/@media\s*\(max-width:\s*767px\)[\s\S]*\.form-group[\s\S]*padding/)
+  })
+})

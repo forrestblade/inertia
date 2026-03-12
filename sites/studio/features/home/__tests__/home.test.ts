@@ -92,3 +92,48 @@ describe('renderHome', () => {
     }
   })
 })
+
+describe('renderHome pillar copy rewrite', () => {
+  it('pillar titles use plain-language business outcomes', () => {
+    expect(PILLARS[0].title).toBe('Never Stutters Under Load')
+    expect(PILLARS[1].title).toBe('Never Crashes Silently')
+    expect(PILLARS[2].title).toBe('Nothing Can Hide in the Code')
+    expect(PILLARS[3].title).toBe('Loads Before Your Competitor\'s Logo Appears')
+  })
+
+  it('pillar titles do not contain engineering jargon', () => {
+    for (const pillar of PILLARS) {
+      expect(pillar.title).not.toContain('Dynamic Allocation')
+      expect(pillar.title).not.toContain('Exceptions')
+      expect(pillar.title).not.toContain('Complexity')
+      expect(pillar.title).not.toContain('First Paint')
+    }
+  })
+})
+
+describe('renderHome section order', () => {
+  it('eliminate + ownership appear before pillars', () => {
+    const html = renderHome()
+    const eliminatePos = html.indexOf('eliminate-section')
+    const ownershipPos = html.indexOf('ownership-section')
+    const pillarPos = html.indexOf('pillars-section')
+    expect(eliminatePos).toBeGreaterThan(-1)
+    expect(ownershipPos).toBeGreaterThan(-1)
+    expect(pillarPos).toBeGreaterThan(-1)
+    expect(eliminatePos).toBeLessThan(pillarPos)
+    expect(ownershipPos).toBeLessThan(pillarPos)
+  })
+
+  it('eliminate and ownership are in a side-by-side container', () => {
+    const html = renderHome()
+    expect(html).toContain('value-proposition')
+  })
+})
+
+describe('renderHome hero CTA links to new routes', () => {
+  it('hero primary CTA links to /how-it-works', () => {
+    const html = renderHome()
+    expect(html).toContain('href="/how-it-works"')
+    expect(html).not.toContain('href="/principles"')
+  })
+})

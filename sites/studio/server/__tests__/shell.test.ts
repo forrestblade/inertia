@@ -147,16 +147,43 @@ describe('renderShell hamburger nav', () => {
     expect(html).toContain('class="nav-links"')
   })
 
-  it('nav links container holds all 5 page links', () => {
+  it('nav links container holds all 4 page links plus CTA', () => {
     const html = renderShell(defaultOptions)
     const navLinksMatch = html.match(/class="nav-links"[\s\S]*?<\/div>/)
     expect(navLinksMatch).not.toBeNull()
     const navLinksHtml = navLinksMatch![0]
     expect(navLinksHtml).toContain('Home')
-    expect(navLinksHtml).toContain('Principles')
-    expect(navLinksHtml).toContain('Services')
-    expect(navLinksHtml).toContain('Audit')
+    expect(navLinksHtml).toContain('How It Works')
+    expect(navLinksHtml).toContain('Pricing')
     expect(navLinksHtml).toContain('About')
+    expect(navLinksHtml).toContain('Free Site Audit')
+  })
+})
+
+describe('renderShell nav route renames', () => {
+  it('nav links use new route paths', () => {
+    const html = renderShell(defaultOptions)
+    expect(html).toContain('href="/how-it-works"')
+    expect(html).toContain('href="/pricing"')
+    expect(html).toContain('href="/about"')
+    expect(html).not.toContain('href="/principles"')
+    expect(html).not.toContain('href="/services"')
+  })
+
+  it('audit link is a CTA button in nav, not a text link', () => {
+    const html = renderShell(defaultOptions)
+    expect(html).toContain('nav-cta')
+    expect(html).toContain('href="/free-site-audit"')
+    expect(html).not.toContain('href="/audit"')
+  })
+
+  it('nav labels match new names', () => {
+    const html = renderShell(defaultOptions)
+    expect(html).toContain('How It Works')
+    expect(html).toContain('Pricing')
+    expect(html).toContain('Free Site Audit')
+    expect(html).not.toContain('>Principles<')
+    expect(html).not.toContain('>Services<')
   })
 })
 
