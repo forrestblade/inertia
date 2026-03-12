@@ -22,6 +22,7 @@ for (const d of SOCIAL_DOMAINS) { DOMAIN_MAP[d] = 'Social' }
 for (const d of REFERRAL_DOMAINS) { DOMAIN_MAP[d] = 'Referral' }
 
 function extractHostname (referrer: string): string {
+  if (typeof referrer !== 'string') return ''
   const trimmed = referrer.trim().toLowerCase()
   if (trimmed === '') return ''
 
