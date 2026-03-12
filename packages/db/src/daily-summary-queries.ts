@@ -90,7 +90,7 @@ export function insertDailySummaryFromRemote (
       `
       const row = rows[0]
       if (!row) {
-        throw new Error('INSERT returned no rows')
+        return Promise.reject(new Error('INSERT returned no rows'))
       }
       return row
     })(),
