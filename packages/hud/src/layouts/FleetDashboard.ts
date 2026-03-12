@@ -156,7 +156,7 @@ export class FleetDashboard extends HTMLElement {
       if (siteIdCell === undefined) return
       const siteId = siteIdCell.textContent?.trim() ?? ''
       if (siteId !== '') {
-        window.history.pushState({}, '', `/admin/hud?site=${siteId}`)
+        window.location.href = `/admin/hud?site=${siteId}`
       }
     })
 
