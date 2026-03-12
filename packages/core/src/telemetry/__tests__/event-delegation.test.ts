@@ -171,4 +171,26 @@ describe('initEventDelegation', () => {
     const dirty = buffer.collectDirty()
     expect(dirty).toHaveLength(10)
   })
+
+  it('sets path to current pathname on intent', () => {
+    const result = initEventDelegation(buffer)
+    if (result.isOk()) handle = result.value
+
+    const el = createTrackedElement('CLICK', 'nav')
+    clickElement(el)
+
+    const dirty = buffer.collectDirty()
+    expect(dirty[0]!.path).toBe(window.location.pathname)
+  })
+
+  it('sets referrer to document.referrer on intent', () => {
+    const result = initEventDelegation(buffer)
+    if (result.isOk()) handle = result.value
+
+    const el = createTrackedElement('CLICK', 'nav')
+    clickElement(el)
+
+    const dirty = buffer.collectDirty()
+    expect(typeof dirty[0]!.referrer).toBe('string')
+  })
 })
