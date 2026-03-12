@@ -36,6 +36,6 @@ describe('renderPrinciples', () => {
   it('has audit CTA at bottom', () => {
     const html = renderPrinciples()
     expect(html).toContain('Run a Free Audit')
-    expect(html).toContain('/audit')
+    expect(html).toContain('/free-site-audit')
   })
 })

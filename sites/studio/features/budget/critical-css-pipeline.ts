@@ -15,8 +15,8 @@ interface CriticalCSSCache {
 
 const PAGE_RENDERERS: Record<string, () => string> = {
   '/': renderHome,
-  '/principles': renderPrinciples,
-  '/services': renderServices,
+  '/how-it-works': renderPrinciples,
+  '/pricing': renderServices,
   '/about': renderAbout,
   '/contact': () => renderContactForm()
 }

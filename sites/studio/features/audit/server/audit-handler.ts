@@ -12,11 +12,11 @@ import type { AuditError, LighthouseResult, LighthouseScore, LighthouseMetric } 
 import { PAGE_META } from '../../seo/config/page-meta.js'
 
 const shellOptions = {
-  title: 'Audit',
-  description: PAGE_META.audit.description,
+  title: 'Free Site Audit',
+  description: PAGE_META['free-site-audit'].description,
   criticalCSS: '',
   deferredCSSPath: '/css/studio.css',
-  currentPath: '/audit'
+  currentPath: '/free-site-audit'
 }
 
 // Single-audit semaphore

@@ -33,7 +33,7 @@ describe('PAGE_META', () => {
   })
 
   it('audit description mentions free', () => {
-    expect(PAGE_META.audit.description.toLowerCase()).toContain('free')
+    expect(PAGE_META['free-site-audit'].description.toLowerCase()).toContain('free')
   })
 
   it('no description references specific hardware brands', () => {

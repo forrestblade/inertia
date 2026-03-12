@@ -13,8 +13,16 @@ import { sessionSummaryHandler, eventSummaryHandler, conversionSummaryHandler, i
 import { createFleetOverviewHandler, createFleetCompareHandler } from '../features/admin/server/fleet-handler.js'
 import { fleetSitesHandler, fleetComparisonHandler } from '../features/admin/server/fleet-routes.js'
 import { aggregationHandler } from '../features/admin/server/aggregation-handler.js'
+import type { RouteHandler } from './types.js'
 import { loadConfig } from './config.js'
 import { sendHtml } from './router.js'
+
+function redirect301 (location: string): RouteHandler {
+  return async (_req, res) => {
+    res.writeHead(301, { Location: location })
+    res.end()
+  }
+}
 
 export function registerRoutes (router: Router): void {
   const config = loadConfig()
@@ -24,11 +32,16 @@ export function registerRoutes (router: Router): void {
 
   // Content pages
   router.register('/', { GET: homeHandler })
-  router.register('/principles', { GET: principlesHandler })
+  router.register('/how-it-works', { GET: principlesHandler })
   router.register('/about', { GET: aboutHandler })
-  router.register('/services', { GET: servicesHandler })
+  router.register('/pricing', { GET: servicesHandler })
   router.register('/contact', { GET: contactGetHandler, POST: contactPostHandler })
-  router.register('/audit', { GET: auditGetHandler, POST: auditPostHandler })
+  router.register('/free-site-audit', { GET: auditGetHandler, POST: auditPostHandler })
+
+  // 301 redirects from old routes
+  router.register('/principles', { GET: redirect301('/how-it-works') })
+  router.register('/services', { GET: redirect301('/pricing') })
+  router.register('/audit', { GET: redirect301('/free-site-audit') })
 
   // Admin
   router.register('/admin/hud', { GET: createHudHandler(config.adminToken), POST: createHudPostHandler(config.adminToken) })

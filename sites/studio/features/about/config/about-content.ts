@@ -9,7 +9,7 @@ export const ABOUT = {
   hardware: {
     headline: 'The Appliance Model',
     summary: 'We build your website, install it on a dedicated server appliance, and hand-deliver the hardware to your business. You own the server, the database, and the code. No monthly hosting trap.',
-    cta: { label: 'See full specs and pricing', href: '/services' }
+    cta: { label: 'See full specs and pricing', href: '/pricing' }
   },
   proof: {
     headline: 'Why Inertia Exists',

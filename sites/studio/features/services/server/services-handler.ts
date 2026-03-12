@@ -13,12 +13,12 @@ export const servicesHandler: RouteHandler = async (req, res) => {
   }
 
   const html = renderShell({
-    title: 'Services',
-    description: PAGE_META.services.description,
+    title: 'Pricing',
+    description: PAGE_META.pricing.description,
     criticalCSS: '',
     deferredCSSPath: '/css/studio.css',
     mainContent,
-    currentPath: '/services'
+    currentPath: '/pricing'
   })
   sendHtml(res, html)
 }

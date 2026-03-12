@@ -21,8 +21,8 @@ function makeShell (content: string, path: string): string {
 
 const pages: Record<string, () => string> = {
   '/': renderHome,
-  '/principles': renderPrinciples,
-  '/services': renderServices,
+  '/how-it-works': renderPrinciples,
+  '/pricing': renderServices,
   '/about': renderAbout,
   '/contact': () => '<p>Redirecting to <a href="/about#contact">/about#contact</a>...</p>'
 }

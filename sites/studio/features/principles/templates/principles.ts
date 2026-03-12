@@ -28,6 +28,6 @@ export function renderPrinciples (): string {
 </div>
 <section class="section container cta-section">
   <h2>Want to see these principles in action?</h2>
-  <a href="/audit" class="btn btn-primary" data-telemetry-type="INTENT_NAVIGATE" data-telemetry-target="principles-audit-cta">Run a Free Audit</a>
+  <a href="/free-site-audit" class="btn btn-primary" data-telemetry-type="INTENT_NAVIGATE" data-telemetry-target="principles-audit-cta">Run a Free Audit</a>
 </section>`
 }

@@ -13,12 +13,12 @@ export const principlesHandler: RouteHandler = async (req, res) => {
   }
 
   const html = renderShell({
-    title: 'Principles',
-    description: PAGE_META.principles.description,
+    title: 'How It Works',
+    description: PAGE_META['how-it-works'].description,
     criticalCSS: '',
     deferredCSSPath: '/css/studio.css',
     mainContent,
-    currentPath: '/principles'
+    currentPath: '/how-it-works'
   })
   sendHtml(res, html)
 }

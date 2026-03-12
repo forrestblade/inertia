@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterEach } from 'vitest'
 
 function buildNav (activePath: string): HTMLElement {
   const nav = document.createElement('nav')
-  const links = ['/', '/services', '/principles', '/audit', '/about']
+  const links = ['/', '/pricing', '/how-it-works', '/free-site-audit', '/about']
   for (const href of links) {
     const a = document.createElement('a')
     a.setAttribute('href', href)
@@ -46,10 +46,10 @@ describe('initNavActive', () => {
 
     const handle = initNavActive()
 
-    simulateNavigation('/services')
+    simulateNavigation('/pricing')
 
     const links = nav.querySelectorAll('a:not(.nav-brand)')
-    const servicesLink = Array.from(links).find(a => a.getAttribute('href') === '/services')
+    const servicesLink = Array.from(links).find(a => a.getAttribute('href') === '/pricing')
     const homeLink = Array.from(links).find(a => a.getAttribute('href') === '/')
 
     expect(servicesLink?.classList.contains('nav-active')).toBe(true)
@@ -77,7 +77,7 @@ describe('initNavActive', () => {
   })
 
   it('handles home "/" correctly', () => {
-    const nav = buildNav('/services')
+    const nav = buildNav('/pricing')
     document.body.appendChild(nav)
 
     const handle = initNavActive()
@@ -86,7 +86,7 @@ describe('initNavActive', () => {
 
     const links = nav.querySelectorAll('a:not(.nav-brand)')
     const homeLink = Array.from(links).find(a => a.getAttribute('href') === '/')
-    const servicesLink = Array.from(links).find(a => a.getAttribute('href') === '/services')
+    const servicesLink = Array.from(links).find(a => a.getAttribute('href') === '/pricing')
 
     expect(homeLink?.classList.contains('nav-active')).toBe(true)
     expect(servicesLink?.classList.contains('nav-active')).toBe(false)
@@ -98,7 +98,7 @@ describe('initNavActive', () => {
     // No nav in DOM — should not throw
     const handle = initNavActive()
 
-    simulateNavigation('/services')
+    simulateNavigation('/pricing')
     // No error means pass
 
     handle.destroy()
@@ -112,7 +112,7 @@ describe('initNavActive', () => {
     handle.destroy()
 
     // Navigate after destroy — active class should NOT update
-    simulateNavigation('/services')
+    simulateNavigation('/pricing')
 
     const homeLink = nav.querySelector('a[href="/"]:not(.nav-brand)')
     expect(homeLink?.classList.contains('nav-active')).toBe(true)
