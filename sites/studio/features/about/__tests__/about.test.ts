@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { renderAbout } from '../templates/about.js'
 import { ABOUT } from '../config/about-content.js'
+import { ABOUT_COPY_MAP } from '../config/about-copy-map.js'
 
 describe('renderAbout', () => {
   it('returns non-empty HTML', () => {
@@ -48,6 +49,19 @@ describe('renderAbout', () => {
   it('has telemetry on hardware section', () => {
     const html = renderAbout()
     expect(html).toContain('data-telemetry-target="hardware-section"')
+  })
+
+  it('renders data-copy-technical attributes on spec values', () => {
+    const html = renderAbout()
+    expect(html).toContain('data-copy-technical=')
+    expect(html).toContain('data-copy-default=')
+  })
+
+  it('spec values match about copy map defaults', () => {
+    for (const entry of ABOUT_COPY_MAP) {
+      const spec = ABOUT.hardware.specs.find(s => s.value === entry.default)
+      expect(spec).toBeDefined()
+    }
   })
 })
 

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { renderServices } from '../templates/services.js'
 import { SERVICE_TIERS, OWNERSHIP_LIST } from '../config/services-content.js'
+import { SERVICES_COPY_MAP } from '../config/services-copy-map.js'
 
 describe('renderServices', () => {
   it('returns non-empty HTML', () => {
@@ -88,5 +89,18 @@ describe('renderServices', () => {
     expect(SERVICE_TIERS[0].id).toBe('build-own')
     expect(SERVICE_TIERS[1].id).toBe('infrastructure')
     expect(SERVICE_TIERS[2].id).toBe('managed')
+  })
+
+  it('renders data-copy-technical attributes for dual-layer copy', () => {
+    const html = renderServices()
+    expect(html).toContain('data-copy-technical=')
+    expect(html).toContain('data-copy-default=')
+  })
+
+  it('swappable tier includes match copy map defaults', () => {
+    const allIncludes = SERVICE_TIERS.flatMap(t => t.includes)
+    for (const entry of SERVICES_COPY_MAP) {
+      expect(allIncludes).toContain(entry.default)
+    }
   })
 })
