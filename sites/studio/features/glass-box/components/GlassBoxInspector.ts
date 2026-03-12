@@ -142,8 +142,14 @@ export class GlassBoxInspector extends HTMLElement {
 
     if (this._overlayActive) {
       this._showOverlayLabels()
+      this._swapToTechnical()
+      document.body.setAttribute('data-engineer-mode', '')
+      this._setStripEngineerMode(true)
     } else {
       this._removeOverlayLabels()
+      this._swapToDefault()
+      document.body.removeAttribute('data-engineer-mode')
+      this._setStripEngineerMode(false)
     }
   }
 
@@ -155,6 +161,7 @@ export class GlassBoxInspector extends HTMLElement {
   private _onAfterSwap (): void {
     if (this._overlayActive) {
       this._showOverlayLabels()
+      this._swapToTechnical()
     }
   }
 
@@ -212,6 +219,30 @@ export class GlassBoxInspector extends HTMLElement {
       label.remove()
     }
     this._overlayLabels = []
+  }
+
+  private _swapToTechnical (): void {
+    const els = document.querySelectorAll('[data-copy-technical]')
+    for (const el of els) {
+      (el as HTMLElement).textContent = el.getAttribute('data-copy-technical') ?? ''
+    }
+  }
+
+  private _swapToDefault (): void {
+    const els = document.querySelectorAll('[data-copy-default]')
+    for (const el of els) {
+      (el as HTMLElement).textContent = el.getAttribute('data-copy-default') ?? ''
+    }
+  }
+
+  private _setStripEngineerMode (active: boolean): void {
+    const strip = document.querySelector('inertia-buffer-strip')
+    if (!strip) return
+    if (active) {
+      strip.setAttribute('engineer-mode', '')
+    } else {
+      strip.removeAttribute('engineer-mode')
+    }
   }
 
   private _clearTimeout (): void {
