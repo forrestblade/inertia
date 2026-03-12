@@ -38,13 +38,18 @@ export function initEventDelegation (
 
     const targetDOMNode = tracked.getAttribute('data-telemetry-target') ?? ''
 
-    buffer.write(
+    const writeResult = buffer.write(
       intentType,
       targetDOMNode,
       mouseEvent.clientX,
       mouseEvent.clientY,
       Date.now()
     )
+
+    if (writeResult.isOk()) {
+      writeResult.value.path = window.location.pathname
+      writeResult.value.referrer = document.referrer
+    }
   }
 
   root.addEventListener('click', handleClick)
