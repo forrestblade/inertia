@@ -9,3 +9,7 @@ export { createIngestionHandler, createAsyncIngestionHandler } from './black-hol
 export type { IngestionResponse, AuditEntry, AuditFn } from './black-hole.js'
 export { transformIntentToEvent, transformIntentsToEvents } from './transform.js'
 export type { InsertableEvent as TransformableEvent } from './transform.js'
+
+// Daily summary validation (fleet aggregation)
+export { validateDailySummary } from './daily-summary-schema.js'
+export type { DailySummaryPayload } from './daily-summary-schema.js'
