@@ -47,6 +47,8 @@ export interface GlobalTelemetryIntent {
   schema_version: number
   site_id: string
   business_type: BusinessType
+  path: string
+  referrer: string
 }
 
 export interface TelemetryError {
@@ -65,6 +67,8 @@ export function createEmptyIntent (id: string): GlobalTelemetryIntent {
     isDirty: false,
     schema_version: 1,
     site_id: '',
-    business_type: 'other'
+    business_type: 'other',
+    path: '',
+    referrer: ''
   }
 }

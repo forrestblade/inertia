@@ -43,7 +43,7 @@ describe('TelemetryErrorCode', () => {
 })
 
 describe('createEmptyIntent', () => {
-  it('returns an intent with all 10 properties and correct defaults', () => {
+  it('returns an intent with all 12 properties and correct defaults', () => {
     const intent = createEmptyIntent('test-0')
     expect(intent.id).toBe('test-0')
     expect(intent.timestamp).toBe(0)
@@ -68,7 +68,7 @@ describe('createEmptyIntent', () => {
     expect(keys).toEqual([
       'id', 'timestamp', 'type', 'targetDOMNode',
       'x_coord', 'y_coord', 'isDirty', 'schema_version',
-      'site_id', 'business_type'
+      'site_id', 'business_type', 'path', 'referrer'
     ])
   })
 
