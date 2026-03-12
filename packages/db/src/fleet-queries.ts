@@ -31,6 +31,23 @@ export interface FleetComparisonRow {
   readonly sparkline_data: ReadonlyArray<number>
 }
 
+export interface FleetFilter {
+  readonly vertical?: string
+  readonly status?: string
+  readonly tier?: string
+}
+
+export interface FleetSort {
+  readonly column: string
+  readonly order: 'asc' | 'desc'
+}
+
+export interface FleetAggregateRow {
+  readonly total_sites: number
+  readonly total_sessions: number
+  readonly total_conversions: number
+}
+
 const TWENTY_FOUR_HOURS = 86_400_000
 const FORTY_EIGHT_HOURS = 172_800_000
 
@@ -52,7 +69,11 @@ interface RawFleetSiteRow {
   readonly synced_at: Date | null
 }
 
-export function getFleetSites (pool: DbPool): ResultAsync<ReadonlyArray<FleetSiteRow>, DbError> {
+export function getFleetSites (
+  pool: DbPool,
+  _filter?: FleetFilter,
+  _sort?: FleetSort
+): ResultAsync<ReadonlyArray<FleetSiteRow>, DbError> {
   return ResultAsync.fromPromise(
     (async () => {
       const rows = await pool.sql<RawFleetSiteRow[]>`
@@ -137,6 +158,35 @@ export function getFleetSiteHistory (
         ORDER BY date ASC
       `
       return rows as ReadonlyArray<DailySummaryRow>
+    })(),
+    mapPostgresError
+  )
+}
+
+interface RawAggregateRow {
+  readonly total_sites: number
+  readonly total_sessions: number
+  readonly total_conversions: number
+}
+
+const EMPTY_AGGREGATES: FleetAggregateRow = {
+  total_sites: 0,
+  total_sessions: 0,
+  total_conversions: 0
+}
+
+export function getFleetAggregates (pool: DbPool): ResultAsync<FleetAggregateRow, DbError> {
+  return ResultAsync.fromPromise(
+    (async () => {
+      const rows = await pool.sql<RawAggregateRow[]>`
+        SELECT
+          COUNT(DISTINCT site_id)::int AS total_sites,
+          COALESCE(SUM(session_count), 0)::int AS total_sessions,
+          COALESCE(SUM(conversion_count), 0)::int AS total_conversions
+        FROM daily_summaries
+        WHERE date >= NOW() - INTERVAL '30 days'
+      `
+      return rows[0] ?? EMPTY_AGGREGATES
     })(),
     mapPostgresError
   )
