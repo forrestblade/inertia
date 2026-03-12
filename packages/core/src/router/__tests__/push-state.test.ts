@@ -656,6 +656,52 @@ describe('initRouter', () => {
     expect(handle!.pageCacheSize()).toBe(0)
   })
 
+  it('reads initial version from data-inertia-version on html element', async () => {
+    document.documentElement.setAttribute('data-inertia-version', 'test-v1')
+
+    const mockFetch = createMockFetch('<html><head><title>Ver</title></head><body><main><p>Ver</p></main></body></html>')
+    const result = initRouter({}, mockFetch)
+    if (result.isOk()) handle = result.value
+
+    const main = document.createElement('main')
+    main.innerHTML = '<p>Home</p>'
+    document.body.appendChild(main)
+
+    // Navigate — should store in cache
+    await handle!.navigate('/ver-test')
+    expect(handle!.pageCacheSize()).toBe(1)
+
+    document.documentElement.removeAttribute('data-inertia-version')
+  })
+
+  it('version mismatch from response header invalidates page cache', async () => {
+    document.documentElement.setAttribute('data-inertia-version', 'old-version')
+
+    const mockFetch = createMockFetch(
+      '<html><head><title>New</title></head><body><main><p>New</p></main></body></html>',
+      { 'X-Inertia-Version': 'new-version' }
+    )
+    const result = initRouter({}, mockFetch)
+    if (result.isOk()) handle = result.value
+
+    const main = document.createElement('main')
+    main.innerHTML = '<p>Home</p>'
+    document.body.appendChild(main)
+
+    // First nav — response has new-version, mismatches old-version seeded from DOM
+    // performNavigation stores in cache, then navigate() calls setVersion which
+    // detects mismatch and invalidates all entries
+    await handle!.navigate('/page-a')
+    // Cache was purged by version mismatch
+    expect(handle!.pageCacheSize()).toBe(0)
+
+    // Second nav with same version — no mismatch now, entry survives
+    await handle!.navigate('/page-b')
+    expect(handle!.pageCacheSize()).toBe(1)
+
+    document.documentElement.removeAttribute('data-inertia-version')
+  })
+
   it('clearPageCache empties the cache', async () => {
     const mockFetch = createMockFetch('<html><head><title>Clear</title></head><body><main><p>Clear</p></main></body></html>')
 
