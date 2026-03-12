@@ -9,29 +9,30 @@ function mapFetchError (e: unknown): HudError {
   }
 }
 
-function buildUrl (base: string, path: string, period: HudPeriod): string {
-  return `${base}${path}?period=${period}`
+function buildUrl (base: string, path: string, period: HudPeriod, site?: string): string {
+  const siteParam = site !== undefined && site !== '' ? `&site=${site}` : ''
+  return `${base}${path}?period=${period}${siteParam}`
 }
 
-export function fetchTopPages (baseUrl: string, period: HudPeriod): ResultAsync<TopPagesData, HudError> {
+export function fetchTopPages (baseUrl: string, period: HudPeriod, site?: string): ResultAsync<TopPagesData, HudError> {
   return ResultAsync.fromPromise(
-    fetch(buildUrl(baseUrl, '/api/breakdowns/pages', period))
+    fetch(buildUrl(baseUrl, '/api/breakdowns/pages', period, site))
       .then(r => r.json() as Promise<TopPagesData>),
     mapFetchError
   )
 }
 
-export function fetchTrafficSources (baseUrl: string, period: HudPeriod): ResultAsync<TrafficSourcesData, HudError> {
+export function fetchTrafficSources (baseUrl: string, period: HudPeriod, site?: string): ResultAsync<TrafficSourcesData, HudError> {
   return ResultAsync.fromPromise(
-    fetch(buildUrl(baseUrl, '/api/breakdowns/sources', period))
+    fetch(buildUrl(baseUrl, '/api/breakdowns/sources', period, site))
       .then(r => r.json() as Promise<TrafficSourcesData>),
     mapFetchError
   )
 }
 
-export function fetchLeadActions (baseUrl: string, period: HudPeriod): ResultAsync<LeadActionsData, HudError> {
+export function fetchLeadActions (baseUrl: string, period: HudPeriod, site?: string): ResultAsync<LeadActionsData, HudError> {
   return ResultAsync.fromPromise(
-    fetch(buildUrl(baseUrl, '/api/breakdowns/actions', period))
+    fetch(buildUrl(baseUrl, '/api/breakdowns/actions', period, site))
       .then(r => r.json() as Promise<LeadActionsData>),
     mapFetchError
   )

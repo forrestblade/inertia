@@ -10,8 +10,14 @@ const LEAD_ACTION_LABELS: Record<string, string> = {
   LEAD_FORM: 'Form'
 }
 
+function readSiteParam (): string {
+  const params = new URLSearchParams(window.location.search)
+  return params.get('site') ?? ''
+}
+
 export class ClientDashboard extends HTMLElement {
   private _initialized = false
+  private _siteParam = ''
   private _visitorsMetric: HTMLElement | null = null
   private _leadsMetric: HTMLElement | null = null
   private _topPagesTable: HTMLElement | null = null
@@ -138,6 +144,9 @@ export class ClientDashboard extends HTMLElement {
     }
     this.addEventListener('hud-period-change', this._periodChangeHandler)
 
+    // Read site param from URL for drill-down context
+    this._siteParam = readSiteParam()
+
     // Initial data fetch
     this.refreshData('7D')
   }
@@ -153,7 +162,9 @@ export class ClientDashboard extends HTMLElement {
   }
 
   private refreshData (period: HudPeriod): void {
-    fetchSessionSummary('', period).match(
+    const site = this._siteParam || undefined
+
+    fetchSessionSummary('', period, site).match(
       (data) => {
         if (this._visitorsMetric && typeof data.total_sessions === 'number') {
           this._visitorsMetric.setAttribute('value', formatNumber(data.total_sessions))
@@ -162,7 +173,7 @@ export class ClientDashboard extends HTMLElement {
       () => {} // Hold placeholders on error
     )
 
-    fetchEventSummary('', period).match(
+    fetchEventSummary('', period, site).match(
       (data) => {
         if (this._leadsMetric && typeof data.total_count === 'number') {
           this._leadsMetric.setAttribute('value', formatNumber(data.total_count))
@@ -171,12 +182,12 @@ export class ClientDashboard extends HTMLElement {
       () => {} // Hold placeholders on error
     )
 
-    fetchConversionSummary('', period).match(
+    fetchConversionSummary('', period, site).match(
       () => {},
       () => {} // Hold placeholders on error
     )
 
-    fetchTopPages('', period).match(
+    fetchTopPages('', period, site).match(
       (data) => {
         if (this._topPagesTable && Array.isArray(data.pages)) {
           this._topPagesTable.setAttribute('rows', JSON.stringify(data.pages))
@@ -185,7 +196,7 @@ export class ClientDashboard extends HTMLElement {
       () => {} // Hold placeholders on error
     )
 
-    fetchTrafficSources('', period).match(
+    fetchTrafficSources('', period, site).match(
       (data) => {
         if (this._sourcesPanel && Array.isArray(data.sources)) {
           this._updateBars(this._sourcesPanel, data.sources.map(s => ({
@@ -198,7 +209,7 @@ export class ClientDashboard extends HTMLElement {
       () => {} // Hold placeholders on error
     )
 
-    fetchLeadActions('', period).match(
+    fetchLeadActions('', period, site).match(
       (data) => {
         if (this._actionsPanel && Array.isArray(data.actions)) {
           const total = data.actions.reduce((sum, x) => sum + x.count, 0)
