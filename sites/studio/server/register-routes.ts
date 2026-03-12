@@ -10,6 +10,9 @@ import { sessionHandler } from '../features/telemetry/server/session-handler.js'
 import { auditGetHandler, auditPostHandler } from '../features/audit/server/audit-handler.js'
 import { createHudHandler, createHudPostHandler } from '../features/admin/server/hud-handler.js'
 import { sessionSummaryHandler, eventSummaryHandler, conversionSummaryHandler, ingestionHealthHandler } from '../features/admin/server/summary-routes.js'
+import { createFleetOverviewHandler, createFleetCompareHandler } from '../features/admin/server/fleet-handler.js'
+import { fleetSitesHandler, fleetComparisonHandler } from '../features/admin/server/fleet-routes.js'
+import { aggregationHandler } from '../features/admin/server/aggregation-handler.js'
 import { loadConfig } from './config.js'
 
 export function registerRoutes (router: Router): void {
@@ -25,6 +28,15 @@ export function registerRoutes (router: Router): void {
 
   // Admin
   router.register('/admin/hud', { GET: createHudHandler(config.adminToken), POST: createHudPostHandler(config.adminToken) })
+  router.register('/admin/fleet', { GET: createFleetOverviewHandler(config.adminToken) })
+  router.register('/admin/fleet/compare', { GET: createFleetCompareHandler(config.adminToken) })
+
+  // Fleet APIs
+  router.register('/api/fleet/sites', { GET: fleetSitesHandler })
+  router.register('/api/fleet/compare', { GET: fleetComparisonHandler })
+
+  // Aggregation API (HMAC-verified, not cookie-auth)
+  router.register('/api/aggregation', { POST: aggregationHandler })
 
   // Summary APIs
   router.register('/api/summaries/sessions', { GET: sessionSummaryHandler })
