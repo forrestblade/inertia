@@ -15,7 +15,10 @@ const intentTypeMap: Record<string, IntentType | undefined> = {
   FORM_INPUT: IntentType.FORM_INPUT,
   INTENT_NAVIGATE: IntentType.INTENT_NAVIGATE,
   INTENT_CALL: IntentType.INTENT_CALL,
-  INTENT_BOOK: IntentType.INTENT_BOOK
+  INTENT_BOOK: IntentType.INTENT_BOOK,
+  LEAD_PHONE: IntentType.LEAD_PHONE,
+  LEAD_EMAIL: IntentType.LEAD_EMAIL,
+  LEAD_FORM: IntentType.LEAD_FORM
 }
 
 export function initEventDelegation (

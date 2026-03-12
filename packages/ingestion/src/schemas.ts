@@ -4,7 +4,8 @@ import { z } from 'zod'
 
 export const INTENT_TYPES = [
   'CLICK', 'SCROLL', 'VIEWPORT_INTERSECT', 'FORM_INPUT',
-  'INTENT_NAVIGATE', 'INTENT_CALL', 'INTENT_BOOK', 'INTENT_LEAD'
+  'INTENT_NAVIGATE', 'INTENT_CALL', 'INTENT_BOOK', 'INTENT_LEAD',
+  'LEAD_PHONE', 'LEAD_EMAIL', 'LEAD_FORM'
 ] as const
 
 export type IntentTypeValue = typeof INTENT_TYPES[number]
