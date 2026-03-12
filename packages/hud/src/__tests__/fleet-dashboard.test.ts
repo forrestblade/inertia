@@ -142,7 +142,7 @@ describe('FleetDashboard drill-down', () => {
     vi.restoreAllMocks()
   })
 
-  it('navigates to /admin/hud?site=slug on table row click', async () => {
+  it('navigates to /admin/hud?site=slug on table row click via location.href', async () => {
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
       const url = String(input)
       if (url.includes('/api/fleet/sites')) {
@@ -176,14 +176,15 @@ describe('FleetDashboard drill-down', () => {
     const row = table?.querySelector('tbody tr')
     expect(row).not.toBeNull()
 
-    // Mock pushState
-    const pushStateSpy = vi.spyOn(window.history, 'pushState').mockImplementation(() => {})
+    // Capture location.href assignment
+    let navigatedTo = ''
+    Object.defineProperty(window, 'location', {
+      value: { ...window.location, get href () { return '' }, set href (url: string) { navigatedTo = url } },
+      writable: true,
+      configurable: true
+    })
     row?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-    expect(pushStateSpy).toHaveBeenCalledWith(
-      expect.anything(),
-      '',
-      expect.stringContaining('/admin/hud?site=')
-    )
+    expect(navigatedTo).toContain('/admin/hud?site=site_acme')
   })
 })
 
