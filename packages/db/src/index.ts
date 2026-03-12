@@ -28,3 +28,7 @@ export type {
 } from './daily-summary-types.js'
 export { generateDailySummary } from './daily-summary-aggregation.js'
 export { getDailySummary, getUnsyncedDailySummaries, markSynced, insertDailySummaryFromRemote } from './daily-summary-queries.js'
+
+// Fleet queries
+export { getFleetSites, getFleetComparison, getFleetSiteHistory, FleetSiteStatus } from './fleet-queries.js'
+export type { FleetSiteRow, FleetComparisonRow } from './fleet-queries.js'
