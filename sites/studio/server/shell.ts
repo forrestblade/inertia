@@ -12,11 +12,12 @@ export interface ShellOptions {
 
 const NAV_LINKS: ReadonlyArray<{ readonly href: string; readonly label: string }> = [
   { href: '/', label: 'Home' },
-  { href: '/principles', label: 'Principles' },
-  { href: '/services', label: 'Services' },
-  { href: '/audit', label: 'Audit' },
+  { href: '/how-it-works', label: 'How It Works' },
+  { href: '/pricing', label: 'Pricing' },
   { href: '/about', label: 'About' }
 ]
+
+const NAV_CTA = { href: '/free-site-audit', label: 'Free Site Audit' } as const
 
 function renderNav (currentPath: string): string {
   const links = NAV_LINKS.map((link) => {
@@ -35,6 +36,7 @@ function renderNav (currentPath: string): string {
         </button>
         <div class="nav-links">
           ${links}
+          <a href="${NAV_CTA.href}" class="btn btn-primary nav-cta" data-telemetry-type="INTENT_NAVIGATE" data-telemetry-target="nav-${NAV_CTA.label.toLowerCase().replace(/\s+/g, '-')}">${NAV_CTA.label}</a>
         </div>
       </div>
     </nav>`

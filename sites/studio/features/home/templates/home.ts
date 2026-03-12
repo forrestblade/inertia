@@ -40,25 +40,28 @@ export function renderHome (): string {
   </div>
 </section>
 
-<section class="section container">
-  <h2>The Four Pillars</h2>
-  <div class="grid grid-4">
-    ${pillarCards}
+<section class="section container value-proposition">
+  <div class="grid grid-2">
+    <div class="eliminate-section">
+      <h2>What We Eliminate</h2>
+      <ul class="eliminate-list">
+        ${eliminateItems}
+      </ul>
+    </div>
+    <div class="ownership-section">
+      <h2>${OWNERSHIP.headline}</h2>
+      <p class="prose"${copyAttrs('ownership-body')}>${OWNERSHIP.body}</p>
+    </div>
+  </div>
+  <div class="grid grid-4 proof-grid">
+    ${proofMetrics}
   </div>
 </section>
 
-<section class="section container">
-  <h2>What We Eliminate</h2>
-  <ul class="eliminate-list">
-    ${eliminateItems}
-  </ul>
-</section>
-
-<section class="section container">
-  <h2>${OWNERSHIP.headline}</h2>
-  <p class="prose"${copyAttrs('ownership-body')}>${OWNERSHIP.body}</p>
-  <div class="grid grid-4 proof-grid">
-    ${proofMetrics}
+<section class="section container pillars-section">
+  <h2>How We Build Different</h2>
+  <div class="grid grid-4">
+    ${pillarCards}
   </div>
 </section>
 

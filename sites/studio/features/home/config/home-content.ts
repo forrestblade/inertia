@@ -1,33 +1,33 @@
 export const HERO = {
   headline: 'Your website should load before you can blink.',
   subhead: 'We build websites on dedicated hardware you own. No shared hosting. No bloated frameworks. No monthly ransom.',
-  cta: { label: 'See Our Principles', href: '/principles' },
+  cta: { label: 'See How It Works', href: '/how-it-works' },
   ctaSecondary: { label: 'Get In Touch', href: '/about#contact' }
 } as const
 
 export const PILLARS = [
   {
     id: 'no-dynamic-alloc',
-    title: 'No Dynamic Allocation',
-    summary: 'Pre-allocated buffers. Zero garbage collection jank at runtime.',
+    title: 'Never Stutters Under Load',
+    summary: 'Your site stays fast even when traffic spikes. No slowdowns, no freezing, no excuses.',
     icon: '⬡'
   },
   {
     id: 'no-exceptions',
-    title: 'No Exceptions',
-    summary: 'Every code path is explicitly handled. No silent failures.',
+    title: 'Never Crashes Silently',
+    summary: 'Every possible error is handled up front. Your site never breaks without telling you why.',
     icon: '⬢'
   },
   {
     id: 'low-complexity',
-    title: 'Low Complexity',
-    summary: 'Every function is small enough to reason about. Bugs have fewer places to hide.',
+    title: 'Nothing Can Hide in the Code',
+    summary: 'Every function is small enough to audit in seconds. Bugs have nowhere to hide.',
     icon: '◇'
   },
   {
     id: '14kb-protocol',
-    title: 'Instant First Paint',
-    summary: 'Your website renders from the very first server response.',
+    title: 'Loads Before Your Competitor\'s Logo Appears',
+    summary: 'Your website renders from the very first server response. Visitors see content instantly.',
     icon: '△'
   }
 ] as const

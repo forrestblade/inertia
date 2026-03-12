@@ -20,44 +20,44 @@ export const HOME_COPY_MAP: readonly CopyMapEntry[] = [
   // Pillars — titles
   {
     id: 'pillar-no-dynamic-alloc-title',
-    default: 'No Dynamic Allocation',
+    default: 'Never Stutters Under Load',
     technical: 'AV Rule 206'
   },
   {
     id: 'pillar-no-exceptions-title',
-    default: 'No Exceptions',
+    default: 'Never Crashes Silently',
     technical: 'AV Rule 208'
   },
   {
     id: 'pillar-low-complexity-title',
-    default: 'Low Complexity',
+    default: 'Nothing Can Hide in the Code',
     technical: 'AV Rule 3'
   },
   {
     id: 'pillar-14kb-title',
-    default: 'Instant First Paint',
+    default: 'Loads Before Your Competitor\'s Logo Appears',
     technical: '14kB Protocol'
   },
 
   // Pillars — summaries
   {
     id: 'pillar-no-dynamic-alloc-summary',
-    default: 'Pre-allocated buffers. Zero garbage collection jank at runtime.',
+    default: 'Your site stays fast even when traffic spikes. No slowdowns, no freezing, no excuses.',
     technical: 'Fixed-capacity ring buffer initialized at boot. Monomorphic interface preserves V8 inline cache. Zero GC pressure.'
   },
   {
     id: 'pillar-no-exceptions-summary',
-    default: 'Every code path is explicitly handled. No silent failures.',
+    default: 'Every possible error is handled up front. Your site never breaks without telling you why.',
     technical: 'Result<Ok, Err> monads via neverthrow. One try/catch boundary: safeJsonParse. All other paths are compiler-enforced.'
   },
   {
     id: 'pillar-low-complexity-summary',
-    default: 'Every function is small enough to reason about. Bugs have fewer places to hide.',
+    default: 'Every function is small enough to audit in seconds. Bugs have nowhere to hide.',
     technical: 'Cyclomatic complexity < 20. Static dictionary maps replace switch statements. Early returns reduce nesting depth.'
   },
   {
     id: 'pillar-14kb-summary',
-    default: 'Your website renders from the very first server response.',
+    default: 'Your website renders from the very first server response. Visitors see content instantly.',
     technical: 'Inline critical CSS + initial DOM fits first TCP slow start window. DOMParser fragment swaps for subsequent navigations.'
   },
 
