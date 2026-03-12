@@ -61,6 +61,50 @@ export function seedDemoSummaries (pool: DbPool): ResultAsync<true, DbError> {
         ON CONFLICT DO NOTHING
       `
 
+      // Daily summaries — 3 fictional fleet sites, 30 days each
+      const fleetSites = [
+        { siteId: 'site_acme_barbershop', businessType: 'barbershop', baseSessionCount: 180, baseConversionCount: 32 },
+        { siteId: 'site_peak_legal', businessType: 'legal', baseSessionCount: 95, baseConversionCount: 18 },
+        { siteId: 'site_downtown_dental', businessType: 'dental', baseSessionCount: 140, baseConversionCount: 25 }
+      ]
+
+      const today = new Date()
+      for (const site of fleetSites) {
+        for (let dayOffset = 29; dayOffset >= 0; dayOffset--) {
+          const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() - dayOffset)
+          // Deterministic variance per day — avoids Math.random for reproducibility
+          const variance = ((dayOffset * 7 + site.baseSessionCount) % 13) - 6
+          const sessionCount = site.baseSessionCount + variance
+          const pageviewCount = sessionCount * 3 + variance * 2
+          const conversionCount = site.baseConversionCount + ((dayOffset * 3) % 7) - 3
+          const rejectionCount = (dayOffset % 5 === 0) ? 2 : 0
+
+          const topReferrers = JSON.stringify([
+            { referrer: 'google', count: Math.max(1, sessionCount - 60) },
+            { referrer: 'direct', count: Math.max(1, Math.floor(sessionCount * 0.2)) },
+            { referrer: 'yelp', count: Math.max(1, Math.floor(sessionCount * 0.08)) }
+          ])
+          const topPages = JSON.stringify([
+            { page: '/', count: sessionCount },
+            { page: '/services', count: Math.floor(sessionCount * 0.6) },
+            { page: '/contact', count: Math.floor(sessionCount * 0.3) }
+          ])
+          const intentCounts = JSON.stringify({
+            INTENT_LEAD: Math.max(0, conversionCount - 5),
+            INTENT_CALL: Math.max(0, conversionCount - 10),
+            INTENT_BOOK: Math.max(0, Math.floor(conversionCount * 0.3))
+          })
+
+          const syncedAt = dayOffset === 0 ? null : date
+
+          await pool.sql`
+            INSERT INTO daily_summaries (site_id, date, business_type, schema_version, session_count, pageview_count, conversion_count, top_referrers, top_pages, intent_counts, avg_flush_ms, rejection_count, synced_at)
+            VALUES (${site.siteId}, ${date}, ${site.businessType}, 1, ${sessionCount}, ${pageviewCount}, ${conversionCount}, ${topReferrers}::jsonb, ${topPages}::jsonb, ${intentCounts}::jsonb, 2.4, ${rejectionCount}, ${syncedAt})
+            ON CONFLICT (site_id, date) DO NOTHING
+          `
+        }
+      }
+
       return ok(true as const)
     })(),
     mapPostgresError
