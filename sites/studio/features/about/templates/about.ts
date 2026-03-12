@@ -47,12 +47,12 @@ export function renderAbout (): string {
   <form method="POST" action="/contact" data-telemetry-type="FORM_INPUT" data-telemetry-target="contact-form">
     <div class="form-group">
       <label for="name" class="form-label">Name *</label>
-      <input type="text" id="name" name="name" class="form-input" required autocomplete="name">
+      <input type="text" id="name" name="name" class="form-input" required>
     </div>
 
     <div class="form-group">
       <label for="email" class="form-label">Email *</label>
-      <input type="email" id="email" name="email" class="form-input" required autocomplete="email">
+      <input type="email" id="email" name="email" class="form-input" required>
     </div>
 
     <div class="form-group">

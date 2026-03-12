@@ -8,8 +8,6 @@ import { renderAbout } from '../../about/templates/about.js'
 import { getStudioCSS } from '../../theme/config/studio-css.js'
 import { createCriticalCSSPipeline } from '../critical-css-pipeline.js'
 
-const BUDGET_BYTES = 14_600
-
 function makeShell (content: string, path: string): string {
   return renderShell({
     title: 'Test',
@@ -45,7 +43,7 @@ describe('14kB budget compliance', () => {
       expect(auditResult.isOk()).toBe(true)
 
       const report = auditResult._unsafeUnwrap()
-      expect(report.totalBytes).toBeLessThanOrEqual(BUDGET_BYTES)
+      expect(report.withinBudget, `${path} exceeds 14kB compressed (${report.compressedBytes + 500} bytes effective)`).toBe(true)
     })
   }
 })

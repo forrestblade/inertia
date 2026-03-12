@@ -43,6 +43,16 @@ export function renderShell (options: ShellOptions): string {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${options.title} | Inertia Web Solutions</title>
   <meta name="description" content="${options.description}">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Inertia Web Solutions">
+  <meta property="og:title" content="${options.title} | Inertia Web Solutions">
+  <meta property="og:description" content="${options.description}">
+  <meta property="og:image" content="https://inertiawebsolutions.com/img/og-card.png">
+  <meta property="og:url" content="https://inertiawebsolutions.com${options.currentPath}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${options.title} | Inertia Web Solutions">
+  <meta name="twitter:description" content="${options.description}">
+  <meta name="twitter:image" content="https://inertiawebsolutions.com/img/og-card.png">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <style>${options.criticalCSS}</style>
   <link rel="stylesheet" href="${options.deferredCSSPath}?v=${BOOT_VERSION}">
