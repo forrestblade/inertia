@@ -1,54 +1,38 @@
-import type { RouteHandler } from '../../../server/types.js'
-import { isFragmentRequest, sendHtml } from '../../../server/router.js'
-import { renderShell, renderFragment } from '../../../server/shell.js'
-import { checkAuth } from './auth-middleware.js'
+import type { RouteHandler, RouteContext } from '../../../server/types.js'
+import { respondWithPage } from '../../../server/page-helpers.js'
+import { authenticateRequest } from './auth-helpers.js'
 import { renderFleetPage } from '../templates/fleet-page.js'
 import type { FleetPageMode } from '../templates/fleet-page.js'
 import { renderLoginForm } from '../templates/login-form.js'
 
-const SHELL_BASE = {
+const pageBase = {
   description: 'Fleet dashboard',
-  criticalCSS: '',
   deferredCSSPath: '/css/studio.css',
   currentPath: '/admin/fleet'
 }
 
-function showLogin (req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse, error?: string): void {
-  const content = renderLoginForm(error)
-  const html = isFragmentRequest(req)
-    ? renderFragment(content)
-    : renderShell({ ...SHELL_BASE, title: 'Admin Login', mainContent: content })
-  sendHtml(res, html, 401)
-}
-
-function extractTokenFromCookie (cookieHeader: string | undefined): string | undefined {
-  if (!cookieHeader) return undefined
-  const match = /admin_token=([^;]+)/.exec(cookieHeader)
-  return match?.[1]
+function showLogin (req: import('node:http').IncomingMessage, res: import('node:http').ServerResponse, ctx: RouteContext, error?: string): void {
+  respondWithPage(req, res, ctx, {
+    ...pageBase,
+    title: 'Admin Login',
+    mainContent: renderLoginForm(error)
+  }, 401)
 }
 
 function createFleetPageHandler (adminToken: string, mode: FleetPageMode): RouteHandler {
-  return async (req, res) => {
-    let authResult = checkAuth(req.headers.authorization, adminToken)
+  return async (req, res, ctx) => {
+    const authResult = authenticateRequest(req.headers, adminToken)
 
     if (authResult.isErr()) {
-      const cookieToken = extractTokenFromCookie(req.headers.cookie)
-      if (cookieToken) {
-        authResult = checkAuth(`Bearer ${cookieToken}`, adminToken)
-      }
-    }
-
-    if (authResult.isErr()) {
-      showLogin(req, res)
+      showLogin(req, res, ctx)
       return
     }
 
-    const content = renderFleetPage(mode)
-
-    const html = isFragmentRequest(req)
-      ? renderFragment(content)
-      : renderShell({ ...SHELL_BASE, title: 'Fleet Dashboard', mainContent: content })
-    sendHtml(res, html)
+    respondWithPage(req, res, ctx, {
+      ...pageBase,
+      title: 'Fleet Dashboard',
+      mainContent: renderFleetPage(mode)
+    })
   }
 }
 

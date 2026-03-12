@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { createFleetOverviewHandler, createFleetCompareHandler } from '../server/fleet-handler.js'
+import type { RouteContext } from '../../../server/types.js'
 
 function mockReq (headers: Record<string, string> = {}): unknown {
   return {
@@ -19,12 +20,23 @@ function mockRes (): { writeHead: ReturnType<typeof vi.fn>; end: ReturnType<type
   }
 }
 
+function mockCtx (): RouteContext {
+  return {
+    pool: {} as RouteContext['pool'],
+    config: {} as RouteContext['config'],
+    cssPipeline: {
+      getCriticalCSS: () => undefined,
+      getDeferredCSS: () => undefined
+    }
+  }
+}
+
 describe('fleet handler auth', () => {
   it('returns login form HTML on 401 instead of bare text', async () => {
     const handler = createFleetOverviewHandler('secret-token')
     const req = mockReq()
     const res = mockRes()
-    await handler(req as never, res as never)
+    await handler(req as never, res as never, mockCtx())
     expect(res.statusCode()).toBe(401)
     expect(res.html()).toContain('Admin Login')
     expect(res.html()).toContain('<form')
@@ -35,7 +47,7 @@ describe('fleet handler auth', () => {
     const handler = createFleetCompareHandler('secret-token')
     const req = mockReq()
     const res = mockRes()
-    await handler(req as never, res as never)
+    await handler(req as never, res as never, mockCtx())
     expect(res.statusCode()).toBe(401)
     expect(res.html()).toContain('<form')
   })
@@ -44,7 +56,7 @@ describe('fleet handler auth', () => {
     const handler = createFleetOverviewHandler('secret-token')
     const req = mockReq({ cookie: 'admin_token=secret-token' })
     const res = mockRes()
-    await handler(req as never, res as never)
+    await handler(req as never, res as never, mockCtx())
     expect(res.statusCode()).toBe(200)
     expect(res.html()).toContain('hud-fleet-dashboard')
   })
