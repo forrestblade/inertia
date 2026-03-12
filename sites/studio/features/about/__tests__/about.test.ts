@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { renderAbout } from '../templates/about.js'
 import { ABOUT } from '../config/about-content.js'
-import { ABOUT_COPY_MAP } from '../config/about-copy-map.js'
 
 describe('renderAbout', () => {
   it('returns non-empty HTML', () => {
@@ -26,26 +25,15 @@ describe('renderAbout', () => {
     expect(html).not.toContain('Forrest Carlton')
   })
 
-  it('contains hardware section without brand names in visible copy', () => {
+  it('contains hardware section without brand names', () => {
     const html = renderAbout()
-    // Strip data-copy-technical attributes (technical copy is hidden by default)
-    const visible = html.replace(/\s*data-copy-technical="[^"]*"/g, '')
-    expect(visible).toContain(ABOUT.hardware.headline)
-    // Must NOT contain hardware brand names on public-facing pages
-    expect(visible).not.toContain('Raspberry Pi')
-    expect(visible).not.toContain('ZimaBoard')
-    expect(visible).not.toContain('N100')
-    expect(visible).not.toContain('NVMe')
-    expect(visible).not.toContain('WD Red')
-    expect(visible).not.toContain('Cloudflare')
-  })
-
-  it('renders all hardware specs', () => {
-    const html = renderAbout()
-    for (const spec of ABOUT.hardware.specs) {
-      expect(html).toContain(spec.label)
-      expect(html).toContain(spec.value)
-    }
+    expect(html).toContain(ABOUT.hardware.headline)
+    expect(html).not.toContain('Raspberry Pi')
+    expect(html).not.toContain('ZimaBoard')
+    expect(html).not.toContain('N100')
+    expect(html).not.toContain('NVMe')
+    expect(html).not.toContain('WD Red')
+    expect(html).not.toContain('Cloudflare')
   })
 
   it('has telemetry on hardware section', () => {
@@ -69,19 +57,6 @@ describe('renderAbout', () => {
     const text = hwHtml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
     const wordCount = text.split(' ').length
     expect(wordCount).toBeLessThan(80)
-  })
-
-  it('renders data-copy-technical attributes on spec values', () => {
-    const html = renderAbout()
-    expect(html).toContain('data-copy-technical=')
-    expect(html).toContain('data-copy-default=')
-  })
-
-  it('spec values match about copy map defaults', () => {
-    for (const entry of ABOUT_COPY_MAP) {
-      const spec = ABOUT.hardware.specs.find(s => s.value === entry.default)
-      expect(spec).toBeDefined()
-    }
   })
 })
 
