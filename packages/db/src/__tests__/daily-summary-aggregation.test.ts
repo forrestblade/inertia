@@ -91,4 +91,49 @@ describe('generateDailySummary', () => {
     const result = generateDailySummary(pool, 'site_acme', 'barbershop', new Date('2026-03-10'))
     expect(typeof result.andThen).toBe('function')
   })
+
+  it('includes null referrers as empty string for direct traffic classification', async () => {
+    const sqlCalls: string[] = []
+    const responses = [
+      [{ total_sessions: 10 }],
+      [{ pageview_count: 50 }],
+      [{ conversion_count: 3 }],
+      [{ referrer: '', count: 5 }], // direct traffic from COALESCE(referrer, '')
+      [{ path: '/', count: 100 }],
+      [{ event_category: 'CLICK', count: 80 }],
+      [{ avg_flush_ms: 1.5, rejection_count: 0 }],
+      [{
+        id: 1,
+        site_id: 'studio',
+        date: new Date('2026-03-10'),
+        business_type: 'studio',
+        schema_version: 1,
+        session_count: 10,
+        pageview_count: 50,
+        conversion_count: 3,
+        top_referrers: [{ referrer: '', count: 5 }],
+        top_pages: [{ path: '/', count: 100 }],
+        intent_counts: { CLICK: 80 },
+        avg_flush_ms: 1.5,
+        rejection_count: 0,
+        synced_at: null,
+        created_at: new Date()
+      }]
+    ]
+    let callIdx = 0
+    const sql = vi.fn((strings: TemplateStringsArray) => {
+      sqlCalls.push(strings.join(''))
+      const result = responses[callIdx] ?? []
+      callIdx++
+      return Promise.resolve(result)
+    }) as unknown as DbPool['sql']
+    const pool: DbPool = { sql }
+
+    const result = await generateDailySummary(pool, 'studio', 'studio', new Date('2026-03-10'))
+    expect(result.isOk()).toBe(true)
+
+    // The referrer query (4th call) should NOT contain 'IS NOT NULL'
+    const referrerQuery = sqlCalls[3] ?? ''
+    expect(referrerQuery).not.toContain('IS NOT NULL')
+  })
 })

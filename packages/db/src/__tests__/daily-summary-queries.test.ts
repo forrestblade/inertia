@@ -166,4 +166,20 @@ describe('getDailyBreakdowns', () => {
     const result = await getDailyBreakdowns(pool, 'site_acme', new Date('2026-03-10'), new Date('2026-03-11'))
     expect(result.isErr()).toBe(true)
   })
+
+  it('uses inclusive end date to include today in results', async () => {
+    const sqlCalls: string[] = []
+    const sql = vi.fn((strings: TemplateStringsArray) => {
+      sqlCalls.push(strings.join(''))
+      return Promise.resolve([])
+    }) as unknown as DbPool['sql']
+    const pool: DbPool = { sql }
+
+    await getDailyBreakdowns(pool, 'site_acme', new Date('2026-03-10'), new Date('2026-03-12'))
+
+    // The query should use <= for end date, not <
+    const query = sqlCalls[0] ?? ''
+    expect(query).toContain('date <=')
+    expect(query).not.toMatch(/date\s*<\s*\$/)
+  })
 })

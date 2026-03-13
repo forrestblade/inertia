@@ -70,11 +70,10 @@ function queryConversionCount (pool: DbPool, start: Date, end: Date): Promise<nu
 
 function queryTopReferrers (pool: DbPool, start: Date, end: Date): Promise<ReadonlyArray<{ referrer: string; count: number }>> {
   return pool.sql<ReferrerAgg[]>`
-    SELECT referrer, COUNT(*)::int AS count
+    SELECT COALESCE(referrer, '') AS referrer, COUNT(*)::int AS count
     FROM sessions
     WHERE created_at >= ${start} AND created_at < ${end}
-      AND referrer IS NOT NULL
-    GROUP BY referrer
+    GROUP BY COALESCE(referrer, '')
     ORDER BY count DESC
     LIMIT 10
   `.then((rows) => rows.map((r) => ({ referrer: r.referrer, count: r.count })))

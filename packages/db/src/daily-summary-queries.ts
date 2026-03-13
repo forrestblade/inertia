@@ -109,7 +109,7 @@ export function getDailyBreakdowns (
       const rows = await pool.sql<DailySummaryRow[]>`
         SELECT top_pages, top_referrers, intent_counts
         FROM daily_summaries
-        WHERE site_id = ${siteId} AND date >= ${start} AND date < ${end}
+        WHERE site_id = ${siteId} AND date >= ${start} AND date <= ${end}
         ORDER BY date DESC
       `
       if (rows.length === 0) {
