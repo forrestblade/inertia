@@ -4,11 +4,13 @@ import type { DbPool } from '../connection.js'
 
 function makeMockPool (returnValue: unknown = []): DbPool {
   const sql = vi.fn(() => Promise.resolve(returnValue)) as unknown as DbPool['sql']
+  Object.defineProperty(sql, 'json', { value: (v: unknown) => v })
   return { sql }
 }
 
 function makeErrorPool (error: Error): DbPool {
   const sql = vi.fn(() => Promise.reject(error)) as unknown as DbPool['sql']
+  Object.defineProperty(sql, 'json', { value: (v: unknown) => v })
   return { sql }
 }
 

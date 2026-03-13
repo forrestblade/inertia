@@ -1,4 +1,5 @@
 import { ResultAsync } from 'neverthrow'
+import type { JSONValue } from 'postgres'
 import type { DbError } from './types.js'
 import type { DbPool } from './connection.js'
 import { mapPostgresError } from './connection.js'
@@ -152,7 +153,7 @@ export function generateDailySummary (
         VALUES (
           ${siteId}, ${dateOnly}, ${businessType}, ${1},
           ${sessionCount}, ${pageviewCount}, ${conversionCount},
-          ${JSON.stringify(topReferrers)}::jsonb, ${JSON.stringify(topPages)}::jsonb, ${JSON.stringify(intentCounts)}::jsonb,
+          ${pool.sql.json(topReferrers as unknown as JSONValue)}, ${pool.sql.json(topPages as unknown as JSONValue)}, ${pool.sql.json(intentCounts as unknown as JSONValue)},
           ${health.avg_flush_ms}, ${health.rejection_count}, NOW()
         )
         ON CONFLICT (site_id, date) DO UPDATE SET

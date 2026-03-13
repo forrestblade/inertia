@@ -1,4 +1,5 @@
 import { ResultAsync } from 'neverthrow'
+import type { JSONValue } from 'postgres'
 import type { DbError } from './types.js'
 import type { DbPool } from './connection.js'
 import { mapPostgresError } from './connection.js'
@@ -72,7 +73,7 @@ export function insertDailySummaryFromRemote (
         VALUES (
           ${summary.site_id}, ${summary.date}::date, ${summary.business_type}, ${summary.schema_version},
           ${summary.session_count}, ${summary.pageview_count}, ${summary.conversion_count},
-          ${JSON.stringify(summary.top_referrers)}::jsonb, ${JSON.stringify(summary.top_pages)}::jsonb, ${JSON.stringify(summary.intent_counts)}::jsonb,
+          ${pool.sql.json(summary.top_referrers as unknown as JSONValue)}, ${pool.sql.json(summary.top_pages as unknown as JSONValue)}, ${pool.sql.json(summary.intent_counts as unknown as JSONValue)},
           ${summary.avg_flush_ms}, ${summary.rejection_count}, NOW()
         )
         ON CONFLICT (site_id, date) DO UPDATE SET
