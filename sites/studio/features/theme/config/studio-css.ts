@@ -81,7 +81,7 @@ body {
   background: var(--background);
   color: var(--foreground);
 }
-main { flex: 1; position: relative; z-index: 1; }
+main { flex: 1; position: relative; z-index: 1; padding-top: ${SPACING.scale[12]}; }
 footer { position: relative; z-index: 1; }
 
 /* Site-wide halftone texture — fixed behind all content, persists across navigations */
@@ -126,8 +126,10 @@ footer { position: relative; z-index: 1; }
 
 /* Navigation */
 nav {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
   background: var(--background);
   border-bottom: 1px solid var(--border);
