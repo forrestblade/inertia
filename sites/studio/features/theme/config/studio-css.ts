@@ -558,6 +558,40 @@ footer {
 .principle-benefit h3 {
   color: var(--primary);
 }
+
+/* Audit loading */
+.audit-status { margin-top: 0.5rem; }
+.audit-status p { color: var(--muted-foreground); }
+.audit-btn-loading { display: inline-flex; align-items: center; gap: 0.5rem; }
+.spinner {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  vertical-align: -0.15em;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.audit-progress-bar {
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 1rem;
+}
+.audit-progress-fill {
+  height: 100%;
+  width: 30%;
+  background: var(--primary);
+  border-radius: 2px;
+  animation: scan 1.5s ease-in-out infinite;
+}
+@keyframes scan {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(433%); }
+}
 `
 
   return tokenCSS + studioCSS
