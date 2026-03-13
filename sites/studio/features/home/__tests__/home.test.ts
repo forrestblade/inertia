@@ -344,13 +344,15 @@ describe('renderHome mobile comparison tabs', () => {
   it('each panel has 8 feature rows', () => {
     const html = renderHome()
     for (const panel of ['inertia', 'wix', 'agency']) {
-      // Extract panel content between data-panel="X" and the next data-panel or closing mobile-comparison
       const panelStart = html.indexOf(`data-panel="${panel}"`)
       expect(panelStart).toBeGreaterThan(-1)
-      const nextPanel = html.indexOf('data-panel=', panelStart + 1)
-      const panelEnd = nextPanel > -1 ? nextPanel : html.indexOf('</div>', panelStart + 200)
+      // Find next panel or end of mobile-comparison
+      const searchFrom = panelStart + `data-panel="${panel}"`.length
+      const nextPanel = html.indexOf('data-panel=', searchFrom)
+      const mobileEnd = html.indexOf('</div>\n  </div>', searchFrom)
+      const panelEnd = nextPanel > -1 ? nextPanel : mobileEnd
       const panelContent = html.substring(panelStart, panelEnd)
-      const rowCount = (panelContent.match(/mobile-row"/g) || []).length
+      const rowCount = (panelContent.match(/class="mobile-row"/g) || []).length
       expect(rowCount).toBe(8)
     }
   })

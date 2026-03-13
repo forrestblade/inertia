@@ -33,6 +33,54 @@ function renderCell (marker: string, text: string, cellClass: string): string {
   return `<td${cls}><span class="${MARKER_CLASS[marker]}">${MARKER_SYMBOL[marker]}</span> ${text}</td>`
 }
 
+interface TabConfig {
+  readonly key: string
+  readonly label: string
+  readonly valueField: 'inertia' | 'wix' | 'agency'
+  readonly markerField: 'inertiaMarker' | 'wixMarker' | 'agencyMarker'
+  readonly classField: 'inertiaClass' | 'wixClass' | 'agencyClass'
+}
+
+const MOBILE_TABS: readonly TabConfig[] = [
+  { key: 'inertia', label: 'Inertia', valueField: 'inertia', markerField: 'inertiaMarker', classField: 'inertiaClass' },
+  { key: 'wix', label: 'Wix/SQ', valueField: 'wix', markerField: 'wixMarker', classField: 'wixClass' },
+  { key: 'agency', label: 'Agency', valueField: 'agency', markerField: 'agencyMarker', classField: 'agencyClass' }
+] as const
+
+function renderMobileMarker (marker: string): string {
+  if (!marker) return ''
+  return `<span class="${MARKER_CLASS[marker]}">${MARKER_SYMBOL[marker]}</span> `
+}
+
+function renderMobileComparison (): string {
+  const tabs = MOBILE_TABS.map(
+    (tab, i) => `<button class="mobile-tab${i === 0 ? ' active' : ''}" data-tab="${tab.key}">${tab.label}</button>`
+  ).join('')
+
+  const panels = MOBILE_TABS.map((tab, i) => {
+    const rows = COMPARISON_TABLE.rows.map(
+      (row) => {
+        const marker = row[tab.markerField]
+        const value = row[tab.valueField]
+        const cls = row[tab.classField]
+        return `
+        <div class="mobile-row">
+          <div class="mobile-row-label">${row.feature}</div>
+          <div class="mobile-row-value${cls ? ' ' + cls : ''}">${renderMobileMarker(marker)}${value}</div>
+        </div>`
+      }
+    ).join('')
+    return `
+      <div class="mobile-panel${i === 0 ? ' active' : ''}" data-panel="${tab.key}">${rows}
+      </div>`
+  }).join('')
+
+  return `
+  <div class="mobile-comparison">
+    <div class="mobile-tabs">${tabs}</div>${panels}
+  </div>`
+}
+
 export function renderHome (): string {
   const accentWord = HERO.headlineAccent
   const headlineParts = HERO.headline.split(accentWord)
@@ -111,6 +159,7 @@ export function renderHome (): string {
     <tbody>${tableRows}
     </tbody>
   </table>
+  ${renderMobileComparison()}
   <div class="pain-grid">
     ${painCards}
   </div>
