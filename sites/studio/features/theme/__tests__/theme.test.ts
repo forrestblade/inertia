@@ -222,12 +222,13 @@ describe('getStudioCSS', () => {
     expect(css).toContain('.grid-4')
   })
 
-  it('contains proof metric styles', () => {
+  it('contains hero eyebrow and stats styles', () => {
     const css = getStudioCSS()
-    expect(css).toContain('.proof-grid')
-    expect(css).toContain('.proof-value')
-    expect(css).toContain('.proof-metric')
-    expect(css).toContain('.proof-label')
+    expect(css).toContain('.hero-eyebrow')
+    expect(css).toContain('.hero-pulse')
+    expect(css).toContain('.hero-stats')
+    expect(css).toContain('.hero-stat-value')
+    expect(css).toContain('.hero-stat-label')
   })
 
   it('contains Dank Mono font-face declarations', () => {
@@ -260,9 +261,14 @@ describe('getStudioCSS', () => {
     expect(css).toContain('.hero-cta')
   })
 
-  it('contains eliminate-list utility class', () => {
+  it('contains comparison and pain card styles', () => {
     const css = getStudioCSS()
-    expect(css).toContain('.eliminate-list')
+    expect(css).toContain('.comparison-table')
+    expect(css).toContain('.comparison-accent')
+    expect(css).toContain('.marker-pass')
+    expect(css).toContain('.pain-card')
+    expect(css).toContain('.pain-card-pain')
+    expect(css).toContain('.pain-card-ours')
   })
 
   it('contains cta-section utility class', () => {
