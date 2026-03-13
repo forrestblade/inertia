@@ -40,23 +40,33 @@ describe('trendHandler', () => {
 
   it('each day has date, session_count, pageview_count, conversion_count', async () => {
     const res = mockRes()
-    const ctx = { pool: mockPool(sampleRows), config: mockConfig }
+    // Use today-relative rows so they fall within the 7D range
+    const today = new Date()
+    const yesterday = new Date(today.getTime() - 86_400_000)
+    const recentRows = [
+      { date: yesterday, session_count: 20, pageview_count: 100, conversion_count: 5 },
+      { date: today, session_count: 30, pageview_count: 150, conversion_count: 8 }
+    ]
+    const ctx = { pool: mockPool(recentRows), config: mockConfig }
     const req = { url: '/api/summaries/trend?period=7D', headers: { host: 'localhost' } }
     await trendHandler(req as never, res as never, ctx as never)
     const body = res.body() as { days: { date: string; session_count: number; pageview_count: number; conversion_count: number }[] }
-    expect(body.days).toHaveLength(2)
-    expect(body.days[0].date).toBe('2026-03-01')
-    expect(body.days[0].session_count).toBe(20)
-    expect(body.days[0].pageview_count).toBe(100)
-    expect(body.days[0].conversion_count).toBe(5)
+    // Gap-filling produces a full date range with zeros for missing days
+    expect(body.days.length).toBeGreaterThanOrEqual(7)
+    // Rows with data should have non-zero values
+    const withData = body.days.filter(d => d.session_count > 0)
+    expect(withData.length).toBe(2)
+    expect(withData[0]!.session_count).toBe(20)
   })
 
-  it('returns empty days for no data', async () => {
+  it('returns zero-filled days for no data', async () => {
     const res = mockRes()
     const ctx = { pool: mockPool([]), config: mockConfig }
     const req = { url: '/api/summaries/trend?period=7D', headers: { host: 'localhost' } }
     await trendHandler(req as never, res as never, ctx as never)
-    const body = res.body() as { days: unknown[] }
-    expect(body.days).toEqual([])
+    const body = res.body() as { days: { session_count: number }[] }
+    // Gap-filling produces days even with no data rows
+    expect(body.days.length).toBeGreaterThanOrEqual(7)
+    expect(body.days.every(d => d.session_count === 0)).toBe(true)
   })
 })

@@ -23,7 +23,8 @@ describe('fleetSitesHandler', () => {
   it('returns JSON array', async () => {
     const res = mockRes()
     const ctx = { pool: mockPool([]), config: {} }
-    await fleetSitesHandler({} as never, res as never, ctx as never)
+    const req = { url: '/api/fleet/sites?period=7D', headers: { host: 'localhost' } }
+    await fleetSitesHandler(req as never, res as never, ctx as never)
     const body = res.body()
     expect(Array.isArray(body)).toBe(true)
   })
@@ -52,7 +53,8 @@ describe('fleetAggregatesHandler', () => {
   it('returns JSON with aggregate totals', async () => {
     const res = mockRes()
     const ctx = { pool: mockPool([{ total_sites: 5, total_sessions: 1200, total_conversions: 85 }]), config: {} }
-    await fleetAggregatesHandler({} as never, res as never, ctx as never)
+    const req = { url: '/api/fleet/aggregates?period=7D', headers: { host: 'localhost' } }
+    await fleetAggregatesHandler(req as never, res as never, ctx as never)
     const body = res.body() as { total_sites: number; total_sessions: number; total_conversions: number }
     expect(body.total_sites).toBe(5)
   })
@@ -60,7 +62,8 @@ describe('fleetAggregatesHandler', () => {
   it('returns zeros for no data', async () => {
     const res = mockRes()
     const ctx = { pool: mockPool([]), config: {} }
-    await fleetAggregatesHandler({} as never, res as never, ctx as never)
+    const req = { url: '/api/fleet/aggregates?period=7D', headers: { host: 'localhost' } }
+    await fleetAggregatesHandler(req as never, res as never, ctx as never)
     const body = res.body() as { total_sites: number }
     expect(body.total_sites).toBe(0)
   })

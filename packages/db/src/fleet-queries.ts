@@ -94,15 +94,18 @@ interface RawFleetSiteRow {
 
 export function getFleetSites (
   pool: DbPool,
-  _filter?: FleetFilter,
-  _sort?: FleetSort
+  start?: Date,
+  end?: Date
 ): ResultAsync<ReadonlyArray<FleetSiteRow>, DbError> {
+  const since = start ?? new Date(Date.now() - 7 * TWENTY_FOUR_HOURS)
+  const until = end ?? new Date()
   return ResultAsync.fromPromise(
     (async () => {
       const rows = await pool.sql<RawFleetSiteRow[]>`
         SELECT DISTINCT ON (site_id)
           site_id, business_type, date, session_count, pageview_count, conversion_count, synced_at
         FROM daily_summaries
+        WHERE date >= ${since} AND date <= ${until}
         ORDER BY site_id, date DESC
       `
       return rows.map((r): FleetSiteRow => ({
@@ -198,7 +201,9 @@ const EMPTY_AGGREGATES: FleetAggregateRow = {
   total_conversions: 0
 }
 
-export function getFleetAggregates (pool: DbPool): ResultAsync<FleetAggregateRow, DbError> {
+export function getFleetAggregates (pool: DbPool, start?: Date, end?: Date): ResultAsync<FleetAggregateRow, DbError> {
+  const since = start ?? new Date(Date.now() - 30 * TWENTY_FOUR_HOURS)
+  const until = end ?? new Date()
   return ResultAsync.fromPromise(
     (async () => {
       const rows = await pool.sql<RawAggregateRow[]>`
@@ -207,7 +212,7 @@ export function getFleetAggregates (pool: DbPool): ResultAsync<FleetAggregateRow
           COALESCE(SUM(session_count), 0)::int AS total_sessions,
           COALESCE(SUM(conversion_count), 0)::int AS total_conversions
         FROM daily_summaries
-        WHERE date >= NOW() - INTERVAL '30 days'
+        WHERE date >= ${since} AND date <= ${until}
       `
       return rows[0] ?? EMPTY_AGGREGATES
     })(),

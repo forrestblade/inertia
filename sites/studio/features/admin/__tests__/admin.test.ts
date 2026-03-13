@@ -84,6 +84,10 @@ describe('summary route handlers', () => {
     return { ...res, body: () => JSON.parse(raw) }
   }
 
+  function mockReq (): unknown {
+    return { url: '/api/summaries/sessions?period=7D', headers: { host: 'localhost' } }
+  }
+
   function mockPool (rows: unknown[]): unknown {
     return { sql: async () => rows }
   }
@@ -103,7 +107,7 @@ describe('summary route handlers', () => {
     }
     const res = mockRes()
     const ctx = { pool: mockPool([row]), config: {} }
-    await sessionSummaryHandler({} as never, res as never, ctx as never)
+    await sessionSummaryHandler(mockReq() as never, res as never, ctx as never)
     const body = res.body()
     expect(body).not.toBeInstanceOf(Array)
     expect(body).toHaveProperty('total_sessions', 247)
@@ -122,7 +126,7 @@ describe('summary route handlers', () => {
     }
     const res = mockRes()
     const ctx = { pool: mockPool([row]), config: {} }
-    await eventSummaryHandler({} as never, res as never, ctx as never)
+    await eventSummaryHandler(mockReq() as never, res as never, ctx as never)
     const body = res.body()
     expect(body).not.toBeInstanceOf(Array)
     expect(body).toHaveProperty('total_count', 1500)
@@ -141,7 +145,7 @@ describe('summary route handlers', () => {
     }
     const res = mockRes()
     const ctx = { pool: mockPool([row]), config: {} }
-    await conversionSummaryHandler({} as never, res as never, ctx as never)
+    await conversionSummaryHandler(mockReq() as never, res as never, ctx as never)
     const body = res.body()
     expect(body).not.toBeInstanceOf(Array)
     expect(body).toHaveProperty('total_count', 45)
@@ -160,7 +164,7 @@ describe('summary route handlers', () => {
     }
     const res = mockRes()
     const ctx = { pool: mockPool([row]), config: {} }
-    await ingestionHealthHandler({} as never, res as never, ctx as never)
+    await ingestionHealthHandler(mockReq() as never, res as never, ctx as never)
     const body = res.body()
     expect(body).not.toBeInstanceOf(Array)
     expect(body).toHaveProperty('payloads_accepted', 500)
@@ -170,7 +174,7 @@ describe('summary route handlers', () => {
     const { sessionSummaryHandler } = await import('../server/summary-routes.js')
     const res = mockRes()
     const ctx = { pool: mockPool([]), config: {} }
-    await sessionSummaryHandler({} as never, res as never, ctx as never)
+    await sessionSummaryHandler(mockReq() as never, res as never, ctx as never)
     const body = res.body() as Record<string, unknown>
     expect(body).not.toBeInstanceOf(Array)
     expect(body.total_sessions).toBe(0)

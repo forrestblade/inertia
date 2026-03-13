@@ -1,14 +1,7 @@
 import { getSessionSummaries, getEventSummaries, getConversionSummaries, getIngestionHealth } from '@inertia/db'
 import type { RouteHandler } from '../../../server/types.js'
-import type { SummaryPeriod } from '@inertia/db'
 import { sendJson } from '../../../server/router.js'
-
-function todayPeriod (): SummaryPeriod {
-  const now = new Date()
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const end = new Date(start.getTime() + 86_400_000)
-  return { start, end }
-}
+import { parsePeriodRange } from './period-utils.js'
 
 const EMPTY_SESSION = {
   period_start: '',
@@ -44,8 +37,9 @@ const EMPTY_INGESTION = {
   buffer_saturation_pct: 0
 }
 
-export const sessionSummaryHandler: RouteHandler = async (_req, res, ctx) => {
-  const result = await getSessionSummaries(ctx.pool, todayPeriod())
+export const sessionSummaryHandler: RouteHandler = async (req, res, ctx) => {
+  const { start, end } = parsePeriodRange(req)
+  const result = await getSessionSummaries(ctx.pool, { start, end })
   if (result.isOk()) {
     sendJson(res, result.value[0] ?? EMPTY_SESSION)
     return
@@ -53,8 +47,9 @@ export const sessionSummaryHandler: RouteHandler = async (_req, res, ctx) => {
   sendJson(res, { error: result.error.message }, 500)
 }
 
-export const eventSummaryHandler: RouteHandler = async (_req, res, ctx) => {
-  const result = await getEventSummaries(ctx.pool, todayPeriod())
+export const eventSummaryHandler: RouteHandler = async (req, res, ctx) => {
+  const { start, end } = parsePeriodRange(req)
+  const result = await getEventSummaries(ctx.pool, { start, end })
   if (result.isOk()) {
     sendJson(res, result.value[0] ?? EMPTY_EVENT)
     return
@@ -62,8 +57,9 @@ export const eventSummaryHandler: RouteHandler = async (_req, res, ctx) => {
   sendJson(res, { error: result.error.message }, 500)
 }
 
-export const conversionSummaryHandler: RouteHandler = async (_req, res, ctx) => {
-  const result = await getConversionSummaries(ctx.pool, todayPeriod())
+export const conversionSummaryHandler: RouteHandler = async (req, res, ctx) => {
+  const { start, end } = parsePeriodRange(req)
+  const result = await getConversionSummaries(ctx.pool, { start, end })
   if (result.isOk()) {
     sendJson(res, result.value[0] ?? EMPTY_CONVERSION)
     return
@@ -71,8 +67,9 @@ export const conversionSummaryHandler: RouteHandler = async (_req, res, ctx) => 
   sendJson(res, { error: result.error.message }, 500)
 }
 
-export const ingestionHealthHandler: RouteHandler = async (_req, res, ctx) => {
-  const result = await getIngestionHealth(ctx.pool, todayPeriod())
+export const ingestionHealthHandler: RouteHandler = async (req, res, ctx) => {
+  const { start, end } = parsePeriodRange(req)
+  const result = await getIngestionHealth(ctx.pool, { start, end })
   if (result.isOk()) {
     sendJson(res, result.value[0] ?? EMPTY_INGESTION)
     return

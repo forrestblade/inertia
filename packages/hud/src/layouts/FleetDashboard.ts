@@ -2,6 +2,13 @@ import { HUD_COLORS, HUD_TYPOGRAPHY, HUD_SPACING, isMobile } from '../tokens/hud
 import { fetchFleetSites, fetchFleetAggregates, fetchFleetAlerts } from '../data/fetch-fleet.js'
 import { formatNumber } from '../data/format-number.js'
 
+const PERIOD_LABELS: Record<string, string> = {
+  TODAY: 'today',
+  '7D': '7 days',
+  '30D': '30 days',
+  '90D': '90 days'
+}
+
 const ALERT_BG: Record<string, string> = {
   red: 'hsla(0, 70%, 40%, 0.15)',
   amber: 'hsla(35, 70%, 40%, 0.15)',
@@ -227,6 +234,10 @@ export class FleetDashboard extends HTMLElement {
   }
 
   private refreshData (period: string): void {
+    const periodLabel = PERIOD_LABELS[period] ?? period
+    if (this._sessionsMetric !== null) this._sessionsMetric.setAttribute('label', periodLabel)
+    if (this._conversionsMetric !== null) this._conversionsMetric.setAttribute('label', periodLabel)
+
     fetchFleetSites('', period).match(
       (sites) => {
         const table = this.querySelector('hud-table')
