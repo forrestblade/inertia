@@ -24,12 +24,13 @@ function copyAttrs (id: string): string {
   return ` data-copy-default="${esc(entry.default)}" data-copy-technical="${esc(entry.technical)}"`
 }
 
-const MARKER_CLASS: Record<string, string> = { pass: 'marker-pass', fail: 'marker-fail', partial: 'marker-partial' }
-const MARKER_SYMBOL: Record<string, string> = { pass: '✓', fail: '✗', partial: '~' }
+const MARKER_CLASS: Record<string, string> = { check: 'check', cross: 'cross', warn: 'warn' }
+const MARKER_SYMBOL: Record<string, string> = { check: '&#10003;', cross: '&#10005;', warn: '~' }
 
-function renderMarker (marker: string, text: string): string {
-  if (!marker) return text
-  return `<span class="${MARKER_CLASS[marker]}">${MARKER_SYMBOL[marker]}</span> ${text}`
+function renderCell (marker: string, text: string, cellClass: string): string {
+  const cls = cellClass ? ` class="${cellClass}"` : ''
+  if (!marker) return `<td${cls}>${text}</td>`
+  return `<td${cls}><span class="${MARKER_CLASS[marker]}">${MARKER_SYMBOL[marker]}</span> ${text}</td>`
 }
 
 export function renderHome (): string {
@@ -43,8 +44,8 @@ export function renderHome (): string {
   const heroStats = HERO.stats.map(
     (s, i) => `
       <div class="hero-stat">
-        <span class="hero-stat-value">${esc(s.value)}</span>
-        <span class="hero-stat-label"${copyAttrs(`hero-stat-${i + 1}-label`)}>${s.label}</span>
+        <div class="val${s.accent ? ' ' + s.accent : ''}">${esc(s.value)}</div>
+        <div class="lbl"${copyAttrs(`hero-stat-${i + 1}-label`)}>${s.label}</div>
       </div>`
   ).join('')
 
@@ -67,19 +68,19 @@ export function renderHome (): string {
     (row) => `
       <tr>
         <td>${row.feature}</td>
-        <td>${renderMarker(row.wixMarker, row.wix)}</td>
-        <td>${renderMarker(row.agencyMarker, row.agency)}</td>
-        <td>${renderMarker(row.inertiaMarker, row.inertia)}</td>
+        ${renderCell(row.wixMarker, row.wix, row.wixClass)}
+        ${renderCell(row.agencyMarker, row.agency, row.agencyClass)}
+        ${renderCell(row.inertiaMarker, row.inertia, row.inertiaClass)}
       </tr>`
   ).join('')
 
   const painCards = PAIN_CARDS.map(
-    (card) => `
-    <div class="pain-card pain-card-${card.variant}">
-      <span class="pain-label">${card.label}</span>
-      <h3${copyAttrs(`pain-card-${PAIN_CARDS.indexOf(card) + 1}-title`)}>${card.title}</h3>
-      <p${copyAttrs(`pain-card-${PAIN_CARDS.indexOf(card) + 1}-desc`)}>${card.description}</p>
-      <span class="pain-stat">${card.stat}</span>
+    (card, i) => `
+    <div class="pain-card${card.variant === 'ours' ? ' ours' : ''}">
+      <div class="pain-label"${copyAttrs(`pain-card-${i + 1}-label`)}>${card.label}</div>
+      <h3${copyAttrs(`pain-card-${i + 1}-title`)}>${card.title}</h3>
+      <p${copyAttrs(`pain-card-${i + 1}-desc`)}>${card.description}</p>
+      <div class="stat">${card.stat}</div>
     </div>`
   ).join('')
 
@@ -89,38 +90,36 @@ export function renderHome (): string {
   return `
 <section class="hero container">
   <div class="hero-content">
-    <span class="hero-eyebrow"${copyAttrs('hero-eyebrow')}><span class="hero-pulse"></span> ${HERO.eyebrow}</span>
+    <div class="hero-eyebrow"${copyAttrs('hero-eyebrow')}><span class="dot"></span> ${HERO.eyebrow}</div>
     <h1${copyAttrs('hero-headline')}>${accentHeadline}</h1>
-    <p${copyAttrs('hero-subhead')}>${HERO.subhead}</p>
+    <p class="hero-sub"${copyAttrs('hero-subhead')}>${HERO.subhead}</p>
     <div class="hero-stats">
       ${heroStats}
     </div>
-    <div class="hero-cta">
-      <a href="${HERO.cta.href}" class="btn btn-primary" data-telemetry-type="INTENT_NAVIGATE" data-telemetry-target="hero-cta-primary">${HERO.cta.label}</a>
+    <div class="hero-ctas">
+      <a href="${HERO.cta.href}" class="btn btn-primary" data-telemetry-type="INTENT_NAVIGATE" data-telemetry-target="hero-cta-primary">${HERO.cta.label} &rarr;</a>
       <a href="${HERO.ctaSecondary.href}" class="btn btn-ghost" data-telemetry-type="INTENT_NAVIGATE" data-telemetry-target="hero-cta-secondary">${HERO.ctaSecondary.label}</a>
     </div>
   </div>
 </section>
 
-<section class="section container comparison-section">
+<section class="comparison comparison-section">
   <div class="comparison-header">
-    <h2${comparisonCopyEntry ? ` data-copy-default="${esc(comparisonCopyEntry.default)}" data-copy-technical="${esc(comparisonCopyEntry.technical)}"` : ''}>How We Compare</h2>
-    <p${comparisonSubEntry ? ` data-copy-default="${esc(comparisonSubEntry.default)}" data-copy-technical="${esc(comparisonSubEntry.technical)}"` : ''}>Most web solutions rent you a website. We build one you own.</p>
+    <h2${comparisonCopyEntry ? ` data-copy-default="${esc(comparisonCopyEntry.default)}" data-copy-technical="${esc(comparisonCopyEntry.technical)}"` : ''}>${COMPARISON_TABLE.heading}</h2>
+    <p${comparisonSubEntry ? ` data-copy-default="${esc(comparisonSubEntry.default)}" data-copy-technical="${esc(comparisonSubEntry.technical)}"` : ''}>${COMPARISON_TABLE.subtitle}</p>
   </div>
-  <div class="comparison-table-wrap">
-    <table class="comparison-table">
-      <thead><tr>${tableHeaders}</tr></thead>
-      <tbody>${tableRows}
-      </tbody>
-    </table>
-  </div>
-  <div class="pain-cards">
+  <table class="comp-table">
+    <thead><tr>${tableHeaders}</tr></thead>
+    <tbody>${tableRows}
+    </tbody>
+  </table>
+  <div class="pain-grid">
     ${painCards}
   </div>
-  <div class="comparison-cta">
+  <div class="bottom-cta">
     <h3${copyAttrs('comparison-cta-headline')}>${COMPARISON_CTA.headline}</h3>
     <p>${COMPARISON_CTA.subtitle}</p>
-    <a href="${COMPARISON_CTA.cta.href}" class="btn btn-primary" data-telemetry-type="INTENT_NAVIGATE" data-telemetry-target="comparison-cta">${COMPARISON_CTA.cta.label}</a>
+    <a href="${COMPARISON_CTA.cta.href}" class="btn btn-primary" data-telemetry-type="INTENT_NAVIGATE" data-telemetry-target="comparison-cta">${COMPARISON_CTA.cta.label} &rarr;</a>
   </div>
 </section>
 

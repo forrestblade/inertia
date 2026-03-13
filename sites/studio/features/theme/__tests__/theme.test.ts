@@ -225,10 +225,11 @@ describe('getStudioCSS', () => {
   it('contains hero eyebrow and stats styles', () => {
     const css = getStudioCSS()
     expect(css).toContain('.hero-eyebrow')
-    expect(css).toContain('.hero-pulse')
+    expect(css).toContain('.hero-eyebrow .dot')
     expect(css).toContain('.hero-stats')
-    expect(css).toContain('.hero-stat-value')
-    expect(css).toContain('.hero-stat-label')
+    expect(css).toContain('.hero-stat .val')
+    expect(css).toContain('.hero-stat .lbl')
+    expect(css).toContain('.val.green')
   })
 
   it('contains Dank Mono font-face declarations', () => {
@@ -256,19 +257,23 @@ describe('getStudioCSS', () => {
     expect(css).toMatch(/\.spec-row dd\s*\{/)
   })
 
-  it('contains hero-cta utility class', () => {
+  it('contains hero-ctas utility class', () => {
     const css = getStudioCSS()
-    expect(css).toContain('.hero-cta')
+    expect(css).toContain('.hero-ctas')
   })
 
   it('contains comparison and pain card styles', () => {
     const css = getStudioCSS()
-    expect(css).toContain('.comparison-table')
+    expect(css).toContain('.comp-table')
     expect(css).toContain('.comparison-accent')
-    expect(css).toContain('.marker-pass')
+    expect(css).toContain('.check')
+    expect(css).toContain('.cross')
+    expect(css).toContain('.warn')
+    expect(css).toContain('.price-pain')
+    expect(css).toContain('.price-good')
     expect(css).toContain('.pain-card')
-    expect(css).toContain('.pain-card-pain')
-    expect(css).toContain('.pain-card-ours')
+    expect(css).toContain('.pain-card.ours')
+    expect(css).toContain('.pain-grid')
   })
 
   it('contains cta-section utility class', () => {
@@ -281,9 +286,9 @@ describe('getStudioCSS', () => {
     expect(css).toContain('.contact-info')
   })
 
-  it('hero section uses clamped viewport height', () => {
+  it('hero section uses min-height 90vh', () => {
     const css = getStudioCSS()
-    expect(css).toContain('clamp(600px, 100vh, 900px)')
+    expect(css).toContain('min-height: 90vh')
   })
 
   it('contains glass-box inspector styles', () => {
@@ -327,10 +332,10 @@ describe('mobile CSS: contact form', () => {
   })
 })
 
-describe('mobile CSS: hero responsive text', () => {
-  it('hero h1 uses clamp() or reduces font-size on mobile', () => {
+describe('hero responsive text', () => {
+  it('hero h1 uses clamp() for responsive sizing', () => {
     const css = getStudioCSS()
-    expect(css).toMatch(/@media\s*\(max-width:\s*767px\)[\s\S]*\.hero h1\s*\{[^}]*font-size/)
+    expect(css).toMatch(/\.hero h1\s*\{[^}]*clamp\(/)
   })
 })
 

@@ -4,10 +4,10 @@ export const HERO = {
   headlineAccent: 'yours',
   subhead: 'We build fast, secure websites on dedicated hardware we hand-deliver to your business. You own the server, the code, the data, and the analytics. No monthly ransom. No vendor lock-in. No kill switch.',
   stats: [
-    { value: '<1s', label: 'Page Load' },
-    { value: '100', label: 'Lighthouse Score' },
-    { value: '0', label: 'Third-Party Scripts' },
-    { value: '100%', label: 'Client Owned' }
+    { value: '<1s', label: 'Page Load', accent: '' },
+    { value: '100', label: 'Lighthouse Score', accent: 'green' },
+    { value: '0', label: 'Third-Party Scripts', accent: '' },
+    { value: '100%', label: 'Client Owned', accent: '' }
   ],
   cta: { label: 'Get a Free Site Audit', href: '/free-site-audit' },
   ctaSecondary: { label: 'See How It Works', href: '/how-it-works' }
@@ -40,7 +40,7 @@ export const PILLARS = [
   }
 ] as const
 
-type MarkerType = 'pass' | 'fail' | 'partial'
+type MarkerType = 'check' | 'cross' | 'warn'
 
 interface ComparisonRow {
   readonly feature: string
@@ -50,75 +50,64 @@ interface ComparisonRow {
   readonly wixMarker: MarkerType | ''
   readonly agencyMarker: MarkerType | ''
   readonly inertiaMarker: MarkerType | ''
+  readonly wixClass: string
+  readonly agencyClass: string
+  readonly inertiaClass: string
 }
 
 export const COMPARISON_TABLE = {
-  headers: ['', 'Wix / Squarespace', 'Agency Retainer', 'Inertia'],
+  heading: 'What you\u2019re actually paying for',
+  subtitle: 'Most businesses don\u2019t realize how much they\u2019re spending to rent infrastructure they\u2019ll never own.',
+  headers: ['', 'Wix / Squarespace', 'Agency Retainer', 'Inertia Web Solutions'],
   rows: [
-    { feature: 'You own the server', wix: 'No', agency: 'No', inertia: 'Yes', wixMarker: 'fail', agencyMarker: 'fail', inertiaMarker: 'pass' },
-    { feature: 'You own the code', wix: 'No', agency: 'Sometimes', inertia: 'Yes', wixMarker: 'fail', agencyMarker: 'partial', inertiaMarker: 'pass' },
-    { feature: 'You own the data', wix: 'No', agency: 'Sometimes', inertia: 'Yes', wixMarker: 'fail', agencyMarker: 'partial', inertiaMarker: 'pass' },
-    { feature: 'Page load under 1s', wix: '3–6s typical', agency: '2–4s typical', inertia: 'Under 1s', wixMarker: 'fail', agencyMarker: 'partial', inertiaMarker: 'pass' },
-    { feature: 'No third-party tracking', wix: 'Platform scripts', agency: 'GA + GTM', inertia: 'Zero scripts', wixMarker: 'fail', agencyMarker: 'fail', inertiaMarker: 'pass' },
-    { feature: 'Works if vendor disappears', wix: 'Site gone', agency: 'Depends', inertia: 'Runs forever', wixMarker: 'fail', agencyMarker: 'partial', inertiaMarker: 'pass' },
-    { feature: 'Lighthouse 100', wix: '50–70', agency: '70–90', inertia: '100', wixMarker: 'fail', agencyMarker: 'partial', inertiaMarker: 'pass' },
-    { feature: 'Monthly cost after launch', wix: '$16–45/mo', agency: '$1,500–5,000/mo', inertia: '$0 required', wixMarker: '', agencyMarker: '', inertiaMarker: '' }
+    { feature: 'Typical Cost', wix: '$30 - $100/mo forever', agency: '$2,500 - $9,000/mo forever', inertia: '~$3,500 one-time + $49/mo relay', wixMarker: '', agencyMarker: '', inertiaMarker: '', wixClass: 'price-pain', agencyClass: 'price-pain', inertiaClass: 'price-good' },
+    { feature: '3-Year Total', wix: '$1,080 - $3,600', agency: '$90,000 - $324,000', inertia: '~$5,264', wixMarker: '', agencyMarker: '', inertiaMarker: '', wixClass: 'price-pain', agencyClass: 'price-pain', inertiaClass: 'price-good' },
+    { feature: 'You Own the Code', wix: 'Locked in their platform', agency: 'Usually retained by agency', inertia: 'Full source code handover', wixMarker: 'cross', agencyMarker: 'cross', inertiaMarker: 'check', wixClass: '', agencyClass: '', inertiaClass: '' },
+    { feature: 'You Own Your Data', wix: 'Stored on their servers', agency: 'Depends on contract', inertia: 'Database on your hardware', wixMarker: 'cross', agencyMarker: 'warn', inertiaMarker: 'check', wixClass: '', agencyClass: '', inertiaClass: '' },
+    { feature: 'Analytics Privacy', wix: 'Google Analytics / third-party', agency: 'Google Analytics / Adobe', inertia: 'Self-hosted, zero third-party scripts', wixMarker: 'cross', agencyMarker: 'cross', inertiaMarker: 'check', wixClass: '', agencyClass: '', inertiaClass: '' },
+    { feature: 'Survives Without Vendor', wix: 'Site disappears if you stop paying', agency: 'Lose access to everything', inertia: 'Server keeps running in your office', wixMarker: 'cross', agencyMarker: 'cross', inertiaMarker: 'check', wixClass: '', agencyClass: '', inertiaClass: '' },
+    { feature: 'Page Speed', wix: '3 - 6 seconds typical', agency: '2 - 4 seconds typical', inertia: 'Under 1 second, sub-14kB critical load', wixMarker: 'warn', agencyMarker: 'warn', inertiaMarker: 'check', wixClass: '', agencyClass: '', inertiaClass: '' },
+    { feature: 'Hidden Fees', wix: 'Transaction %, plugin upsells, storage limits', agency: 'Scope creep, hourly overages', inertia: 'Price is the price. No surprises.', wixMarker: 'cross', agencyMarker: 'cross', inertiaMarker: 'check', wixClass: '', agencyClass: '', inertiaClass: '' }
   ] as readonly ComparisonRow[]
 } as const
 
 export const PAIN_CARDS = [
   {
-    id: 'pain-hosting',
+    id: 'pain-platform',
     variant: 'pain' as const,
-    label: 'The Hosting Trap',
-    title: 'You\'re renting a website you can\'t take with you',
-    description: 'Wix, Squarespace, and WordPress.com hold your site hostage. Try to leave and you start from scratch.',
-    stat: '72% of small businesses can\'t export their own website'
+    label: 'The Platform Trap',
+    title: 'You don\'t own your Wix site',
+    description: 'Wix and Squarespace market $16/month as affordable. But you can\'t export your site. You can\'t add custom features. When you outgrow the platform, you start over from scratch and write off years of sunk cost.',
+    stat: 'Average 3-year DIY platform cost: <strong>$1,800 - $3,600</strong> for a site you\'ll eventually abandon'
   },
   {
-    id: 'pain-speed',
+    id: 'pain-agency',
     variant: 'pain' as const,
-    label: 'The Speed Tax',
-    title: 'Slow sites cost you customers every single day',
-    description: 'Shared hosting, bloated themes, and third-party scripts add seconds to every page load.',
-    stat: '53% of visitors leave if a page takes over 3 seconds'
+    label: 'The Agency Tax',
+    title: '$60K/year and you still own nothing',
+    description: 'DFW agencies charge $5,000 - $9,000/month for managed digital presence. If you cancel, you lose the optimized pages, the email workflows, and the CRM integrations they built. You paid $60K and walk away empty-handed.',
+    stat: 'Average mid-tier DFW agency retainer: <strong>$5,000 - $9,000/mo</strong>'
   },
   {
-    id: 'pain-cost',
+    id: 'pain-outage',
     variant: 'pain' as const,
-    label: 'The Retainer Racket',
-    title: 'Agencies charge monthly for a site you should own',
-    description: 'You paid to build it. Now you pay to keep it. Change a phone number? That\'ll be $150.',
-    stat: 'Average agency retainer: $2,500/month'
+    label: 'The Outage Gamble',
+    title: 'When AWS goes down, your business stops',
+    description: 'During the 2025 AWS outage, Fort Worth restaurants couldn\'t process orders. Toast terminals became paperweights. One Texas restaurateur lost 25% of his revenue in a single day because a server failed 1,000 miles away.',
+    stat: 'McKinney has experienced <strong>3-day business internet outages</strong> from a single fiber cut'
   },
   {
-    id: 'ours-ownership',
+    id: 'ours-different',
     variant: 'ours' as const,
-    label: 'The Inertia Model',
-    title: 'One payment. Your server. Your site. Forever.',
-    description: 'We hand-deliver a dedicated server appliance to your business. You own the hardware, the code, the data, and the analytics. No monthly ransom.',
-    stat: '$0/month after launch'
-  },
-  {
-    id: 'ours-speed',
-    variant: 'ours' as const,
-    label: 'Built for Speed',
-    title: 'Your site loads before they can blink',
-    description: 'No shared servers. No bloated frameworks. Just your code on your hardware, optimized for sub-second page loads.',
-    stat: 'Perfect 100 Lighthouse score'
-  },
-  {
-    id: 'ours-independence',
-    variant: 'ours' as const,
-    label: 'True Independence',
-    title: 'Your site runs with or without us',
-    description: 'If we disappeared tomorrow, your website keeps running. You have the server, the database, and every line of code.',
-    stat: 'Zero vendor dependencies'
+    label: 'How We\'re Different',
+    title: 'Your server sits in your office',
+    description: 'We build your site, install it on a dedicated server, and hand-deliver the hardware to your business. Your database, your analytics, your code. The internet doorway costs $49/month. Cancel and your site keeps running.',
+    stat: 'Bus factor: <strong>zero</strong>. If we disappear, your website doesn\'t.'
   }
 ] as const
 
 export const COMPARISON_CTA = {
-  headline: 'See exactly what we\'d build for you',
-  subtitle: 'We\'ll audit your current site for free — speed, SEO, accessibility, and security. No strings.',
+  headline: 'Curious what your current site is costing you?',
+  subtitle: 'Run a free audit and see your real performance scores. No email required.',
   cta: { label: 'Run Free Site Audit', href: '/free-site-audit' }
 } as const

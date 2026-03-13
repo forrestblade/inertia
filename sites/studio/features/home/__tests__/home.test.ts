@@ -93,7 +93,7 @@ describe('renderHome hero eyebrow + stats', () => {
 
   it('contains hero pulse dot in eyebrow', () => {
     const html = renderHome()
-    expect(html).toContain('hero-pulse')
+    expect(html).toContain('class="dot"')
   })
 
   it('contains em accent inside h1', () => {
@@ -106,16 +106,28 @@ describe('renderHome hero eyebrow + stats', () => {
   it('contains hero stats bar with 4 stat cells', () => {
     const html = renderHome()
     expect(html).toContain('hero-stats')
-    const statCount = (html.match(/hero-stat"/g) || []).length
+    const statCount = (html.match(/class="hero-stat"/g) || []).length
     expect(statCount).toBe(4)
   })
 
   it('contains expected stat values', () => {
     const html = renderHome()
     expect(html).toContain('&lt;1s')
-    expect(html).toContain('100')
+    expect(html).toContain('>100<')
     expect(html).toContain('>0<')
     expect(html).toContain('100%')
+  })
+
+  it('Lighthouse score has green accent class', () => {
+    const html = renderHome()
+    expect(html).toContain('class="val green"')
+  })
+
+  it('non-Lighthouse stat values do not have green class', () => {
+    const html = renderHome()
+    // Only one .val.green — the Lighthouse 100
+    const greenCount = (html.match(/class="val green"/g) || []).length
+    expect(greenCount).toBe(1)
   })
 })
 
@@ -129,13 +141,28 @@ describe('renderHome comparison section', () => {
     expect(comparisonPos).toBeLessThan(pillarPos)
   })
 
-  it('contains comparison table with 4 column headers', () => {
+  it('comparison heading matches prototype', () => {
     const html = renderHome()
-    expect(html).toContain('comparison-table')
+    expect(html).toContain('What you\u2019re actually paying for')
+  })
+
+  it('comparison subtitle matches prototype', () => {
+    const html = renderHome()
+    expect(html).toContain('Most businesses don\u2019t realize')
+  })
+
+  it('contains comp-table with 4 column headers', () => {
+    const html = renderHome()
+    expect(html).toContain('comp-table')
     const theadMatch = html.match(/<thead>[\s\S]*?<\/thead>/)
     expect(theadMatch).not.toBeNull()
     const thMatches = theadMatch![0].match(/<th[\s>]/g) || []
     expect(thMatches.length).toBe(4)
+  })
+
+  it('last column header says Inertia Web Solutions', () => {
+    const html = renderHome()
+    expect(html).toContain('Inertia Web Solutions')
   })
 
   it('Inertia column header has accent class', () => {
@@ -151,52 +178,95 @@ describe('renderHome comparison section', () => {
     expect(rowCount).toBe(8)
   })
 
-  it('uses marker classes not inline color styles', () => {
+  it('uses check/cross/warn marker classes', () => {
     const html = renderHome()
-    expect(html).toContain('marker-pass')
-    expect(html).toContain('marker-fail')
-    expect(html).toContain('marker-partial')
-    // No inline color on markers
-    expect(html).not.toMatch(/marker-(?:pass|fail|partial)[^"]*style=/)
+    expect(html).toContain('class="check"')
+    expect(html).toContain('class="cross"')
+    expect(html).toContain('class="warn"')
+  })
+
+  it('uses price-pain and price-good classes for cost rows', () => {
+    const html = renderHome()
+    expect(html).toContain('price-pain')
+    expect(html).toContain('price-good')
+  })
+
+  it('contains prototype table row content', () => {
+    const html = renderHome()
+    expect(html).toContain('Typical Cost')
+    expect(html).toContain('3-Year Total')
+    expect(html).toContain('Locked in their platform')
+    expect(html).toContain('Database on your hardware')
+    expect(html).toContain('Price is the price. No surprises.')
   })
 })
 
 describe('renderHome pain cards', () => {
-  it('renders 6 pain cards', () => {
+  it('renders 4 pain cards', () => {
     const html = renderHome()
-    const cardCount = (html.match(/pain-card /g) || []).length
-    expect(cardCount).toBe(6)
+    const cardCount = (html.match(/class="pain-card[ "]/g) || []).length
+    expect(cardCount).toBe(4)
   })
 
-  it('renders 3 pain variant and 3 ours variant', () => {
+  it('renders 3 pain variant and 1 ours variant', () => {
     const html = renderHome()
-    const painCount = (html.match(/pain-card-pain/g) || []).length
-    const oursCount = (html.match(/pain-card-ours/g) || []).length
-    expect(painCount).toBe(3)
-    expect(oursCount).toBe(3)
+    const oursCount = (html.match(/pain-card ours/g) || []).length
+    expect(oursCount).toBe(1)
+    // 3 without ours class
+    const totalCards = (html.match(/class="pain-card[ "]/g) || []).length
+    expect(totalCards - oursCount).toBe(3)
+  })
+
+  it('pain card labels match prototype', () => {
+    const html = renderHome()
+    expect(html).toContain('The Platform Trap')
+    expect(html).toContain('The Agency Tax')
+    expect(html).toContain('The Outage Gamble')
+    expect(html).toContain('How We\'re Different')
+  })
+
+  it('pain card titles match prototype', () => {
+    const html = renderHome()
+    expect(html).toContain('You don\'t own your Wix site')
+    expect(html).toContain('$60K/year and you still own nothing')
+    expect(html).toContain('When AWS goes down, your business stops')
+    expect(html).toContain('Your server sits in your office')
   })
 
   it('each pain card has label, title, description, and stat', () => {
     const html = renderHome()
-    // Verify all pain cards contain required elements
     expect(html).toContain('pain-label')
-    expect(html).toContain('pain-stat')
-    // Each card should have an h3 and p — count them within pain-cards section
-    const painSection = html.match(/class="pain-cards">([\s\S]*?)<\/div>\s*<div class="comparison-cta/)
+    expect(html).toContain('class="stat"')
+    // Each card should have an h3 and p within pain-grid
+    const painSection = html.match(/class="pain-grid">([\s\S]*?)<\/div>\s*<div class="bottom-cta/)
     expect(painSection).not.toBeNull()
     const h3Count = (painSection![1].match(/<h3/g) || []).length
     const pCount = (painSection![1].match(/<p[ >]/g) || []).length
-    expect(h3Count).toBe(6)
-    expect(pCount).toBe(6)
+    expect(h3Count).toBe(4)
+    expect(pCount).toBe(4)
+  })
+
+  it('stat divs contain strong tags for emphasis', () => {
+    const html = renderHome()
+    const painSection = html.match(/class="pain-grid">([\s\S]*?)<\/div>\s*<div class="bottom-cta/)
+    expect(painSection).not.toBeNull()
+    const strongCount = (painSection![1].match(/<strong>/g) || []).length
+    expect(strongCount).toBeGreaterThanOrEqual(4)
   })
 })
 
 describe('renderHome comparison CTA', () => {
   it('renders comparison CTA with audit link', () => {
     const html = renderHome()
-    expect(html).toContain('comparison-cta')
+    expect(html).toContain('bottom-cta')
     expect(html).toContain('Run Free Site Audit')
     expect(html).toContain('data-telemetry-target="comparison-cta"')
+  })
+
+  it('comparison CTA copy matches prototype', () => {
+    const html = renderHome()
+    expect(html).toContain('Curious what your current site is costing you?')
+    expect(html).toContain('No email required.')
   })
 })
 

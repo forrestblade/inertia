@@ -19,7 +19,7 @@ export const HOME_COPY_MAP: readonly CopyMapEntry[] = [
   {
     id: 'hero-eyebrow',
     default: 'Proudly serving DFW businesses from McKinney, TX',
-    technical: 'Edge-deployed from McKinney, TX — sub-millisecond intra-DFW latency'
+    technical: 'Edge-deployed from McKinney, TX \u2014 sub-millisecond intra-DFW latency'
   },
 
   // Hero stats
@@ -44,7 +44,7 @@ export const HOME_COPY_MAP: readonly CopyMapEntry[] = [
     technical: 'Hardware, PostgreSQL, Payload CMS, domain, backups, source code'
   },
 
-  // Pillars — titles
+  // Pillars \u2014 titles
   {
     id: 'pillar-no-dynamic-alloc-title',
     default: 'Never Stutters Under Load',
@@ -66,7 +66,7 @@ export const HOME_COPY_MAP: readonly CopyMapEntry[] = [
     technical: '14kB Protocol'
   },
 
-  // Pillars — summaries
+  // Pillars \u2014 summaries
   {
     id: 'pillar-no-dynamic-alloc-summary',
     default: 'Your site stays fast even when traffic spikes. No slowdowns, no freezing, no excuses.',
@@ -91,83 +91,81 @@ export const HOME_COPY_MAP: readonly CopyMapEntry[] = [
   // Comparison section
   {
     id: 'comparison-header',
-    default: 'How We Compare',
+    default: 'What you\u2019re actually paying for',
     technical: 'Competitive analysis: SaaS platforms vs agency retainers vs Inertia appliance model'
   },
   {
     id: 'comparison-subtitle',
-    default: 'Most web solutions rent you a website. We build one you own.',
+    default: 'Most businesses don\u2019t realize how much they\u2019re spending to rent infrastructure they\u2019ll never own.',
     technical: 'Ownership model comparison across infrastructure, code, data, and operational independence'
   },
 
   // Pain cards
   {
+    id: 'pain-card-1-label',
+    default: 'The Platform Trap',
+    technical: 'Vendor Lock-In Risk'
+  },
+  {
     id: 'pain-card-1-title',
-    default: 'You\'re renting a website you can\'t take with you',
+    default: 'You don\'t own your Wix site',
     technical: 'Vendor lock-in: no pg_dump, no code export, proprietary CMS schema'
   },
   {
-    id: 'pain-card-2-title',
-    default: 'Slow sites cost you customers every single day',
-    technical: 'Shared hosting P99 latency: 3–6s TTFB. Inertia appliance: <200ms'
-  },
-  {
-    id: 'pain-card-3-title',
-    default: 'Agencies charge monthly for a site you should own',
-    technical: 'Agency retainer model: $1,500–5,000/mo for hosting + maintenance you could self-serve'
-  },
-  {
-    id: 'pain-card-4-title',
-    default: 'One payment. Your server. Your site. Forever.',
-    technical: 'Appliance model: one-time cost, client owns hardware + code + data, $0 ongoing required'
-  },
-  {
     id: 'pain-card-1-desc',
-    default: 'Wix, Squarespace, and WordPress.com hold your site hostage. Try to leave and you start from scratch.',
-    technical: 'No file-system access, no database export, proprietary template engine locks content to platform'
+    default: 'Wix and Squarespace market $16/month as affordable. But you can\'t export your site. You can\'t add custom features. When you outgrow the platform, you start over from scratch and write off years of sunk cost.',
+    technical: 'No file-system access, no database export, proprietary template engine locks content to platform. Migration cost: full rebuild.'
+  },
+  {
+    id: 'pain-card-2-label',
+    default: 'The Agency Tax',
+    technical: 'Retainer Model Analysis'
+  },
+  {
+    id: 'pain-card-2-title',
+    default: '$60K/year and you still own nothing',
+    technical: 'Agency retainer model: $5,000\u2013$9,000/mo for hosting + maintenance you could self-serve'
   },
   {
     id: 'pain-card-2-desc',
-    default: 'Shared hosting, bloated themes, and third-party scripts add seconds to every page load.',
-    technical: 'Multi-tenant resource contention, 2–4MB JS bundles, render-blocking GA/GTM/Meta beacon chains'
+    default: 'DFW agencies charge $5,000 - $9,000/month for managed digital presence. If you cancel, you lose the optimized pages, the email workflows, and the CRM integrations they built. You paid $60K and walk away empty-handed.',
+    technical: 'Managed service markup on trivial CMS edits. Client has no admin access. Code ownership retained by agency.'
+  },
+  {
+    id: 'pain-card-3-label',
+    default: 'The Outage Gamble',
+    technical: 'Single Point of Failure'
+  },
+  {
+    id: 'pain-card-3-title',
+    default: 'When AWS goes down, your business stops',
+    technical: 'Cloud SPOF: us-east-1 outage cascades to all tenants. No local failover.'
   },
   {
     id: 'pain-card-3-desc',
-    default: 'You paid to build it. Now you pay to keep it. Change a phone number? That\'ll be $150.',
-    technical: 'Managed service markup on trivial CMS edits. Client has no admin access.'
+    default: 'During the 2025 AWS outage, Fort Worth restaurants couldn\'t process orders. Toast terminals became paperweights. One Texas restaurateur lost 25% of his revenue in a single day because a server failed 1,000 miles away.',
+    technical: 'Multi-tenant cloud: single AZ failure cascades to all hosted sites. No edge failover, no local serving capability.'
+  },
+  {
+    id: 'pain-card-4-label',
+    default: 'How We\'re Different',
+    technical: 'Appliance Model'
+  },
+  {
+    id: 'pain-card-4-title',
+    default: 'Your server sits in your office',
+    technical: 'Edge appliance: x86 hardware on-prem, WireGuard tunnel to stateless VPS relay'
   },
   {
     id: 'pain-card-4-desc',
-    default: 'We hand-deliver a dedicated server appliance to your business. You own the hardware, the code, the data, and the analytics. No monthly ransom.',
-    technical: 'x86 edge appliance with PostgreSQL, Payload CMS, and WireGuard tunnel. Full pg_dump + git clone access.'
-  },
-
-  // Ours cards (additional)
-  {
-    id: 'pain-card-5-title',
-    default: 'Your site loads before they can blink',
-    technical: 'Sub-200ms TTFB, <14kB critical shell, zero render-blocking external scripts'
-  },
-  {
-    id: 'pain-card-5-desc',
-    default: 'No shared servers. No bloated frameworks. Just your code on your hardware, optimized for sub-second page loads.',
-    technical: 'Dedicated x86 hardware, inline critical CSS, HTML-over-the-wire routing, pre-allocated ring buffer telemetry'
-  },
-  {
-    id: 'pain-card-6-title',
-    default: 'Your site runs with or without us',
-    technical: 'Gliding failover: static HTML snapshot on VPS. Caddy health-check auto-switches. Zero vendor dependency.'
-  },
-  {
-    id: 'pain-card-6-desc',
-    default: 'If we disappeared tomorrow, your website keeps running. You have the server, the database, and every line of code.',
-    technical: 'Client holds full pg_dump + git clone access. Static failover snapshot on VPS serves if appliance offline.'
+    default: 'We build your site, install it on a dedicated server, and hand-deliver the hardware to your business. Your database, your analytics, your code. The internet doorway costs $49/month. Cancel and your site keeps running.',
+    technical: 'x86 edge appliance with PostgreSQL, Payload CMS, and WireGuard tunnel. Full pg_dump + git clone access. Bus factor: zero.'
   },
 
   // Comparison CTA
   {
     id: 'comparison-cta-headline',
-    default: 'See exactly what we\'d build for you',
+    default: 'Curious what your current site is costing you?',
     technical: 'Automated Lighthouse audit pipeline: Performance, Accessibility, Best Practices, SEO'
   }
 ] as const
