@@ -19,6 +19,7 @@ import type { RouteHandler } from '@inertia/core/server'
 import type { RouteContext } from './types.js'
 import { loadConfig } from './config.js'
 import { sendHtml } from './router.js'
+import { sitemapHandler, robotsHandler } from './seo-handlers.js'
 
 function redirect301 (location: string): RouteHandler<RouteContext> {
   return async (_req, res) => {
@@ -32,6 +33,8 @@ export function registerRoutes (router: ServerRouter<RouteContext>): void {
 
   // Infrastructure
   router.register('/health', { GET: async (_req, res) => sendHtml(res, 'OK') })
+  router.register('/sitemap.xml', { GET: sitemapHandler })
+  router.register('/robots.txt', { GET: robotsHandler })
 
   // Content pages
   router.register('/', { GET: homeHandler })

@@ -23,14 +23,15 @@ function fillGaps (start: Date, end: Date, rows: ReadonlyArray<TrendDay>): Reado
     dataMap.set(row.date, row)
   }
 
-  const startMs = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime()
-  const endMs = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime()
-  const dayMs = 86_400_000
-  const totalDays = Math.floor((endMs - startMs) / dayMs) + 1
+  // Use calendar day arithmetic to avoid DST off-by-one
+  const sy = start.getFullYear()
+  const sm = start.getMonth()
+  const sd = start.getDate()
+  const totalDays = Math.round((Date.UTC(end.getFullYear(), end.getMonth(), end.getDate()) - Date.UTC(sy, sm, sd)) / 86_400_000) + 1
 
   const filled: TrendDay[] = []
   for (let i = 0; i < totalDays; i++) {
-    const d = new Date(startMs + i * dayMs)
+    const d = new Date(sy, sm, sd + i)
     const key = formatDate(d)
     const existing = dataMap.get(key)
     if (existing !== undefined) {
