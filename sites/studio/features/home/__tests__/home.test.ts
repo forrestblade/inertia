@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { renderHome } from '../templates/home.js'
-import { HERO, PILLARS } from '../config/home-content.js'
+import { HERO, PILLARS, COMPARISON_TABLE } from '../config/home-content.js'
 import { HOME_COPY_MAP } from '../config/home-copy-map.js'
 
 describe('renderHome', () => {
@@ -276,6 +276,113 @@ describe('renderHome comparison CTA', () => {
     const html = renderHome()
     expect(html).toContain('Curious what your current site is costing you?')
     expect(html).toContain('No email required.')
+  })
+})
+
+describe('renderHome mobile comparison tabs', () => {
+  it('renders mobile-comparison container', () => {
+    const html = renderHome()
+    expect(html).toContain('mobile-comparison')
+  })
+
+  it('desktop comp-table still exists alongside mobile view', () => {
+    const html = renderHome()
+    expect(html).toContain('comp-table')
+    expect(html).toContain('mobile-comparison')
+  })
+
+  it('renders 3 tab buttons with correct labels', () => {
+    const html = renderHome()
+    const tabBar = html.match(/class="mobile-tabs">([\s\S]*?)<\/div>/)
+    expect(tabBar).not.toBeNull()
+    expect(tabBar![1]).toContain('Inertia')
+    expect(tabBar![1]).toContain('Wix')
+    expect(tabBar![1]).toContain('Agency')
+  })
+
+  it('tab buttons are button elements with data-tab attributes', () => {
+    const html = renderHome()
+    expect(html).toContain('data-tab="inertia"')
+    expect(html).toContain('data-tab="wix"')
+    expect(html).toContain('data-tab="agency"')
+    const tabBar = html.match(/class="mobile-tabs">([\s\S]*?)<\/div>/)!
+    const buttonCount = (tabBar[1].match(/<button/g) || []).length
+    expect(buttonCount).toBe(3)
+  })
+
+  it('Inertia tab is active by default', () => {
+    const html = renderHome()
+    const inertiaTab = html.match(/<button[^>]*data-tab="inertia"[^>]*>/)
+    expect(inertiaTab).not.toBeNull()
+    expect(inertiaTab![0]).toContain('active')
+  })
+
+  it('renders 3 panels with data-panel attributes', () => {
+    const html = renderHome()
+    expect(html).toContain('data-panel="inertia"')
+    expect(html).toContain('data-panel="wix"')
+    expect(html).toContain('data-panel="agency"')
+  })
+
+  it('Inertia panel is active by default', () => {
+    const html = renderHome()
+    const inertiaPanel = html.match(/<div[^>]*data-panel="inertia"[^>]*>/)
+    expect(inertiaPanel).not.toBeNull()
+    expect(inertiaPanel![0]).toContain('active')
+  })
+
+  it('wix and agency panels are not active by default', () => {
+    const html = renderHome()
+    const wixPanel = html.match(/<div[^>]*data-panel="wix"[^>]*>/)
+    const agencyPanel = html.match(/<div[^>]*data-panel="agency"[^>]*>/)
+    expect(wixPanel).not.toBeNull()
+    expect(agencyPanel).not.toBeNull()
+    expect(wixPanel![0]).not.toContain('active')
+    expect(agencyPanel![0]).not.toContain('active')
+  })
+
+  it('each panel has 8 feature rows', () => {
+    const html = renderHome()
+    for (const panel of ['inertia', 'wix', 'agency']) {
+      // Extract panel content between data-panel="X" and the next data-panel or closing mobile-comparison
+      const panelStart = html.indexOf(`data-panel="${panel}"`)
+      expect(panelStart).toBeGreaterThan(-1)
+      const nextPanel = html.indexOf('data-panel=', panelStart + 1)
+      const panelEnd = nextPanel > -1 ? nextPanel : html.indexOf('</div>', panelStart + 200)
+      const panelContent = html.substring(panelStart, panelEnd)
+      const rowCount = (panelContent.match(/mobile-row"/g) || []).length
+      expect(rowCount).toBe(8)
+    }
+  })
+
+  it('feature rows contain labels from comparison data', () => {
+    const html = renderHome()
+    const mobileStart = html.indexOf('mobile-comparison')
+    const mobileSection = html.substring(mobileStart)
+    for (const row of COMPARISON_TABLE.rows) {
+      expect(mobileSection).toContain(row.feature)
+    }
+  })
+
+  it('mobile rows contain status indicators with marker classes', () => {
+    const html = renderHome()
+    const mobileStart = html.indexOf('mobile-comparison')
+    const mobileSection = html.substring(mobileStart)
+    expect(mobileSection).toContain('class="check"')
+    expect(mobileSection).toContain('class="cross"')
+    expect(mobileSection).toContain('class="warn"')
+  })
+
+  it('mobile rows contain value text from each competitor', () => {
+    const html = renderHome()
+    const mobileStart = html.indexOf('mobile-comparison')
+    const mobileSection = html.substring(mobileStart)
+    // Inertia values
+    expect(mobileSection).toContain('Full source code handover')
+    // Wix values
+    expect(mobileSection).toContain('Locked in their platform')
+    // Agency values
+    expect(mobileSection).toContain('Usually retained by agency')
   })
 })
 
