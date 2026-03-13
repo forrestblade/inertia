@@ -2,7 +2,7 @@ import { HUD_COLORS, HUD_TYPOGRAPHY, HUD_SPACING } from '../tokens/hud-tokens.js
 import type { HudPeriod } from '../types.js'
 
 const PERIODS: ReadonlyArray<{ value: HudPeriod; label: string }> = [
-  { value: 'TODAY', label: 'Today' },
+  { value: 'TODAY', label: '24h' },
   { value: '7D', label: '7d' },
   { value: '30D', label: '30d' },
   { value: '90D', label: '90d' }
@@ -73,7 +73,7 @@ export class HudTimeRange extends HTMLElement {
   }
 
   private updateActive (): void {
-    const current = this.getAttribute('period') ?? '7D'
+    const current = this.getAttribute('period') ?? 'TODAY'
     for (const btn of this.buttons) {
       const isActive = btn.dataset.period === current
       btn.style.backgroundColor = isActive ? HUD_COLORS.accent : 'transparent'

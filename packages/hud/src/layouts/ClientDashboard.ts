@@ -54,7 +54,7 @@ export class ClientDashboard extends HTMLElement {
     title.textContent = 'INERTIA HUD'
 
     const timerange = document.createElement('hud-timerange')
-    timerange.setAttribute('period', '7D')
+    timerange.setAttribute('period', 'TODAY')
 
     header.appendChild(title)
     header.appendChild(timerange)
@@ -159,7 +159,7 @@ export class ClientDashboard extends HTMLElement {
     this._siteParam = readSiteParam()
 
     // Initial data fetch
-    this.refreshData('7D')
+    this.refreshData('TODAY')
   }
 
   disconnectedCallback (): void {

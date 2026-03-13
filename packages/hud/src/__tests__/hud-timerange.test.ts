@@ -40,7 +40,7 @@ describe('HudTimeRange', () => {
     const el = attach(createElement())
     const buttons = el.querySelectorAll('button')
     const labels = Array.from(buttons).map(b => b.textContent)
-    expect(labels).toEqual(['Today', '7d', '30d', '90d'])
+    expect(labels).toEqual(['24h', '7d', '30d', '90d'])
   })
 
   it('sets active state from period attribute', () => {
@@ -50,10 +50,10 @@ describe('HudTimeRange', () => {
     expect(active?.style.backgroundColor).not.toBe('transparent')
   })
 
-  it('defaults to 7D active', () => {
+  it('defaults to TODAY active', () => {
     const el = attach(createElement())
     const buttons = el.querySelectorAll('button')
-    const active = Array.from(buttons).find(b => b.dataset.period === '7D')
+    const active = Array.from(buttons).find(b => b.dataset.period === 'TODAY')
     expect(active?.style.backgroundColor).not.toBe('transparent')
   })
 

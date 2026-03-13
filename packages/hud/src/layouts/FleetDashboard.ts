@@ -3,7 +3,7 @@ import { fetchFleetSites, fetchFleetAggregates, fetchFleetAlerts } from '../data
 import { formatNumber } from '../data/format-number.js'
 
 const PERIOD_LABELS: Record<string, string> = {
-  TODAY: 'today',
+  TODAY: '24h',
   '7D': '7 days',
   '30D': '30 days',
   '90D': '90 days'
@@ -55,7 +55,7 @@ export class FleetDashboard extends HTMLElement {
     title.textContent = 'FLEET OVERVIEW'
 
     const timerange = document.createElement('hud-timerange')
-    timerange.setAttribute('period', '7D')
+    timerange.setAttribute('period', 'TODAY')
 
     header.appendChild(title)
     header.appendChild(timerange)
@@ -92,14 +92,14 @@ export class FleetDashboard extends HTMLElement {
     sessionsPanel.setAttribute('label', 'Sessions')
     const sessionsMetric = document.createElement('hud-metric')
     sessionsMetric.setAttribute('value', '--')
-    sessionsMetric.setAttribute('label', '7 days')
+    sessionsMetric.setAttribute('label', '24h')
     sessionsPanel.appendChild(sessionsMetric)
 
     const conversionsPanel = document.createElement('hud-panel')
     conversionsPanel.setAttribute('label', 'Conversions')
     const conversionsMetric = document.createElement('hud-metric')
     conversionsMetric.setAttribute('value', '--')
-    conversionsMetric.setAttribute('label', '7 days')
+    conversionsMetric.setAttribute('label', '24h')
     conversionsPanel.appendChild(conversionsMetric)
 
     grid.appendChild(totalPanel)
@@ -194,7 +194,7 @@ export class FleetDashboard extends HTMLElement {
     this.addEventListener('hud-period-change', this._periodChangeHandler)
 
     // Fetch data
-    this.refreshData('7D')
+    this.refreshData('TODAY')
   }
 
   disconnectedCallback (): void {
