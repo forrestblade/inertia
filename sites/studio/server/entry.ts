@@ -1,6 +1,7 @@
 import { createServer } from 'node:http'
-import { join } from 'node:path'
+import { join, dirname } from 'node:path'
 import { mkdir, writeFile } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
 import { createPool, closePool, loadMigrations, runMigrations } from '@inertia/db'
 import type { DbPool } from '@inertia/db'
 import { loadConfig } from './config.js'
@@ -24,8 +25,11 @@ async function boot (): Promise<void> {
   // Init DB pool
   pool = createPool(config.db)
 
-  // Run migrations — import.meta.dirname = sites/studio/server
-  const studioRoot = join(import.meta.dirname, '..')
+  // Resolve studio root — works from both server/ (dev) and dist/server/ (prod)
+  let studioRoot = import.meta.dirname
+  while (!existsSync(join(studioRoot, 'package.json'))) {
+    studioRoot = dirname(studioRoot)
+  }
   const monorepoRoot = join(studioRoot, '..', '..')
   const migrationsDir = join(monorepoRoot, 'packages', 'db', 'migrations')
   const migrationsResult = await loadMigrations(migrationsDir)

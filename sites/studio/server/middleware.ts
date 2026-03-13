@@ -1,8 +1,14 @@
 import { readFile } from 'node:fs/promises'
-import { join, extname } from 'node:path'
+import { existsSync } from 'node:fs'
+import { join, dirname, extname } from 'node:path'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
-const STATIC_ROOT = join(import.meta.dirname, '..', 'public')
+// Resolve studio root — works from both server/ (dev) and dist/server/ (prod)
+let packageRoot = import.meta.dirname
+while (!existsSync(join(packageRoot, 'package.json'))) {
+  packageRoot = dirname(packageRoot)
+}
+const STATIC_ROOT = join(packageRoot, 'public')
 
 const MIME_MAP: Record<string, string> = {
   '.html': 'text/html',
