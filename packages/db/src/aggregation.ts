@@ -93,7 +93,7 @@ export function aggregateConversionSummary (
           AND e2.created_at < ${period.end}
       ) sub ON true
       WHERE e.created_at >= ${period.start} AND e.created_at < ${period.end}
-        AND e.event_category IN ('INTENT_CALL', 'INTENT_BOOK', 'INTENT_NAVIGATE')
+        AND e.event_category IN ('INTENT_CALL', 'INTENT_BOOK', 'LEAD_PHONE', 'LEAD_EMAIL', 'LEAD_FORM')
       GROUP BY e.event_category
       ON CONFLICT (period_start, period_end, intent_type) DO UPDATE SET
         total_count = EXCLUDED.total_count,

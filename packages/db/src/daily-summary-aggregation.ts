@@ -65,7 +65,7 @@ function queryConversionCount (pool: DbPool, start: Date, end: Date): Promise<nu
     SELECT COALESCE(SUM(total_count), 0)::int AS conversion_count
     FROM event_summaries
     WHERE period_start >= ${start} AND period_end <= ${end}
-      AND event_category IN ('INTENT_LEAD', 'INTENT_CALL', 'INTENT_BOOK')
+      AND event_category IN ('INTENT_LEAD', 'INTENT_CALL', 'INTENT_BOOK', 'LEAD_PHONE', 'LEAD_EMAIL', 'LEAD_FORM')
   `.then((rows) => rows[0]?.conversion_count ?? 0)
 }
 
