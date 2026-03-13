@@ -12,6 +12,23 @@ const LEAD_ACTION_LABELS: Record<string, string> = {
   LEAD_FORM: 'Form'
 }
 
+function toCsvRow (values: ReadonlyArray<string | number | null>): string {
+  return values.map(v => {
+    const s = v === null ? '' : String(v)
+    return s.includes(',') ? `"${s}"` : s
+  }).join(',')
+}
+
+function downloadCsv (filename: string, content: string): void {
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 function readSiteParam (): string {
   const params = new URLSearchParams(window.location.search)
   return params.get('site') ?? ''
@@ -30,6 +47,11 @@ export class ClientDashboard extends HTMLElement {
   private _gridEl: HTMLElement | null = null
   private _bottomGridEl: HTMLElement | null = null
   private _resizeHandler: (() => void) | null = null
+  private _currentPeriod: HudPeriod = 'TODAY'
+  private _lastTrend: ReadonlyArray<{ date: string; session_count: number | null; pageview_count: number | null; conversion_count: number | null }> = []
+  private _lastPages: ReadonlyArray<{ path: string; count: number }> = []
+  private _lastSources: ReadonlyArray<{ category: string; count: number; percent: number }> = []
+  private _lastActions: ReadonlyArray<{ action: string; count: number }> = []
 
   connectedCallback (): void {
     if (this._initialized) return
@@ -56,8 +78,21 @@ export class ClientDashboard extends HTMLElement {
     const timerange = document.createElement('hud-timerange')
     timerange.setAttribute('period', 'TODAY')
 
+    const exportBtn = document.createElement('button')
+    exportBtn.textContent = 'Export CSV'
+    exportBtn.style.cssText = `background:${HUD_COLORS.accent};color:${HUD_COLORS.bg};border:none;border-radius:4px;padding:${HUD_SPACING.xs} ${HUD_SPACING.sm};font-size:${HUD_TYPOGRAPHY.scale.sm};cursor:pointer;font-family:${HUD_TYPOGRAPHY.fontPrimary}`
+    exportBtn.addEventListener('click', () => this._exportCsv())
+
+    const headerRight = document.createElement('div')
+    headerRight.style.display = 'flex'
+    headerRight.style.alignItems = 'center'
+    headerRight.style.gap = HUD_SPACING.sm
+
+    headerRight.appendChild(exportBtn)
+    headerRight.appendChild(timerange)
+
     header.appendChild(title)
-    header.appendChild(timerange)
+    header.appendChild(headerRight)
 
     // Grid layout
     const grid = document.createElement('div')
@@ -192,7 +227,46 @@ export class ClientDashboard extends HTMLElement {
     }
   }
 
+  private _exportCsv (): void {
+    const lines: string[] = []
+
+    // Trend section
+    lines.push('# Daily Trend')
+    lines.push(toCsvRow(['Date', 'Sessions', 'Pageviews', 'Conversions']))
+    for (const d of this._lastTrend) {
+      lines.push(toCsvRow([d.date, d.session_count, d.pageview_count, d.conversion_count]))
+    }
+
+    // Top pages
+    lines.push('')
+    lines.push('# Top Pages')
+    lines.push(toCsvRow(['Page', 'Views']))
+    for (const p of this._lastPages) {
+      lines.push(toCsvRow([p.path, p.count]))
+    }
+
+    // Traffic sources
+    lines.push('')
+    lines.push('# Traffic Sources')
+    lines.push(toCsvRow(['Source', 'Count', 'Percent']))
+    for (const s of this._lastSources) {
+      lines.push(toCsvRow([s.category, s.count, s.percent]))
+    }
+
+    // Lead actions
+    lines.push('')
+    lines.push('# Lead Actions')
+    lines.push(toCsvRow(['Action', 'Count']))
+    for (const a of this._lastActions) {
+      lines.push(toCsvRow([LEAD_ACTION_LABELS[a.action] ?? a.action, a.count]))
+    }
+
+    const date = new Date().toISOString().split('T')[0]
+    downloadCsv(`inertia-hud-${this._currentPeriod.toLowerCase()}-${date}.csv`, lines.join('\n'))
+  }
+
   private refreshData (period: HudPeriod): void {
+    this._currentPeriod = period
     const site = this._siteParam || undefined
 
     fetchSessionSummary('', period, site).match(
@@ -217,6 +291,7 @@ export class ClientDashboard extends HTMLElement {
     fetchTopPages('', period, site).match(
       (data) => {
         if (this._topPagesTable && Array.isArray(data.pages)) {
+          this._lastPages = data.pages
           this._topPagesTable.setAttribute('rows', JSON.stringify(data.pages))
         }
       },
@@ -226,6 +301,7 @@ export class ClientDashboard extends HTMLElement {
     fetchTrafficSources('', period, site).match(
       (data) => {
         if (this._sourcesPanel && Array.isArray(data.sources)) {
+          this._lastSources = data.sources
           this._updateBars(this._sourcesPanel, data.sources.map(s => ({
             label: s.category,
             value: String(s.count),
@@ -239,6 +315,7 @@ export class ClientDashboard extends HTMLElement {
     fetchLeadActions('', period, site).match(
       (data) => {
         if (this._actionsPanel && Array.isArray(data.actions)) {
+          this._lastActions = data.actions
           const total = data.actions.reduce((sum, x) => sum + x.count, 0)
           this._updateBars(this._actionsPanel, data.actions.map(a => ({
             label: LEAD_ACTION_LABELS[a.action] ?? a.action,
@@ -253,6 +330,7 @@ export class ClientDashboard extends HTMLElement {
     fetchTrendData('', period, site).match(
       (data) => {
         if (!Array.isArray(data.days)) return
+        this._lastTrend = data.days
 
         const sessionCsv = data.days.map(d => d.session_count ?? 0).join(',')
         if (this._visitorsMetric) {
