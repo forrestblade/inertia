@@ -202,6 +202,19 @@ describe('ClientDashboard data fetching', () => {
           top_sources: [{ referrer: 'google', count: 15 }]
         }))
       }
+      if (url.includes('/api/summaries/trend')) {
+        return new Response(JSON.stringify({
+          days: [
+            { date: '2026-03-01', session_count: 20, pageview_count: 40, conversion_count: 3 },
+            { date: '2026-03-02', session_count: 22, pageview_count: 44, conversion_count: 5 },
+            { date: '2026-03-03', session_count: 18, pageview_count: 36, conversion_count: 2 },
+            { date: '2026-03-04', session_count: 25, pageview_count: 50, conversion_count: 4 },
+            { date: '2026-03-05', session_count: 19, pageview_count: 38, conversion_count: 3 },
+            { date: '2026-03-06', session_count: 21, pageview_count: 42, conversion_count: 3 },
+            { date: '2026-03-07', session_count: 17, pageview_count: 34, conversion_count: 3 }
+          ]
+        }))
+      }
       return new Response('{}')
     })
   }

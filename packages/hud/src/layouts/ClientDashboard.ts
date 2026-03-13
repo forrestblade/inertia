@@ -205,11 +205,7 @@ export class ClientDashboard extends HTMLElement {
     )
 
     fetchEventSummary('', period, site).match(
-      (data) => {
-        if (this._leadsMetric && typeof data.total_count === 'number') {
-          this._leadsMetric.setAttribute('value', formatNumber(data.total_count))
-        }
-      },
+      () => {},
       () => {} // Hold placeholders on error
     )
 
@@ -263,19 +259,30 @@ export class ClientDashboard extends HTMLElement {
           this._visitorsMetric.setAttribute('sparkline-data', sessionCsv)
         }
 
-        const conversionCsv = data.days.map(d => d.conversion_count ?? 0).join(',')
+        const conversionValues = data.days.map(d => d.conversion_count ?? 0)
+        const conversionCsv = conversionValues.join(',')
+        const conversionTotal = conversionValues.reduce((s, v) => s + v, 0)
         if (this._leadsMetric) {
+          this._leadsMetric.setAttribute('value', formatNumber(conversionTotal))
           this._leadsMetric.setAttribute('sparkline-data', conversionCsv)
         }
 
         if (data.days.length >= 2) {
           const mid = Math.floor(data.days.length / 2)
-          const currentSum = data.days.slice(mid).reduce((s, d) => s + (d.session_count ?? 0), 0)
-          const priorSum = data.days.slice(0, mid).reduce((s, d) => s + (d.session_count ?? 0), 0)
-          const delta = formatDelta(currentSum, priorSum)
+          const currentSessions = data.days.slice(mid).reduce((s, d) => s + (d.session_count ?? 0), 0)
+          const priorSessions = data.days.slice(0, mid).reduce((s, d) => s + (d.session_count ?? 0), 0)
+          const sessionDelta = formatDelta(currentSessions, priorSessions)
           if (this._visitorsMetric) {
-            this._visitorsMetric.setAttribute('delta', delta.value)
-            this._visitorsMetric.setAttribute('delta-direction', delta.direction)
+            this._visitorsMetric.setAttribute('delta', sessionDelta.value)
+            this._visitorsMetric.setAttribute('delta-direction', sessionDelta.direction)
+          }
+
+          const currentLeads = data.days.slice(mid).reduce((s, d) => s + (d.conversion_count ?? 0), 0)
+          const priorLeads = data.days.slice(0, mid).reduce((s, d) => s + (d.conversion_count ?? 0), 0)
+          const leadDelta = formatDelta(currentLeads, priorLeads)
+          if (this._leadsMetric) {
+            this._leadsMetric.setAttribute('delta', leadDelta.value)
+            this._leadsMetric.setAttribute('delta-direction', leadDelta.direction)
           }
         }
       },
