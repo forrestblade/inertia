@@ -58,7 +58,7 @@ export function renderAbout (): string {
       <textarea id="message" name="message" class="form-textarea" required></textarea>
     </div>
 
-    <button type="submit" class="btn btn-primary" data-telemetry-type="CLICK" data-telemetry-target="contact-submit">Send Message</button>
+    <button type="submit" class="btn btn-primary" data-telemetry-type="INTENT_LEAD" data-telemetry-target="LEAD_FORM">Send Message</button>
   </form>
 
   <div class="contact-info">

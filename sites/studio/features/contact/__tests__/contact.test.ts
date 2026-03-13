@@ -43,7 +43,7 @@ describe('renderContactForm', () => {
   it('has telemetry attributes', () => {
     const html = renderContactForm()
     expect(html).toContain('data-telemetry-target="contact-form"')
-    expect(html).toContain('data-telemetry-target="contact-submit"')
+    expect(html).toContain('data-telemetry-target="LEAD_FORM"')
   })
 })
 

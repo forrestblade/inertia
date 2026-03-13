@@ -52,7 +52,7 @@ export function renderContactForm (errors?: ContactValidationError, values?: Rec
       ${fieldError('message')}
     </div>
 
-    <button type="submit" class="btn btn-primary" data-telemetry-type="CLICK" data-telemetry-target="contact-submit">Send Message</button>
+    <button type="submit" class="btn btn-primary" data-telemetry-type="INTENT_LEAD" data-telemetry-target="LEAD_FORM">Send Message</button>
   </form>
 
   <div class="contact-info">
