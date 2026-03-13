@@ -137,3 +137,47 @@ describe('renderHome hero CTA links to new routes', () => {
     expect(html).not.toContain('href="/principles"')
   })
 })
+
+describe('renderHome halftone hero', () => {
+  it('hero contains halftone SVG element', () => {
+    const html = renderHome()
+    expect(html).toContain('class="hero-halftone"')
+  })
+
+  it('halftone SVG contains organic dot pattern', () => {
+    const html = renderHome()
+    expect(html).toContain('id="ht-organic"')
+    expect(html).toContain('patternTransform="rotate(30)"')
+  })
+
+  it('halftone SVG contains grain pattern for depth', () => {
+    const html = renderHome()
+    expect(html).toContain('id="ht-grain"')
+    expect(html).toContain('patternTransform="rotate(-15)"')
+  })
+
+  it('halftone SVG contains diagonal fade mask', () => {
+    const html = renderHome()
+    expect(html).toContain('id="diag-fade"')
+    expect(html).toContain('id="fade-mask"')
+  })
+
+  it('halftone uses design token for dot color', () => {
+    const html = renderHome()
+    expect(html).toContain('fill="var(--primary)"')
+    expect(html).not.toMatch(/fill="white"/)
+  })
+
+  it('halftone SVG appears before hero content', () => {
+    const html = renderHome()
+    const halftonePos = html.indexOf('hero-halftone')
+    const headlinePos = html.indexOf(HERO.headline)
+    expect(halftonePos).toBeGreaterThan(-1)
+    expect(halftonePos).toBeLessThan(headlinePos)
+  })
+
+  it('halftone is non-interactive (pointer-events: none via CSS class)', () => {
+    const html = renderHome()
+    expect(html).toContain('hero-halftone')
+  })
+})
