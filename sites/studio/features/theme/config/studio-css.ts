@@ -131,8 +131,13 @@ nav {
   left: 0;
   right: 0;
   z-index: 100;
+  background: transparent;
+  border-bottom: 1px solid transparent;
+  transition: background 0.3s, border-color 0.3s;
+}
+nav.nav-scrolled {
   background: var(--background);
-  border-bottom: 1px solid var(--border);
+  border-bottom-color: var(--border);
 }
 .nav-inner {
   max-width: ${SPACING.grid.maxWidth};

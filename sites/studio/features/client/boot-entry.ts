@@ -8,6 +8,22 @@ import '../glass-box/components/GlassBoxInspector.js'
 import './components/CacheIndicator.js'
 import './components/SpeedShowcase.js'
 
+function initNavScroll (): void {
+  const nav = document.querySelector('nav') as HTMLElement | null
+  if (!nav) return
+
+  function update (): void {
+    if (window.scrollY > 20) {
+      nav!.classList.add('nav-scrolled')
+    } else {
+      nav!.classList.remove('nav-scrolled')
+    }
+  }
+
+  window.addEventListener('scroll', update, { passive: true })
+  update()
+}
+
 function initHamburgerNav (): void {
   const btn = document.querySelector('.nav-hamburger') as HTMLElement | null
   const links = document.querySelector('.nav-links') as HTMLElement | null
@@ -75,6 +91,7 @@ function initAuditForm (): void {
 function boot (): void {
   bootTelemetry()
   initNavActive()
+  initNavScroll()
   initHamburgerNav()
   initAuditForm()
 
