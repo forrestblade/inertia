@@ -14,7 +14,7 @@ Deterministic web framework applying JSF aerospace coding standards to TypeScrip
 - Analytics: Self-hosted first-party telemetry engine (ring buffer → ingestion → PostgreSQL → HUD)
 - Linting: Neostandard
 - Validation: Zod (`.safeParse()` only, never `.parse()`)
-- Error handling: `neverthrow` (Result monads)
+- Error handling: `@inertia/neverthrow` (vendored Result monads, originally neverthrow v8.2.0)
 - Package manager: pnpm workspaces (monorepo)
 
 ## The Four Pillars (Non-Negotiable)
@@ -70,6 +70,7 @@ inertia/
 │   ├── tokens/         # Design token engine (OKLCh)
 │   ├── ingestion/      # Server-side monadic pipeline + aggregation endpoint
 │   ├── db/             # PostgreSQL schema, migrations, RBAC, daily summaries, push client
+│   ├── neverthrow/     # Vendored neverthrow v8.2.0 (Result monads, MIT)
 │   └── hud/            # Analytics dashboard (client HUD + fleet dashboard)
 ├── sites/
 │   └── studio/         # Studio website (first Inertia deployment)
