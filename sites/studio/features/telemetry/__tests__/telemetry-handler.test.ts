@@ -16,7 +16,7 @@ describe('createPersistFn', () => {
 
     const { createPersistFn } = await import('../server/telemetry-handler.js')
     const pool = {} as import('@inertia/db').DbPool
-    const persist = createPersistFn(pool, 'test-session')
+    const persist = createPersistFn(pool, 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')
     const result = await persist({ intents: [], schema_version: 1 } as import('@inertia/ingestion').ValidatedTelemetryPayload)
 
     expect(result.isErr()).toBe(true)
@@ -34,7 +34,7 @@ describe('createPersistFn', () => {
 
     const { createPersistFn } = await import('../server/telemetry-handler.js')
     const pool = {} as import('@inertia/db').DbPool
-    const persist = createPersistFn(pool, 'test-session')
+    const persist = createPersistFn(pool, 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee')
     const result = await persist({ intents: [], schema_version: 1 } as import('@inertia/ingestion').ValidatedTelemetryPayload)
 
     expect(result.isOk()).toBe(true)
