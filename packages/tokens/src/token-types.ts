@@ -19,12 +19,14 @@ export interface ColorSet {
   readonly popover: string
   readonly 'popover-foreground': string
   readonly primary: string
+  readonly 'primary-text': string
   readonly 'primary-foreground': string
   readonly secondary: string
   readonly 'secondary-foreground': string
   readonly muted: string
   readonly 'muted-foreground': string
   readonly accent: string
+  readonly 'accent-text': string
   readonly 'accent-foreground': string
   readonly destructive: string
   readonly 'destructive-foreground': string

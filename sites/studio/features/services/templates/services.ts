@@ -19,7 +19,7 @@ export function renderServices (): string {
     return `
     <div class="card service-tier" data-telemetry-type="VIEWPORT_INTERSECT" data-telemetry-target="tier-${tier.id}">
       <h3>${tier.name}</h3>
-      <p class="tier-estimate" style="font-size:1.25rem;font-weight:600;color:var(--accent);margin-block:0.5rem">${tier.estimate}</p>
+      <p class="tier-estimate" style="font-size:1.25rem;font-weight:600;color:var(--accent-text);margin-block:0.5rem">${tier.estimate}</p>
       <p>${tier.description}</p>
       <ul>${items}</ul>
     </div>`

@@ -199,7 +199,7 @@ footer {
   font-size: ${TYPOGRAPHY.scale.xs};
 }
 .footer-hardware a {
-  color: hsl(215, 60%, 55%);
+  color: var(--primary-text);
   text-decoration: underline;
   margin-left: ${SPACING.scale[2]};
 }
@@ -656,7 +656,7 @@ footer {
   border-top: 1px solid var(--border);
 }
 .contact-info a {
-  color: var(--primary);
+  color: var(--primary-text);
   text-decoration: none;
   font-weight: ${TYPOGRAPHY.fontWeight.medium};
 }
@@ -803,8 +803,8 @@ footer {
 .principle-number {
   font-family: var(--font-mono);
   font-size: 2.4rem;
-  color: var(--primary);
-  opacity: 0.4;
+  color: var(--primary-text);
+  opacity: 0.7;
   line-height: 1;
 }
 .principle-section h2 {
@@ -846,7 +846,7 @@ footer {
   padding: 1rem;
 }
 .principle-benefit h3 {
-  color: var(--primary);
+  color: var(--primary-text);
 }
 
 /* Audit loading */

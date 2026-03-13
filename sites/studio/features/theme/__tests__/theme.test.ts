@@ -361,10 +361,9 @@ describe('a11y contrast compliance', () => {
     expect(ratio).toBeGreaterThanOrEqual(4.5)
   })
 
-  it('footer link color meets WCAG AA 4.5:1 on dark background', () => {
+  it('footer link color uses primary-text token for WCAG AA contrast', () => {
     const css = getStudioCSS()
-    // Footer link should use a color with sufficient contrast on dark body bg
-    expect(css).toMatch(/\.footer-hardware a\s*\{[^}]*color:\s*hsl\(215,\s*60%,\s*5[5-9]%\)/)
+    expect(css).toMatch(/\.footer-hardware a\s*\{[^}]*color:\s*var\(--primary-text\)/)
   })
 
   it('footer link has text-decoration underline by default (not hover-only)', () => {
