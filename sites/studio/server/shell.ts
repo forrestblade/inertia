@@ -1,6 +1,13 @@
 // Boot timestamp for cache busting — changes each server restart
 export const BOOT_VERSION = Date.now().toString(36)
 
+import {
+  HALFTONE_VIEWBOX,
+  ORGANIC_PATTERN,
+  GRAIN_PATTERN,
+  FADE_GRADIENT
+} from '../features/theme/config/halftone-config.js'
+
 export interface ShellOptions {
   readonly title: string
   readonly description: string
@@ -18,6 +25,30 @@ const NAV_LINKS: ReadonlyArray<{ readonly href: string; readonly label: string }
 ]
 
 const NAV_CTA = { href: '/free-site-audit', label: 'Free Site Audit' } as const
+
+function renderPattern (p: typeof ORGANIC_PATTERN | typeof GRAIN_PATTERN): string {
+  const dots = p.dots.map(d =>
+    `<circle cx="${d.cx}" cy="${d.cy}" r="${d.r}" fill="var(--primary)"/>`
+  ).join('')
+  return `<pattern id="${p.id}" width="${p.cellSize}" height="${p.cellSize}" patternUnits="userSpaceOnUse" patternTransform="rotate(${p.rotation})">${dots}</pattern>`
+}
+
+function renderHalftone (): string {
+  const stops = FADE_GRADIENT.stops.map(s =>
+    `<stop offset="${s.offset}" stop-color="white" stop-opacity="${s.opacity}"/>`
+  ).join('')
+
+  return `<svg class="site-halftone" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin slice" viewBox="${HALFTONE_VIEWBOX}">
+    <defs>
+      <linearGradient id="${FADE_GRADIENT.id}" x1="0" y1="0" x2="0.45" y2="0.45">${stops}</linearGradient>
+      ${renderPattern(ORGANIC_PATTERN)}
+      ${renderPattern(GRAIN_PATTERN)}
+      <mask id="fade-mask"><rect width="100%" height="100%" fill="url(#${FADE_GRADIENT.id})"/></mask>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#${ORGANIC_PATTERN.id})" mask="url(#fade-mask)" opacity="${ORGANIC_PATTERN.opacity}"/>
+    <rect width="100%" height="100%" fill="url(#${GRAIN_PATTERN.id})" mask="url(#fade-mask)" opacity="${GRAIN_PATTERN.opacity}"/>
+  </svg>`
+}
 
 function renderNav (currentPath: string): string {
   const links = NAV_LINKS.map((link) => {
@@ -112,6 +143,7 @@ export function renderShell (options: ShellOptions): string {
   <header>
     ${renderNav(options.currentPath)}
   </header>
+  ${renderHalftone()}
   <main id="main-content">
     ${options.mainContent}
   </main>

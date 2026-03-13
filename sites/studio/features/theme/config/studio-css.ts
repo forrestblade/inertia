@@ -80,7 +80,18 @@ body {
   background: var(--background);
   color: var(--foreground);
 }
-main { flex: 1; }
+main { flex: 1; position: relative; z-index: 1; }
+footer { position: relative; z-index: 1; }
+
+/* Site-wide halftone texture — fixed behind all content, persists across navigations */
+.site-halftone {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  width: 100%;
+  height: 100%;
+}
 
 /* Studio layout utilities */
 .container {
@@ -192,17 +203,7 @@ footer {
   justify-content: center;
   text-align: center;
 }
-.hero-halftone {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  width: 100%;
-  height: 100%;
-}
 .hero-content {
-  position: relative;
-  z-index: 2;
   max-width: 740px;
   padding: ${SPACING.scale[8]};
 }

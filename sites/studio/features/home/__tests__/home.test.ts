@@ -138,46 +138,15 @@ describe('renderHome hero CTA links to new routes', () => {
   })
 })
 
-describe('renderHome halftone hero', () => {
-  it('hero contains halftone SVG element', () => {
+describe('renderHome hero (halftone moved to shell)', () => {
+  it('hero does NOT contain inline halftone SVG (now in shell)', () => {
     const html = renderHome()
-    expect(html).toContain('class="hero-halftone"')
+    expect(html).not.toContain('hero-halftone')
+    expect(html).not.toContain('site-halftone')
   })
 
-  it('halftone SVG contains organic dot pattern', () => {
+  it('hero still wraps content in hero-content div', () => {
     const html = renderHome()
-    expect(html).toContain('id="ht-organic"')
-    expect(html).toContain('patternTransform="rotate(30)"')
-  })
-
-  it('halftone SVG contains grain pattern for depth', () => {
-    const html = renderHome()
-    expect(html).toContain('id="ht-grain"')
-    expect(html).toContain('patternTransform="rotate(-15)"')
-  })
-
-  it('halftone SVG contains diagonal fade mask', () => {
-    const html = renderHome()
-    expect(html).toContain('id="diag-fade"')
-    expect(html).toContain('id="fade-mask"')
-  })
-
-  it('halftone uses design token for dot color', () => {
-    const html = renderHome()
-    expect(html).toContain('fill="var(--primary)"')
-    expect(html).not.toMatch(/fill="white"/)
-  })
-
-  it('halftone SVG appears before hero content', () => {
-    const html = renderHome()
-    const halftonePos = html.indexOf('hero-halftone')
-    const headlinePos = html.indexOf(HERO.headline)
-    expect(halftonePos).toBeGreaterThan(-1)
-    expect(halftonePos).toBeLessThan(headlinePos)
-  })
-
-  it('halftone is non-interactive (pointer-events: none via CSS class)', () => {
-    const html = renderHome()
-    expect(html).toContain('hero-halftone')
+    expect(html).toContain('hero-content')
   })
 })

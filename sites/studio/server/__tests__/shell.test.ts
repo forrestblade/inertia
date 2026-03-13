@@ -213,6 +213,47 @@ describe('renderShell data-inertia-version', () => {
   })
 })
 
+describe('renderShell site-wide halftone', () => {
+  it('contains halftone SVG element with site-halftone class', () => {
+    const html = renderShell(defaultOptions)
+    expect(html).toContain('class="site-halftone"')
+  })
+
+  it('halftone SVG appears between header and main (outside swap zone)', () => {
+    const html = renderShell(defaultOptions)
+    const headerEnd = html.indexOf('</header>')
+    const halftonePos = html.indexOf('site-halftone')
+    const mainStart = html.indexOf('<main')
+    expect(halftonePos).toBeGreaterThan(headerEnd)
+    expect(halftonePos).toBeLessThan(mainStart)
+  })
+
+  it('halftone uses design token var(--primary) for dot color', () => {
+    const html = renderShell(defaultOptions)
+    const halftoneStart = html.indexOf('site-halftone')
+    const halftoneEnd = html.indexOf('</svg>', halftoneStart)
+    const halftoneSection = html.substring(halftoneStart, halftoneEnd)
+    expect(halftoneSection).toContain('fill="var(--primary)"')
+  })
+
+  it('halftone contains organic and grain patterns', () => {
+    const html = renderShell(defaultOptions)
+    expect(html).toContain('id="ht-organic"')
+    expect(html).toContain('id="ht-grain"')
+  })
+
+  it('halftone contains diagonal fade mask', () => {
+    const html = renderShell(defaultOptions)
+    expect(html).toContain('id="diag-fade"')
+    expect(html).toContain('id="fade-mask"')
+  })
+
+  it('halftone is non-interactive (pointer-events: none via CSS class)', () => {
+    const html = renderShell(defaultOptions)
+    expect(html).toContain('site-halftone')
+  })
+})
+
 describe('renderFragment', () => {
   it('returns just the main content', () => {
     const fragment = renderFragment('<h1>Hello</h1>')
