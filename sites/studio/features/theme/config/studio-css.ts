@@ -74,6 +74,7 @@ export function getStudioCSS (): string {
 /* Viewport flex layout */
 html { height: 100%; }
 body {
+  margin: 0;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
