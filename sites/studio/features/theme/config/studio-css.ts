@@ -81,7 +81,11 @@ body {
   background: var(--background);
   color: var(--foreground);
 }
-main { flex: 1; position: relative; z-index: 1; padding-top: ${SPACING.scale[12]}; }
+main { flex: 1; position: relative; z-index: 1; }
+main > .section:first-child { padding-top: calc(${SPACING.scale[12]} + ${SPACING.section.paddingYMobile}); }
+@media (min-width: 768px) {
+  main > .section:first-child { padding-top: calc(${SPACING.scale[12]} + ${SPACING.section.paddingY}); }
+}
 footer { position: relative; z-index: 1; }
 
 /* Site-wide halftone texture — fixed behind all content, persists across navigations */
