@@ -199,7 +199,7 @@ footer {
   font-size: ${TYPOGRAPHY.scale.xs};
 }
 .footer-hardware a {
-  color: var(--primary);
+  color: hsl(215, 60%, 55%);
   text-decoration: underline;
   margin-left: ${SPACING.scale[2]};
 }
@@ -886,5 +886,17 @@ footer {
 }
 `
 
-  return tokenCSS + studioCSS
+  return minifyCSS(tokenCSS + studioCSS)
+}
+
+function minifyCSS (css: string): string {
+  return css
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\n/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s*{\s*/g, '{')
+    .replace(/\s*}\s*/g, '}')
+    .replace(/;\s*/g, ';')
+    .replace(/;}/g, '}')
+    .trim()
 }
