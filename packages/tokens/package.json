@@ -15,7 +15,9 @@
   },
   "dependencies": {
     "zod": "^4.3.6",
-    "neverthrow": "^8.2.0",
+    "neverthrow": "^8.2.0"
+  },
+  "devDependencies": {
     "tailwind-variants": "^0.3.0",
     "tailwind-merge": "^3.0.0",
     "clsx": "^2.1.0",
