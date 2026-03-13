@@ -5,6 +5,8 @@ import { initNavActive } from './nav-active.js'
 // Side-effect imports: each calls customElements.define()
 import '../glass-box/components/GlassBoxStrip.js'
 import '../glass-box/components/GlassBoxInspector.js'
+import './components/CacheIndicator.js'
+import './components/SpeedShowcase.js'
 
 function initHamburgerNav (): void {
   const btn = document.querySelector('.nav-hamburger') as HTMLElement | null

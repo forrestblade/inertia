@@ -81,6 +81,7 @@ export function renderShell (options: ShellOptions): string {
   <script src="/js/boot.js?v=${BOOT_VERSION}" defer></script>
   <inertia-buffer-strip hardware-label="PI5"></inertia-buffer-strip>
   <inertia-telemetry-infobox></inertia-telemetry-infobox>
+  <inertia-cache-indicator data-inertia-persist id="cache-indicator"></inertia-cache-indicator>
 </body>
 </html>`
 }

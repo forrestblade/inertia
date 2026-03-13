@@ -65,6 +65,11 @@ export function renderHome (): string {
   </div>
 </section>
 
+<section class="section container speed-section">
+  <h2>Navigate between pages. Watch the difference.</h2>
+  <inertia-speed-showcase data-inertia-persist id="speed-showcase"></inertia-speed-showcase>
+</section>
+
 <section class="section container cta-section">
   <h2>Ready to own your web presence?</h2>
   <a href="/about#contact" class="btn btn-primary" data-telemetry-type="INTENT_NAVIGATE" data-telemetry-target="bottom-cta">Contact Us</a>
