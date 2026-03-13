@@ -230,7 +230,7 @@ describe('renderHome pain cards', () => {
     const html = renderHome()
     expect(html).toContain('You don\'t own your Wix site')
     expect(html).toContain('$60K/year and you still own nothing')
-    expect(html).toContain('When AWS goes down, your business stops')
+    expect(html).toContain('When AWS goes down, your website disappears')
     expect(html).toContain('Your server sits in your office')
   })
 

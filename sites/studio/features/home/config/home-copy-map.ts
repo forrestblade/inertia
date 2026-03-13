@@ -128,7 +128,7 @@ export const HOME_COPY_MAP: readonly CopyMapEntry[] = [
   },
   {
     id: 'pain-card-2-desc',
-    default: 'DFW agencies charge $5,000 - $9,000/month for managed digital presence. If you cancel, you lose the optimized pages, the email workflows, and the CRM integrations they built. You paid $60K and walk away empty-handed.',
+    default: 'DFW agencies charge $5,000 - $9,000/month for managed digital presence. If you cancel, you lose the website, the content, and the SEO rankings they built on their hosting. You paid $60K and walk away empty-handed.',
     technical: 'Managed service markup on trivial CMS edits. Client has no admin access. Code ownership retained by agency.'
   },
   {
@@ -138,12 +138,12 @@ export const HOME_COPY_MAP: readonly CopyMapEntry[] = [
   },
   {
     id: 'pain-card-3-title',
-    default: 'When AWS goes down, your business stops',
+    default: 'When AWS goes down, your website disappears',
     technical: 'Cloud SPOF: us-east-1 outage cascades to all tenants. No local failover.'
   },
   {
     id: 'pain-card-3-desc',
-    default: 'During the 2025 AWS outage, Fort Worth restaurants couldn\'t process orders. Toast terminals became paperweights. One Texas restaurateur lost 25% of his revenue in a single day because a server failed 1,000 miles away.',
+    default: 'During the 2025 AWS outage, thousands of business websites across Texas went dark. Customers searching for hours, menus, or directions got nothing. One DFW business owner lost a full day of leads because his site was hosted on a server 1,000 miles away.',
     technical: 'Multi-tenant cloud: single AZ failure cascades to all hosted sites. No edge failover, no local serving capability.'
   },
   {

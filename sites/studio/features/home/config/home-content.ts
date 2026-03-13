@@ -85,15 +85,15 @@ export const PAIN_CARDS = [
     variant: 'pain' as const,
     label: 'The Agency Tax',
     title: '$60K/year and you still own nothing',
-    description: 'DFW agencies charge $5,000 - $9,000/month for managed digital presence. If you cancel, you lose the optimized pages, the email workflows, and the CRM integrations they built. You paid $60K and walk away empty-handed.',
+    description: 'DFW agencies charge $5,000 - $9,000/month for managed digital presence. If you cancel, you lose the website, the content, and the SEO rankings they built on their hosting. You paid $60K and walk away empty-handed.',
     stat: 'Average mid-tier DFW agency retainer: <strong>$5,000 - $9,000/mo</strong>'
   },
   {
     id: 'pain-outage',
     variant: 'pain' as const,
     label: 'The Outage Gamble',
-    title: 'When AWS goes down, your business stops',
-    description: 'During the 2025 AWS outage, Fort Worth restaurants couldn\'t process orders. Toast terminals became paperweights. One Texas restaurateur lost 25% of his revenue in a single day because a server failed 1,000 miles away.',
+    title: 'When AWS goes down, your website disappears',
+    description: 'During the 2025 AWS outage, thousands of business websites across Texas went dark. Customers searching for hours, menus, or directions got nothing. One DFW business owner lost a full day of leads because his site was hosted on a server 1,000 miles away.',
     stat: 'McKinney has experienced <strong>3-day business internet outages</strong> from a single fiber cut'
   },
   {
