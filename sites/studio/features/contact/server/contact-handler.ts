@@ -7,6 +7,7 @@ import { respondWithPage } from '../../../server/page-helpers.js'
 import { renderContactForm, renderContactSuccess } from '../templates/contact.js'
 import { validateContact } from '../schemas/contact-schema.js'
 import { readBody } from '../../../server/router.js'
+import { sendContactNotification } from './send-notification.js'
 
 const pageBase = {
   title: 'Contact',
@@ -49,6 +50,13 @@ export const contactPostHandler: RouteHandler = async (req, res, ctx) => {
   if (insertResult.isErr()) {
     console.error('Contact insert failed:', insertResult.error.message)
   }
+
+  // Send email notification (fire-and-forget, don't block response)
+  const notifyEmail = process.env['CONTACT_NOTIFY_EMAIL'] ?? 'mail@forrestblade.com'
+  sendContactNotification(data, notifyEmail).match(
+    () => {},
+    (notifyErr) => { console.error('[contact] email notification failed:', notifyErr.message) }
+  )
 
   respondWithPage(req, res, ctx, {
     ...pageBase,

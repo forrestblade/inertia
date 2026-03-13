@@ -18,11 +18,13 @@
     "@inertia/ingestion": "workspace:*",
     "@inertia/tokens": "workspace:*",
     "neverthrow": "^8.2.0",
+    "nodemailer": "^8.0.2",
     "postgres": "^3.4.8",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^25.4.0",
+    "@types/nodemailer": "^7.0.11",
     "esbuild": "^0.27.3",
     "tsx": "^4.21.0",
     "vitest": "^4.0.18"
