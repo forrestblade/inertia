@@ -8,13 +8,40 @@ export const HOME_COPY_MAP: readonly CopyMapEntry[] = [
   // Hero
   {
     id: 'hero-headline',
-    default: 'Your website should load before you can blink.',
-    technical: 'Your critical shell ships in the first 10 TCP packets. Sub-14kB compressed.'
+    default: 'Your website should be yours. Not rented. Not hostage. Yours.',
+    technical: 'Deterministic TypeScript on client-owned x86 hardware. No SaaS dependency. No vendor kill switch.'
   },
   {
     id: 'hero-subhead',
-    default: 'We build websites on dedicated hardware you own. No shared hosting. No bloated frameworks. No monthly ransom.',
-    technical: 'Deterministic TypeScript, native Web Components, HTML-over-the-wire routing, pre-allocated ring buffer telemetry. Zero framework dependencies.'
+    default: 'We build fast, secure websites on dedicated hardware we hand-deliver to your business. You own the server, the code, the data, and the analytics. No monthly ransom. No vendor lock-in. No kill switch.',
+    technical: 'Native Web Components, HTML-over-the-wire routing, pre-allocated ring buffer telemetry, PostgreSQL on a fanless edge appliance behind a WireGuard tunnel.'
+  },
+  {
+    id: 'hero-eyebrow',
+    default: 'Proudly serving DFW businesses from McKinney, TX',
+    technical: 'Edge-deployed from McKinney, TX — sub-millisecond intra-DFW latency'
+  },
+
+  // Hero stats
+  {
+    id: 'hero-stat-1-label',
+    default: 'Page Load',
+    technical: 'Time to First Contentful Paint (FCP)'
+  },
+  {
+    id: 'hero-stat-2-label',
+    default: 'Lighthouse Score',
+    technical: 'Lighthouse Performance + Accessibility + Best Practices + SEO (avg)'
+  },
+  {
+    id: 'hero-stat-3-label',
+    default: 'Third-Party Scripts',
+    technical: 'External JS payloads (GA, GTM, Meta Pixel, Adobe): zero'
+  },
+  {
+    id: 'hero-stat-4-label',
+    default: 'Client Owned',
+    technical: 'Hardware, PostgreSQL, Payload CMS, domain, backups, source code'
   },
 
   // Pillars — titles
@@ -61,64 +88,64 @@ export const HOME_COPY_MAP: readonly CopyMapEntry[] = [
     technical: 'Inline critical CSS + initial DOM fits first TCP slow start window. DOMParser fragment swaps for subsequent navigations.'
   },
 
-  // Eliminates
+  // Comparison section
   {
-    id: 'eliminate-1',
-    default: 'WordPress update anxiety',
-    technical: 'Runtime dependency churn and CVE exposure from transitive node_modules'
+    id: 'comparison-header',
+    default: 'How We Compare',
+    technical: 'Competitive analysis: SaaS platforms vs agency retainers vs Inertia appliance model'
   },
   {
-    id: 'eliminate-2',
-    default: 'Overpriced shared hosting',
-    technical: 'Multi-tenant noisy-neighbor latency on shared infrastructure'
-  },
-  {
-    id: 'eliminate-3',
-    default: 'Third-party analytics tracking your visitors',
-    technical: 'Third-party JS injection: Google Analytics, Meta Pixel, Adobe Target beacon chains'
-  },
-  {
-    id: 'eliminate-4',
-    default: 'Shared server neighbors tanking your speed',
-    technical: 'Shared-tenancy resource contention causing P99 latency spikes'
-  },
-  {
-    id: 'eliminate-5',
-    default: 'Framework vendor lock-in',
-    technical: 'React/Next.js/Vercel ecosystem lock-in with proprietary deployment targets'
-  },
-  {
-    id: 'eliminate-6',
-    default: 'Database access held hostage',
-    technical: 'Managed database credentials controlled by SaaS provider, no pg_dump access'
+    id: 'comparison-subtitle',
+    default: 'Most web solutions rent you a website. We build one you own.',
+    technical: 'Ownership model comparison across infrastructure, code, data, and operational independence'
   },
 
-  // Ownership
+  // Pain cards
   {
-    id: 'ownership-body',
-    default: 'When we deliver your server, you own your entire stack. The hardware. The database. The analytics. The code. No vendor dependencies. If we got hit by a bus tomorrow, your website keeps running.',
-    technical: 'The appliance runs Node.js, PostgreSQL, Caddy, and Payload CMS on a fanless x86 mini-PC behind a WireGuard tunnel to a stateless VPS relay.'
+    id: 'pain-card-1-title',
+    default: 'You\'re renting a website you can\'t take with you',
+    technical: 'Vendor lock-in: no pg_dump, no code export, proprietary CMS schema'
+  },
+  {
+    id: 'pain-card-2-title',
+    default: 'Slow sites cost you customers every single day',
+    technical: 'Shared hosting P99 latency: 3–6s TTFB. Inertia appliance: <200ms'
+  },
+  {
+    id: 'pain-card-3-title',
+    default: 'Agencies charge monthly for a site you should own',
+    technical: 'Agency retainer model: $1,500–5,000/mo for hosting + maintenance you could self-serve'
+  },
+  {
+    id: 'pain-card-4-title',
+    default: 'One payment. Your server. Your site. Forever.',
+    technical: 'Appliance model: one-time cost, client owns hardware + code + data, $0 ongoing required'
+  },
+  {
+    id: 'pain-card-1-desc',
+    default: 'Wix, Squarespace, and WordPress.com hold your site hostage. Try to leave and you start from scratch.',
+    technical: 'No file-system access, no database export, proprietary template engine locks content to platform'
+  },
+  {
+    id: 'pain-card-2-desc',
+    default: 'Shared hosting, bloated themes, and third-party scripts add seconds to every page load.',
+    technical: 'Multi-tenant resource contention, 2–4MB JS bundles, render-blocking GA/GTM/Meta beacon chains'
+  },
+  {
+    id: 'pain-card-3-desc',
+    default: 'You paid to build it. Now you pay to keep it. Change a phone number? That\'ll be $150.',
+    technical: 'Managed service markup on trivial CMS edits. Client has no admin access.'
+  },
+  {
+    id: 'pain-card-4-desc',
+    default: 'We hand-deliver a dedicated server appliance to your business. You own the hardware, the code, the data, and the analytics. No monthly ransom.',
+    technical: 'x86 edge appliance with PostgreSQL, Payload CMS, and WireGuard tunnel. Full pg_dump + git clone access.'
   },
 
-  // Proof metrics — labels
+  // Comparison CTA
   {
-    id: 'proof-1-label',
-    default: 'First paint payload',
-    technical: 'Brotli-compressed initial response (inline critical CSS + DOM shell)'
-  },
-  {
-    id: 'proof-2-label',
-    default: 'Third-party scripts',
-    technical: 'Third-party scripts (no GA, no GTM, no Meta Pixel, no Adobe)'
-  },
-  {
-    id: 'proof-3-label',
-    default: 'Client-owned infrastructure',
-    technical: 'Client-owned: hardware, PostgreSQL, Payload CMS, domain, backups, source'
-  },
-  {
-    id: 'proof-4-label',
-    default: 'Your site runs with or without us',
-    technical: 'Gliding failover: static HTML snapshot on VPS serves if appliance goes offline. Caddy health-check auto-switches.'
+    id: 'comparison-cta-headline',
+    default: 'See exactly what we\'d build for you',
+    technical: 'Automated Lighthouse audit pipeline: Performance, Accessibility, Best Practices, SEO'
   }
 ] as const

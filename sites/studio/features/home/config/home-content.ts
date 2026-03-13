@@ -1,8 +1,16 @@
 export const HERO = {
-  headline: 'Your website should load before you can blink.',
-  subhead: 'A McKinney web studio building websites on dedicated hardware you own. No shared hosting. No bloated frameworks. Serving businesses across DFW.',
-  cta: { label: 'See How It Works', href: '/how-it-works' },
-  ctaSecondary: { label: 'Get In Touch', href: '/about#contact' }
+  eyebrow: 'Proudly serving DFW businesses from McKinney, TX',
+  headline: 'Your website should be yours. Not rented. Not hostage. Yours.',
+  headlineAccent: 'yours',
+  subhead: 'We build fast, secure websites on dedicated hardware we hand-deliver to your business. You own the server, the code, the data, and the analytics. No monthly ransom. No vendor lock-in. No kill switch.',
+  stats: [
+    { value: '<1s', label: 'Page Load' },
+    { value: '100', label: 'Lighthouse Score' },
+    { value: '0', label: 'Third-Party Scripts' },
+    { value: '100%', label: 'Client Owned' }
+  ],
+  cta: { label: 'Get a Free Site Audit', href: '/free-site-audit' },
+  ctaSecondary: { label: 'See How It Works', href: '/how-it-works' }
 } as const
 
 export const PILLARS = [
@@ -32,22 +40,69 @@ export const PILLARS = [
   }
 ] as const
 
-export const ELIMINATES = [
-  'WordPress update anxiety',
-  'Overpriced shared hosting',
-  'Third-party analytics tracking your visitors',
-  'Shared server neighbors tanking your speed',
-  'Framework vendor lock-in',
-  'Database access held hostage'
+type MarkerType = 'pass' | 'fail' | 'partial'
+
+interface ComparisonRow {
+  readonly feature: string
+  readonly wix: string
+  readonly agency: string
+  readonly inertia: string
+  readonly wixMarker: MarkerType | ''
+  readonly agencyMarker: MarkerType | ''
+  readonly inertiaMarker: MarkerType | ''
+}
+
+export const COMPARISON_TABLE = {
+  headers: ['', 'Wix / Squarespace', 'Agency Retainer', 'Inertia'],
+  rows: [
+    { feature: 'You own the server', wix: 'No', agency: 'No', inertia: 'Yes', wixMarker: 'fail', agencyMarker: 'fail', inertiaMarker: 'pass' },
+    { feature: 'You own the code', wix: 'No', agency: 'Sometimes', inertia: 'Yes', wixMarker: 'fail', agencyMarker: 'partial', inertiaMarker: 'pass' },
+    { feature: 'You own the data', wix: 'No', agency: 'Sometimes', inertia: 'Yes', wixMarker: 'fail', agencyMarker: 'partial', inertiaMarker: 'pass' },
+    { feature: 'Page load under 1s', wix: '3–6s typical', agency: '2–4s typical', inertia: 'Under 1s', wixMarker: 'fail', agencyMarker: 'partial', inertiaMarker: 'pass' },
+    { feature: 'No third-party tracking', wix: 'Platform scripts', agency: 'GA + GTM', inertia: 'Zero scripts', wixMarker: 'fail', agencyMarker: 'fail', inertiaMarker: 'pass' },
+    { feature: 'Works if vendor disappears', wix: 'Site gone', agency: 'Depends', inertia: 'Runs forever', wixMarker: 'fail', agencyMarker: 'partial', inertiaMarker: 'pass' },
+    { feature: 'Lighthouse 100', wix: '50–70', agency: '70–90', inertia: '100', wixMarker: 'fail', agencyMarker: 'partial', inertiaMarker: 'pass' },
+    { feature: 'Monthly cost after launch', wix: '$16–45/mo', agency: '$1,500–5,000/mo', inertia: '$0 required', wixMarker: '', agencyMarker: '', inertiaMarker: '' }
+  ] as readonly ComparisonRow[]
+} as const
+
+export const PAIN_CARDS = [
+  {
+    id: 'pain-hosting',
+    variant: 'pain' as const,
+    label: 'The Hosting Trap',
+    title: 'You\'re renting a website you can\'t take with you',
+    description: 'Wix, Squarespace, and WordPress.com hold your site hostage. Try to leave and you start from scratch.',
+    stat: '72% of small businesses can\'t export their own website'
+  },
+  {
+    id: 'pain-speed',
+    variant: 'pain' as const,
+    label: 'The Speed Tax',
+    title: 'Slow sites cost you customers every single day',
+    description: 'Shared hosting, bloated themes, and third-party scripts add seconds to every page load.',
+    stat: '53% of visitors leave if a page takes over 3 seconds'
+  },
+  {
+    id: 'pain-cost',
+    variant: 'pain' as const,
+    label: 'The Retainer Racket',
+    title: 'Agencies charge monthly for a site you should own',
+    description: 'You paid to build it. Now you pay to keep it. Change a phone number? That\'ll be $150.',
+    stat: 'Average agency retainer: $2,500/month'
+  },
+  {
+    id: 'pain-ours',
+    variant: 'ours' as const,
+    label: 'The Inertia Model',
+    title: 'One payment. Your server. Your site. Forever.',
+    description: 'We hand-deliver a dedicated server appliance to your business. You own the hardware, the code, the data, and the analytics. No monthly ransom.',
+    stat: '$0/month after launch'
+  }
 ] as const
 
-export const OWNERSHIP = {
-  headline: 'Total Ownership',
-  body: 'When we deliver your server to your Dallas-Fort Worth business, you own your entire stack. The hardware. The database. The analytics. The code. No vendor dependencies. If we got hit by a bus tomorrow, your website keeps running.',
-  proof: [
-    { metric: '<14kB', label: 'First paint payload' },
-    { metric: '0', label: 'Third-party scripts' },
-    { metric: '100%', label: 'Client-owned infrastructure' },
-    { metric: '24/7', label: 'Your site runs with or without us' }
-  ]
+export const COMPARISON_CTA = {
+  headline: 'See exactly what we\'d build for you',
+  subtitle: 'We\'ll audit your current site for free — speed, SEO, accessibility, and security. No strings.',
+  cta: { label: 'Run Free Site Audit', href: '/free-site-audit' }
 } as const
