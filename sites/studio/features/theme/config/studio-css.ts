@@ -690,10 +690,35 @@ footer {
   .nav-inner { position: relative; overflow-x: visible; }
   .hero { padding: 4rem 1.5rem 3rem; min-height: auto; }
   .hero-stats { grid-template-columns: repeat(2, 1fr); }
-  .comp-table { font-size: 0.85rem; }
+  .comp-table { font-size: 0.8rem; }
+  .comp-table,
+  .comp-table thead,
+  .comp-table tbody { display: block; }
+  .comp-table tr {
+    display: flex;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border);
+  }
+  .comp-table tbody tr:last-child { border-bottom: none; }
   .comp-table thead th,
-  .comp-table tbody td { padding: 0.75rem 1rem; }
-  .comp-table tbody td:first-child { width: auto; }
+  .comp-table tbody td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: none;
+  }
+  .comp-table thead th:first-child,
+  .comp-table tbody td:first-child {
+    flex: 0 0 100%;
+    width: 100%;
+    font-weight: ${TYPOGRAPHY.fontWeight.semibold};
+    padding-bottom: 0.25rem;
+  }
+  .comp-table thead th:nth-child(4),
+  .comp-table tbody td:nth-child(4) { order: 1; flex: 1 1 0; min-width: 0; }
+  .comp-table thead th:nth-child(2),
+  .comp-table tbody td:nth-child(2) { order: 2; flex: 1 1 0; min-width: 0; }
+  .comp-table thead th:nth-child(3),
+  .comp-table tbody td:nth-child(3) { order: 3; flex: 1 1 0; min-width: 0; }
+  .comp-table thead th:first-child { font-size: 0; height: 0; padding: 0; overflow: hidden; }
   .pain-grid { grid-template-columns: 1fr; }
   inertia-buffer-strip { display: none; }
   .form-input, .form-textarea, .form-select {

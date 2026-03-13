@@ -123,11 +123,10 @@ describe('renderHome hero eyebrow + stats', () => {
     expect(html).toContain('class="val green"')
   })
 
-  it('non-Lighthouse stat values do not have green class', () => {
+  it('Lighthouse and Client Owned have green class, others do not', () => {
     const html = renderHome()
-    // Only one .val.green — the Lighthouse 100
     const greenCount = (html.match(/class="val green"/g) || []).length
-    expect(greenCount).toBe(1)
+    expect(greenCount).toBe(2)
   })
 })
 
@@ -148,7 +147,7 @@ describe('renderHome comparison section', () => {
 
   it('comparison subtitle matches prototype', () => {
     const html = renderHome()
-    expect(html).toContain('Most businesses don\u2019t realize')
+    expect(html).toContain('Most DFW businesses don\u2019t realize')
   })
 
   it('contains comp-table with 4 column headers', () => {
@@ -202,17 +201,16 @@ describe('renderHome comparison section', () => {
 })
 
 describe('renderHome pain cards', () => {
-  it('renders 4 pain cards', () => {
+  it('renders 6 pain cards', () => {
     const html = renderHome()
     const cardCount = (html.match(/class="pain-card[ "]/g) || []).length
-    expect(cardCount).toBe(4)
+    expect(cardCount).toBe(6)
   })
 
-  it('renders 3 pain variant and 1 ours variant', () => {
+  it('renders 3 pain variant and 3 ours variant', () => {
     const html = renderHome()
     const oursCount = (html.match(/pain-card ours/g) || []).length
-    expect(oursCount).toBe(1)
-    // 3 without ours class
+    expect(oursCount).toBe(3)
     const totalCards = (html.match(/class="pain-card[ "]/g) || []).length
     expect(totalCards - oursCount).toBe(3)
   })
@@ -242,8 +240,8 @@ describe('renderHome pain cards', () => {
     expect(painSection).not.toBeNull()
     const h3Count = (painSection![1].match(/<h3/g) || []).length
     const pCount = (painSection![1].match(/<p[ >]/g) || []).length
-    expect(h3Count).toBe(4)
-    expect(pCount).toBe(4)
+    expect(h3Count).toBe(6)
+    expect(pCount).toBe(6)
   })
 
   it('stat divs contain strong tags for emphasis', () => {
@@ -251,7 +249,15 @@ describe('renderHome pain cards', () => {
     const painSection = html.match(/class="pain-grid">([\s\S]*?)<\/div>\s*<div class="bottom-cta/)
     expect(painSection).not.toBeNull()
     const strongCount = (painSection![1].match(/<strong>/g) || []).length
-    expect(strongCount).toBeGreaterThanOrEqual(4)
+    expect(strongCount).toBeGreaterThanOrEqual(6)
+  })
+
+  it('renders Built for Speed and True Independence cards', () => {
+    const html = renderHome()
+    expect(html).toContain('Built for Speed')
+    expect(html).toContain('Your site loads before they can blink')
+    expect(html).toContain('True Independence')
+    expect(html).toContain('Your site runs with or without us')
   })
 })
 

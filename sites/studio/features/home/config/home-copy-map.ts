@@ -96,7 +96,7 @@ export const HOME_COPY_MAP: readonly CopyMapEntry[] = [
   },
   {
     id: 'comparison-subtitle',
-    default: 'Most businesses don\u2019t realize how much they\u2019re spending to rent infrastructure they\u2019ll never own.',
+    default: 'Most DFW businesses don\u2019t realize how much they\u2019re spending to rent infrastructure they\u2019ll never own.',
     technical: 'Ownership model comparison across infrastructure, code, data, and operational independence'
   },
 
@@ -160,6 +160,37 @@ export const HOME_COPY_MAP: readonly CopyMapEntry[] = [
     id: 'pain-card-4-desc',
     default: 'We build your site, install it on a dedicated server, and hand-deliver the hardware to your business. Your database, your analytics, your code. The internet doorway costs $49/month. Cancel and your site keeps running.',
     technical: 'x86 edge appliance with PostgreSQL, Payload CMS, and WireGuard tunnel. Full pg_dump + git clone access. Bus factor: zero.'
+  },
+
+  {
+    id: 'pain-card-5-label',
+    default: 'Built for Speed',
+    technical: 'Performance Architecture'
+  },
+  {
+    id: 'pain-card-5-title',
+    default: 'Your site loads before they can blink',
+    technical: 'Sub-200ms TTFB, <14kB critical shell, zero render-blocking external scripts'
+  },
+  {
+    id: 'pain-card-5-desc',
+    default: 'No shared servers. No bloated frameworks. Just your code on your hardware, optimized for sub-second page loads.',
+    technical: 'Dedicated x86 hardware, inline critical CSS, HTML-over-the-wire routing, pre-allocated ring buffer telemetry'
+  },
+  {
+    id: 'pain-card-6-label',
+    default: 'True Independence',
+    technical: 'Gliding Failover'
+  },
+  {
+    id: 'pain-card-6-title',
+    default: 'Your site runs with or without us',
+    technical: 'Gliding failover: static HTML snapshot on VPS. Caddy health-check auto-switches. Zero vendor dependency.'
+  },
+  {
+    id: 'pain-card-6-desc',
+    default: 'If we disappeared tomorrow, your website keeps running. You have the server, the database, and every line of code.',
+    technical: 'Client holds full pg_dump + git clone access. Static failover snapshot on VPS serves if appliance offline.'
   },
 
   // Comparison CTA

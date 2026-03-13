@@ -7,7 +7,7 @@ export const HERO = {
     { value: '<1s', label: 'Page Load', accent: '' },
     { value: '100', label: 'Lighthouse Score', accent: 'green' },
     { value: '0', label: 'Third-Party Scripts', accent: '' },
-    { value: '100%', label: 'Client Owned', accent: '' }
+    { value: '100%', label: 'Client Owned', accent: 'green' }
   ],
   cta: { label: 'Get a Free Site Audit', href: '/free-site-audit' },
   ctaSecondary: { label: 'See How It Works', href: '/how-it-works' }
@@ -57,7 +57,7 @@ interface ComparisonRow {
 
 export const COMPARISON_TABLE = {
   heading: 'What you\u2019re actually paying for',
-  subtitle: 'Most businesses don\u2019t realize how much they\u2019re spending to rent infrastructure they\u2019ll never own.',
+  subtitle: 'Most DFW businesses don\u2019t realize how much they\u2019re spending to rent infrastructure they\u2019ll never own.',
   headers: ['', 'Wix / Squarespace', 'Agency Retainer', 'Inertia Web Solutions'],
   rows: [
     { feature: 'Typical Cost', wix: '$30 - $100/mo forever', agency: '$2,500 - $9,000/mo forever', inertia: '~$3,500 one-time + $49/mo relay', wixMarker: '', agencyMarker: '', inertiaMarker: '', wixClass: 'price-pain', agencyClass: 'price-pain', inertiaClass: 'price-good' },
@@ -103,6 +103,22 @@ export const PAIN_CARDS = [
     title: 'Your server sits in your office',
     description: 'We build your site, install it on a dedicated server, and hand-deliver the hardware to your business. Your database, your analytics, your code. The internet doorway costs $49/month. Cancel and your site keeps running.',
     stat: 'Bus factor: <strong>zero</strong>. If we disappear, your website doesn\'t.'
+  },
+  {
+    id: 'ours-speed',
+    variant: 'ours' as const,
+    label: 'Built for Speed',
+    title: 'Your site loads before they can blink',
+    description: 'No shared servers. No bloated frameworks. Just your code on your hardware, optimized for sub-second page loads.',
+    stat: 'Perfect <strong>100</strong> Lighthouse score'
+  },
+  {
+    id: 'ours-independence',
+    variant: 'ours' as const,
+    label: 'True Independence',
+    title: 'Your site runs with or without us',
+    description: 'If we disappeared tomorrow, your website keeps running. You have the server, the database, and every line of code.',
+    stat: '<strong>Zero</strong> vendor dependencies'
   }
 ] as const
 
