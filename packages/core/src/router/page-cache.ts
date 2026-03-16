@@ -1,5 +1,5 @@
-import { ok, err, fromThrowable } from '@inertia/neverthrow'
-import type { Result } from '@inertia/neverthrow'
+import { ok, err, fromThrowable } from '@valencets/neverthrow'
+import type { Result } from '@valencets/neverthrow'
 import { RouterErrorCode } from './router-types.js'
 import type { RouterError, ResolvedRouterConfig, PageCacheEntry } from './router-types.js'
 

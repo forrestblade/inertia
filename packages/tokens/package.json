@@ -1,5 +1,5 @@
 {
-  "name": "@inertia/tokens",
+  "name": "@valencets/tokens",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "zod": "4.3.6",
-    "@inertia/neverthrow": "workspace:*"
+    "@valencets/neverthrow": "workspace:*"
   },
   "devDependencies": {
     "tailwind-variants": "^0.3.0",

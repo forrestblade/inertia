@@ -1,5 +1,5 @@
 {
-  "name": "@inertia/ingestion",
+  "name": "@valencets/ingestion",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -10,7 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@inertia/neverthrow": "workspace:*",
+    "@valencets/neverthrow": "workspace:*",
     "zod": "4.3.6"
   },
   "devDependencies": {

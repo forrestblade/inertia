@@ -1,6 +1,6 @@
 # packages/tokens
 
-Design token engine driving PostCSS/Tailwind for all Inertia client sites. Adapts the Onyx token + variant architecture to vanilla Web Components.
+Design token engine driving PostCSS/Tailwind for all Valence client sites. Adapts the Onyx token + variant architecture to vanilla Web Components.
 
 ## Module Map
 

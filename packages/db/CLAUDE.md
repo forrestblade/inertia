@@ -24,7 +24,7 @@ Session liveness is derived from the last event timestamp — no `is_active` col
 
 ## No Cross-Package Imports
 
-DB defines its own types (`InsertableEvent`, `SessionRow`). Wiring happens at the app layer. Never import from `@inertia/core` or `@inertia/ingestion`.
+DB defines its own types (`InsertableEvent`, `SessionRow`). Wiring happens at the app layer. Never import from `@valencets/core` or `@valencets/ingestion`.
 
 ## Driver
 

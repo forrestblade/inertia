@@ -1,5 +1,5 @@
 {
-  "name": "@inertia/hud",
+  "name": "@valencets/hud",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -10,7 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@inertia/neverthrow": "workspace:*"
+    "@valencets/neverthrow": "workspace:*"
   },
   "devDependencies": {
     "vitest": "^3.0.0",

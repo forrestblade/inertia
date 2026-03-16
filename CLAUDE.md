@@ -1,4 +1,8 @@
-# Inertia Framework
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+# Valence Framework
 
 Deterministic web framework applying JSF aerospace coding standards to TypeScript, Web Components, and PostgreSQL. Proprietary engine for a solo web studio delivering physical web server appliances to local service businesses.
 
@@ -14,7 +18,7 @@ Deterministic web framework applying JSF aerospace coding standards to TypeScrip
 - Analytics: Self-hosted first-party telemetry engine (ring buffer → ingestion → PostgreSQL → HUD)
 - Linting: Neostandard
 - Validation: Zod (`.safeParse()` only, never `.parse()`)
-- Error handling: `@inertia/neverthrow` (vendored Result monads, originally neverthrow v8.2.0)
+- Error handling: `@valencets/neverthrow` (vendored Result monads, originally neverthrow v8.2.0)
 - Package manager: pnpm workspaces (monorepo)
 
 ## The Four Pillars (Non-Negotiable)
@@ -63,7 +67,7 @@ Read `docs/ARCHITECTURE.md` for full details covering:
 ## Project Structure
 
 ```
-inertia/
+valencets/
 ├── packages/
 │   ├── core/           # Telemetry engine, router, event delegation
 │   ├── components/     # Web Component primitives
@@ -72,12 +76,6 @@ inertia/
 │   ├── db/             # PostgreSQL schema, migrations, RBAC, daily summaries, push client
 │   ├── neverthrow/     # Vendored neverthrow v8.2.0 (Result monads, MIT)
 │   └── hud/            # Analytics dashboard (client HUD + fleet dashboard)
-├── sites/
-│   └── studio/         # Studio website (first Inertia deployment)
-│       ├── features/   # Feature modules (see Adding a Feature)
-│       ├── server/
-│       ├── public/
-│       └── pages/
 ├── tools/
 │   ├── critical-css/   # CSS extraction pipeline
 │   └── build/          # Build tooling
@@ -86,27 +84,28 @@ inertia/
 └── CLAUDE.md           # You are here
 ```
 
-## Site Structure (Studio)
-
-```
-/                → Home (manifesto + pillars + ownership + proof)
-/principles      → The Four Pillars (detailed engineering philosophy)
-/services        → Appliance model, three pricing tiers, ownership list
-/audit           → Live Lighthouse audit tool (lead generation)
-/about           → Bio → Philosophy → Proof → Contact form (merged page)
-/admin/hud       → Private analytics dashboard (authenticated)
-/admin/fleet     → Fleet dashboard — all client sites in one view (authenticated)
-```
-
-Five public pages + two admin routes. No separate /contact page (merged into /about).
-
 ## Commands
 
 - `pnpm install` — Install all workspace dependencies
-- `pnpm build` — Build all packages
-- `pnpm test` — Run tests across workspaces
-- `pnpm lint` — Neostandard lint check
-- `pnpm dev --filter=studio` — Dev server for studio site
+- `pnpm build` — Build all packages (also serves as typecheck)
+- `pnpm test` — Run tests across all workspaces (vitest + happy-dom)
+- `pnpm test --filter=core` — Run tests for a single package
+- `pnpm vitest run src/path/__tests__/file.test.ts` — Run a single test file (from within package dir)
+- `pnpm lint` — Neostandard lint check (ESLint 9 flat config, enforces `complexity: 20`)
+- `pnpm validate` — Full CI gate: typecheck + lint + pattern audit + Lighthouse
+- `pnpm audit:patterns` — Check all code for banned patterns (try/catch, switch, enum, etc.)
+- `pnpm audit:lighthouse` — Lighthouse audit (fails on anything below 100)
+
+### Pre-commit Hook
+
+Husky runs on every commit: `pnpm lint` + pattern audit on staged files only (`--staged`). If it fails, fix the issue and create a new commit (do not `--amend`).
+
+## Testing
+
+- Framework: Vitest with happy-dom environment (all packages)
+- Test location: `src/__tests__/*.test.ts` in packages
+- Pattern: `beforeAll` dynamic import, `createElement`/`attach` helpers for Web Components
+- Test both `Ok` and `Err` branches of all Result-returning functions
 
 ## Code Rules
 
@@ -117,23 +116,6 @@ Five public pages + two admin routes. No separate /contact page (merged into /ab
 - Comments explain WHY, not WHAT
 - Do not arbitrarily refactor `let` to `const` or vice versa. Respect intentional declarations.
 - No enums. Use const unions: `const BusinessType = ['barbershop', 'legal', ...] as const`
-
-## Adding a Feature
-
-Features live in `sites/<site-name>/features/<feature-name>/`:
-
-```
-features/<feature-name>/
-  components/    Web Components (Custom Elements)
-  templates/     HTML fragments returned by server routes
-  server/        Server-side route handlers (return HTML, not JSON)
-  types/         TypeScript interfaces (monomorphic, explicit)
-  schemas/       Zod schemas (.safeParse() only)
-  telemetry/     Feature-specific IntentType definitions and data-* contracts
-  config/        Constants and static dictionary maps
-```
-
-Only create what you use. No `try/catch`, no `switch`, no framework imports, no direct DOM mutation outside the router's fragment swap cycle.
 
 ## Commit Convention
 
@@ -149,8 +131,8 @@ TDD commits must be tagged: `RED`, `GREEN`, or `REFACTOR` in the message.
 
 After every commit, re-index the codebase and docs so search tools stay current:
 
-1. `mcp__jcodemunch__index_folder` with `path: "/home/forrest/dev/inertia"` and `incremental: true`
-2. `mcp__jdocmunch__index_local` with `path: "/home/forrest/dev/inertia"` and `incremental: true`
+1. `mcp__jcodemunch__index_folder` with `path: "/home/forrest/dev/valencets"` and `incremental: true`
+2. `mcp__jdocmunch__index_local` with `path: "/home/forrest/dev/valencets"` and `incremental: true`
 
 Always use `incremental: true` to avoid full re-index on every commit.
 
@@ -177,6 +159,6 @@ Always preserve: the Four Pillars, infrastructure model (N100 + WireGuard + VPS 
 
 ## File Boundaries
 
-- Safe to edit: `packages/`, `sites/`, `tools/`, `docs/`
+- Safe to edit: `packages/`, `tools/`, `docs/`
 - Never touch: `node_modules/`, `.husky/` (edit via config only), any `dist/` output
 - Read for context: `docs/ARCHITECTURE.md`, package-level `CLAUDE.md` files

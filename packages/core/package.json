@@ -1,5 +1,5 @@
 {
-  "name": "@inertia/core",
+  "name": "@valencets/core",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -14,7 +14,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@inertia/neverthrow": "workspace:*"
+    "@valencets/neverthrow": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^25.4.0"

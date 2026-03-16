@@ -1,4 +1,4 @@
-import { ResultAsync } from '@inertia/neverthrow'
+import { ResultAsync } from '@valencets/neverthrow'
 import type { DbError } from './types.js'
 import type { DbPool } from './connection.js'
 import { mapPostgresError } from './connection.js'

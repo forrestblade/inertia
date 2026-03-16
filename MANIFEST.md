@@ -1,12 +1,12 @@
-# Inertia Framework — Agent Manifest
+# Valence Framework — Agent Manifest
 
 Comprehensive onboarding reference for any agent working in this codebase. Read this before writing a single line of code.
 
 ---
 
-## What Is Inertia?
+## What Is Valence?
 
-Inertia is a deterministic web framework that applies JSF (Joint Strike Fighter) aerospace coding standards to TypeScript, Web Components, and PostgreSQL. It is the proprietary engine for a solo web studio that delivers **physical web server appliances** to local service businesses (barbershops, dental offices, law firms).
+Valence is a deterministic web framework that applies JSF (Joint Strike Fighter) aerospace coding standards to TypeScript, Web Components, and PostgreSQL. It is the proprietary engine for a solo web studio that delivers **physical web server appliances** to local service businesses (barbershops, dental offices, law firms).
 
 Each client gets a fanless x86 mini-PC running the full stack locally. A disposable VPS acts as a reverse proxy via WireGuard tunnel. The client owns their data, their server, and their website. This is the core value proposition — full ownership, zero cloud dependency.
 
@@ -61,7 +61,7 @@ These will fail code review. Memorize them.
 | `import React` | No VDOM frameworks | Native Web Components |
 | `localStorage`/`sessionStorage` | Fragile state | Server-delivered HTML |
 | `process.env` outside config.ts | Scattered config | Centralized `loadConfig()` |
-| Third-party analytics | Self-hosted only | Inertia telemetry engine |
+| Third-party analytics | Self-hosted only | Valence telemetry engine |
 | `throw new Error(...)` | AV Rule 208 | `err(...)` or `Promise.reject(...)` |
 
 ---
@@ -92,7 +92,7 @@ Minimal, audited dependency tree — fewer than 10 runtime dependencies, each MI
 
 | Dependency | Version | Category | Justification | Vendored? |
 |-----------|---------|----------|--------------|-----------|
-| `@inertia/neverthrow` | 8.2.0 | Client + Server | Result<Ok,Err> monads — AV Rule 208 compliance | **Yes** — source in `packages/neverthrow/` |
+| `@valencets/neverthrow` | 8.2.0 | Client + Server | Result<Ok,Err> monads — AV Rule 208 compliance | **Yes** — source in `packages/neverthrow/` |
 | `postgres` | 3.4.8 | Server | PostgreSQL driver with tagged template SQL, zero transitive deps | No — native bindings, actively maintained |
 | `zod` | 4.3.6 | Server | Schema validation (.safeParse() only), zero transitive deps | No — too large to vendor (5.6MB) |
 | `nodemailer` | 8.0.2 | Server | Contact form email delivery, zero transitive deps | No — complex protocol implementation |
@@ -115,7 +115,7 @@ Minimal, audited dependency tree — fewer than 10 runtime dependencies, each MI
 ## Project Structure
 
 ```
-inertia/
+valencets/
 ├── packages/
 │   ├── core/           # Telemetry engine + HTML-over-the-wire router
 │   ├── components/     # Web Component primitives (TrackingButton, TrackingLink, TrackingForm)
@@ -123,13 +123,6 @@ inertia/
 │   ├── ingestion/      # Server-side monadic pipeline, HMAC, aggregation
 │   ├── db/             # PostgreSQL schema, migrations, queries, fleet data
 │   └── hud/            # Analytics dashboard components (client HUD + fleet dashboard)
-├── sites/
-│   └── studio/         # Studio website (first Inertia deployment)
-│       ├── features/   # 14 feature modules (self-contained)
-│       ├── server/     # Entry point, router, config, middleware
-│       ├── scripts/    # Standalone scripts (aggregate-and-push)
-│       ├── public/     # Static assets
-│       └── pages/      # Top-level page shells (minimal)
 ├── tools/
 │   ├── critical-css/   # CSS extraction for 14kB budget enforcement
 │   └── build/          # Build tooling
@@ -142,7 +135,7 @@ inertia/
 ├── CONTRIBUTING.md     # Human contributor guide
 ├── MANIFEST.md         # You are here
 ├── package.json        # Root monorepo config
-├── pnpm-workspace.yaml # Workspace: packages/*, sites/*, tools/*
+├── pnpm-workspace.yaml # Workspace: packages/*, tools/*
 ├── tsconfig.json       # Root TypeScript config (strict)
 └── eslint.config.js    # Neostandard config
 ```
@@ -151,7 +144,7 @@ inertia/
 
 ## Workspace Packages
 
-### @inertia/core
+### @valencets/core
 **Purpose**: Client-side telemetry engine and HTML-over-the-wire router.
 
 Two subsystems:
@@ -160,7 +153,7 @@ Two subsystems:
 
 **Key exports**: `IntentType`, `TelemetryObjectPool`, `TelemetryRingBuffer`, `initEventDelegation`, `flushTelemetry`, `initRouter`, `initPrefetch`, `swapContent`
 
-### @inertia/components
+### @valencets/components
 **Purpose**: Native Web Component primitives for telemetry tracking.
 
 - `TrackingButton` (`<inertia-button>`) — CTA tracking
@@ -169,14 +162,14 @@ Two subsystems:
 
 All dispatch telemetry via `data-*` attributes, handled by core's event delegation.
 
-### @inertia/tokens
+### @valencets/tokens
 **Purpose**: Design token engine driving PostCSS/Tailwind for all client sites.
 
 Two-tier CSS variable system: `:root`/`.dark` define raw tokens, `@theme inline` maps to Tailwind namespace. Uses `tailwind-variants` (`tv()`) for framework-agnostic variant composition.
 
 **Key exports**: `parseTheme`, `resolveTheme`, `generateCSS`, `cn`, `tv`
 
-### @inertia/ingestion
+### @valencets/ingestion
 **Purpose**: Server-side telemetry ingestion — monadic pipeline from raw HTTP to database.
 
 Pipeline: raw string → `safeJsonParse()` → Zod validation → persist. Always returns HTTP 200 (Black Hole strategy — prevents client retry storms).
@@ -188,7 +181,7 @@ Also contains:
 
 **Key exports**: `safeJsonParse`, `validateTelemetryPayload`, `createIngestionPipeline`, `createIngestionHandler`, `signPayload`, `verifySignature`, `validateDailySummary`, `createAggregationPipeline`
 
-### @inertia/db
+### @valencets/db
 **Purpose**: PostgreSQL schema, migrations, query helpers, fleet data.
 
 **Driver**: `postgres` (porsager/postgres) — tagged template SQL, parameterized by default, zero deps. Import as `import postgres from 'postgres'` (default import, third-party API).
@@ -206,7 +199,7 @@ Also contains:
 
 **Key exports**: `createPool`, `closePool`, `createSession`, `insertEvents`, `generateDailySummary`, `getFleetSites`, `getFleetComparison`, `insertDailySummaryFromRemote`
 
-### @inertia/hud
+### @valencets/hud
 **Purpose**: Self-hosted analytics dashboard — Web Components for data visualization.
 
 - **All visualization is hand-built SVG and CSS.** No charting libraries (no D3, no Recharts, no Chart.js).
@@ -219,106 +212,8 @@ Also contains:
 
 **Data fetchers**: `fetchSessionSummary`, `fetchFleetSites`, `fetchFleetComparison` — all return `ResultAsync`
 
-### @inertia/critical-css
+### @valencets/critical-css
 **Purpose**: PostCSS AST walking for 14kB budget enforcement. Extracts critical CSS from full stylesheet.
-
----
-
-## Studio Site (First Deployment)
-
-### Route Map
-
-| Path | Method | Handler | Auth |
-|------|--------|---------|------|
-| `/` | GET | `homeHandler` | Public |
-| `/principles` | GET | `principlesHandler` | Public |
-| `/about` | GET | `aboutHandler` | Public |
-| `/services` | GET | `servicesHandler` | Public |
-| `/contact` | GET, POST | `contactGetHandler`, `contactPostHandler` | Public |
-| `/audit` | GET, POST | `auditGetHandler`, `auditPostHandler` | Public |
-| `/admin/hud` | GET, POST | `createHudHandler`, `createHudPostHandler` | Bearer/cookie token |
-| `/admin/fleet` | GET | `createFleetOverviewHandler` | Bearer/cookie token |
-| `/admin/fleet/compare` | GET | `createFleetCompareHandler` | Bearer/cookie token |
-| `/api/telemetry` | POST | `telemetryHandler` | None (Black Hole) |
-| `/api/session` | POST | `sessionHandler` | None |
-| `/api/aggregation` | POST | `aggregationHandler` | HMAC signature |
-| `/api/fleet/sites` | GET | `fleetSitesHandler` | None |
-| `/api/fleet/compare` | GET | `fleetComparisonHandler` | None |
-| `/api/summaries/sessions` | GET | `sessionSummaryHandler` | None |
-| `/api/summaries/events` | GET | `eventSummaryHandler` | None |
-| `/api/summaries/conversions` | GET | `conversionSummaryHandler` | None |
-| `/api/diagnostics/ingestion` | GET | `ingestionHealthHandler` | None |
-| `/404` | GET | `notFoundHandler` | Public |
-
-### Feature Modules (14 total)
-
-Each lives in `sites/studio/features/<name>/` with subdirectories as needed:
-
-| Feature | Purpose |
-|---------|---------|
-| `home` | Homepage — manifesto, pillars, ownership proof |
-| `principles` | The Four Pillars detail page |
-| `services` | Appliance model, pricing tiers |
-| `about` | Bio + philosophy + proof + contact (merged page) |
-| `contact` | Contact form with Zod validation |
-| `audit` | Live Lighthouse audit tool (lead gen) |
-| `admin` | Auth gateway, HUD handler, fleet handler, aggregation, push client |
-| `telemetry` | Telemetry data ingestion endpoint |
-| `glass-box` | Telemetry overlay component (dev diagnostic) |
-| `theme` | Theme configuration |
-| `not-found` | 404 handler |
-| `budget` | 14kB budget compliance tests |
-| `client` | Client HUD integration tests |
-| `deploy` | Deployment configuration tests |
-
-### Feature Directory Convention
-
-```
-features/<feature-name>/
-  components/    Web Components (Custom Elements)
-  templates/     HTML fragments returned by server routes
-  server/        Server-side route handlers (return HTML, not JSON)
-  types/         TypeScript interfaces (monomorphic, explicit)
-  schemas/       Zod schemas (.safeParse() only)
-  telemetry/     Feature-specific IntentType definitions and data-* contracts
-  config/        Constants and static dictionary maps
-  __tests__/     Test files
-```
-
-Only create directories you use. Not every feature needs all of these.
-
-### Server Architecture
-
-- **Entry**: `server/entry.ts` — HTTP server bootstrap, middleware chain
-- **Router**: `server/router.ts` — Route registration, fragment protocol (`X-Inertia-Fragment: 1`)
-- **Config**: `server/config.ts` — Centralized `loadConfig()` reads all env vars
-- **Shell**: `server/shell.ts` — HTML shell template, `renderShell()` / `renderFragment()`
-- **Types**: `server/types.ts` — `RouteHandler`, `RouteContext`, `ServerConfig`, `ServerError`
-
-**RouteHandler signature**:
-```typescript
-type RouteHandler = (req: IncomingMessage, res: ServerResponse, ctx: RouteContext) => Promise<void>
-```
-
-**RouteContext** provides `pool` (DbPool) and `config` (ServerConfig) to every handler.
-
-### Environment Variables
-
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `STUDIO_PORT` | `3000` | Server port |
-| `STUDIO_HOST` | `0.0.0.0` | Server bind address |
-| `DB_HOST` | `localhost` | PostgreSQL host |
-| `DB_PORT` | `5432` | PostgreSQL port |
-| `DB_NAME` | `inertia_studio` | Database name |
-| `DB_USER` | `inertia_app` | Database user |
-| `DB_PASSWORD` | `changeme` | Database password |
-| `DB_MAX_CONNECTIONS` | `10` | Connection pool size |
-| `ADMIN_TOKEN` | `''` | Bearer token for admin routes |
-| `SITE_ID` | `'studio'` | Site identifier for fleet |
-| `BUSINESS_TYPE` | `'studio'` | Business category |
-| `SITE_SECRET` | `''` | HMAC secret for fleet push |
-| `STUDIO_ENDPOINT` | `''` | URL to push daily summaries to |
 
 ---
 
@@ -348,7 +243,7 @@ export interface FooError {
 ### Result Monad Usage
 
 ```typescript
-import { ok, err, Result, ResultAsync } from '@inertia/neverthrow'
+import { ok, err, Result, ResultAsync } from '@valencets/neverthrow'
 
 // Synchronous
 function validate (input: string): Result<ValidData, FooError> {
@@ -417,7 +312,7 @@ function createElement (): HTMLElement {
 ```bash
 pnpm test              # All workspaces
 pnpm test -- --run     # Without watch mode
-pnpm test --filter=@inertia/db  # Single package
+pnpm test --filter=@valencets/db  # Single package
 ```
 
 ### Current Test Count
@@ -453,7 +348,6 @@ chore(scope): description       # Dependencies, config, tooling
 pnpm install           # Install all workspace dependencies
 pnpm build             # Build all packages (tsc in each)
 pnpm lint              # Neostandard lint check
-pnpm dev --filter=studio  # Dev server for studio site
 ```
 
 **Build order** matters — packages with cross-workspace dependencies must build after their dependencies. `pnpm -r run build` handles this via topological sort.
@@ -466,15 +360,14 @@ pnpm dev --filter=studio  # Dev server for studio site
 
 | Package | Can Import From | Cannot Import From |
 |---------|----------------|-------------------|
-| `@inertia/core` | Nothing | All others |
-| `@inertia/components` | Nothing | All others |
-| `@inertia/tokens` | Nothing (Zod, neverthrow are external deps) | All others |
-| `@inertia/ingestion` | Nothing (Zod, neverthrow, node:crypto) | All others |
-| `@inertia/db` | Nothing (postgres, neverthrow, zod) | All others |
-| `@inertia/hud` | Nothing (neverthrow) | All others |
-| `studio` (site) | All `@inertia/*` packages | — |
+| `@valencets/core` | Nothing | All others |
+| `@valencets/components` | Nothing | All others |
+| `@valencets/tokens` | Nothing (Zod, neverthrow are external deps) | All others |
+| `@valencets/ingestion` | Nothing (Zod, neverthrow, node:crypto) | All others |
+| `@valencets/db` | Nothing (postgres, neverthrow, zod) | All others |
+| `@valencets/hud` | Nothing (neverthrow) | All others |
 
-**Key rule**: Packages do not import from each other. Wiring happens at the site/app layer. The studio site imports from all packages and composes them.
+**Key rule**: Packages do not import from each other. Wiring happens at the consuming site/app layer.
 
 ---
 
@@ -506,7 +399,7 @@ pnpm dev --filter=studio  # Dev server for studio site
 
 ## File Boundaries
 
-- **Safe to edit**: `packages/`, `sites/`, `tools/`, `docs/`
+- **Safe to edit**: `packages/`, `tools/`, `docs/`
 - **Never touch**: `node_modules/`, `.husky/` (edit via config only), any `dist/` output
 - **Read for context**: `docs/ARCHITECTURE.md`, package-level `CLAUDE.md` files
 

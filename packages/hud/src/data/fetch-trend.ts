@@ -1,4 +1,4 @@
-import { ResultAsync } from '@inertia/neverthrow'
+import { ResultAsync } from '@valencets/neverthrow'
 import type { HudPeriod, HudError, TrendData } from '../types.js'
 import { HudErrorCode } from '../types.js'
 

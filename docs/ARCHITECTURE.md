@@ -1,6 +1,6 @@
-# Inertia Architecture
+# Valence Architecture
 
-Complete architectural reference for the Inertia deterministic web framework. Read the relevant section when working on that subsystem.
+Complete architectural reference for the Valence deterministic web framework. Read the relevant section when working on that subsystem.
 
 ## Table of Contents
 
@@ -21,7 +21,7 @@ Complete architectural reference for the Inertia deterministic web framework. Re
 
 ## Engineering Philosophy
 
-Inertia applies JSF (Joint Strike Fighter) AV C++ Coding Standards to web development. The core metaphor is "remove before flight": strip dangerous language features to achieve deterministic, predictable behavior.
+Valence applies JSF (Joint Strike Fighter) AV C++ Coding Standards to web development. The core metaphor is "remove before flight": strip dangerous language features to achieve deterministic, predictable behavior.
 
 **AV Rule 206 — No Dynamic Memory Allocation After Init**
 In C++, dynamic heap allocation causes fragmentation and unpredictable execution times. In JavaScript, it causes garbage collection "stop-the-world" pauses that drop frames and stutter UI. Solution: pre-allocate all structures at boot, mutate in-place, never create/destroy during runtime.
@@ -66,7 +66,7 @@ The appliance never exposes ports to the public internet. Instead:
   - Public IP + client's domain DNS
        ↓ WireGuard tunnel (encrypted, outbound-initiated by appliance)
 [Client's appliance: behind their router, no port forwarding]
-  - Node.js serving Inertia site
+  - Node.js serving Valence site
   - PostgreSQL with all data
   - Payload CMS admin
 ```
@@ -101,7 +101,7 @@ When the appliance reconnects:
 - Caddy health check passes, live serving resumes
 - Telemetry resumes from where the ring buffer left off
 
-This means a local business website on Inertia has higher uptime than most cloud-hosted WordPress sites, because the fallback is pre-compiled HTML served from a CDN-adjacent VPS.
+This means a local business website on Valence has higher uptime than most cloud-hosted WordPress sites, because the fallback is pre-compiled HTML served from a CDN-adjacent VPS.
 
 ---
 
@@ -413,7 +413,7 @@ Unique, time-boxed codes tied to `session_id`. Redeemed at POS, synced back to P
 Location: `packages/hud/`
 
 ### Client HUD (`/admin/hud`)
-Visible on every appliance. Shows that client's own analytics: sessions, pageviews, conversions, referrers, high-intent actions. Built with Inertia's own Web Components. Pure SVG/CSS charting — no charting libraries.
+Visible on every appliance. Shows that client's own analytics: sessions, pageviews, conversions, referrers, high-intent actions. Built with Valence's own Web Components. Pure SVG/CSS charting — no charting libraries.
 
 ### Fleet Dashboard (`/admin/fleet`)
 Visible only on the studio appliance. Shows all client sites in one view. Each row: site_id, business_type, metrics, health indicator (green = reported today, yellow = 24-48h stale, red = offline 48h+). Filterable by business_type.
@@ -427,11 +427,11 @@ Cross-client analytics grouped by business_type. Conversion patterns, traffic tr
 
 ### Payload CMS 3.x
 
-Self-hosted headless CMS running on the same Node.js process and PostgreSQL instance as the Inertia site. MIT license. No external SaaS dependency.
+Self-hosted headless CMS running on the same Node.js process and PostgreSQL instance as the Valence site. MIT license. No external SaaS dependency.
 
 - Admin UI at `/admin` (React-based, but this is the back-office panel, never public-facing)
 - Content stored in the client's own PostgreSQL database on their own hardware
-- API delivers structured JSON consumed by Inertia's server-side route handlers
+- API delivers structured JSON consumed by Valence's server-side route handlers
 - On publish: webhook triggers static snapshot export for gliding failover
 
 The React in Payload's admin panel does NOT violate the framework's "no React" rule. That rule applies to public-facing pages served to visitors. The admin panel is an authenticated back-office tool behind `/admin`.

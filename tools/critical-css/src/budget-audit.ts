@@ -1,6 +1,6 @@
 import { gzipSync } from 'node:zlib'
-import { fromThrowable } from '@inertia/neverthrow'
-import type { Result } from '@inertia/neverthrow'
+import { fromThrowable } from '@valencets/neverthrow'
+import type { Result } from '@valencets/neverthrow'
 import { CriticalCSSErrorCode } from './types.js'
 import type { CriticalCSSError, BudgetReport } from './types.js'
 

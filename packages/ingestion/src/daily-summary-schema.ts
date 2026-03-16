@@ -1,5 +1,5 @@
-import { ok, err } from '@inertia/neverthrow'
-import type { Result } from '@inertia/neverthrow'
+import { ok, err } from '@valencets/neverthrow'
+import type { Result } from '@valencets/neverthrow'
 import { z } from 'zod'
 import type { ValidationFailure } from './schemas.js'
 

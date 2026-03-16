@@ -1,7 +1,7 @@
 import postcss from 'postcss'
 import type { Root, ChildNode, Rule, AtRule } from 'postcss'
-import { err, fromThrowable } from '@inertia/neverthrow'
-import type { Result } from '@inertia/neverthrow'
+import { err, fromThrowable } from '@valencets/neverthrow'
+import type { Result } from '@valencets/neverthrow'
 import { CriticalCSSErrorCode } from './types.js'
 import type { CriticalCSSError, ExtractedSelectors, SplitResult } from './types.js'
 

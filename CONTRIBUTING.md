@@ -1,4 +1,4 @@
-# Contributing to Inertia
+# Contributing to Valence
 
 ## Development Setup
 

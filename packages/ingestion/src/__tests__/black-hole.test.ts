@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { ok, err } from '@inertia/neverthrow'
+import { ok, err } from '@valencets/neverthrow'
 import { createIngestionHandler } from '../black-hole.js'
 import type { AuditFn, AuditEntry } from '../black-hole.js'
 import type { PersistFn } from '../pipeline.js'

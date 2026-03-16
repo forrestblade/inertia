@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
-import { ok, err } from '@inertia/neverthrow'
-import type { Result } from '@inertia/neverthrow'
+import { ok, err } from '@valencets/neverthrow'
+import type { Result } from '@valencets/neverthrow'
 
 export const HmacErrorCode = {
   INVALID_SIGNATURE: 'INVALID_SIGNATURE',

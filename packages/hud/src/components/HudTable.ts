@@ -1,4 +1,4 @@
-import { fromThrowable } from '@inertia/neverthrow'
+import { fromThrowable } from '@valencets/neverthrow'
 import { HUD_COLORS, HUD_TYPOGRAPHY, HUD_SPACING } from '../tokens/hud-tokens.js'
 
 const parseJson = fromThrowable(JSON.parse)

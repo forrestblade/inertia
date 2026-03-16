@@ -2,13 +2,13 @@
 
 ## What This Is
 
-The HUD (Heads-Up Display) is Inertia's self-hosted, first-party analytics dashboard. It lives inside the client's headless CMS admin console as a single pane of glass: content editing and analytics in one interface. It replaces Google Analytics, Adobe Analytics, and every third-party tracking script. The client owns 100% of their data. No third-party tracking scripts means zero ad-blocker interference.
+The HUD (Heads-Up Display) is Valence's self-hosted, first-party analytics dashboard. It lives inside the client's headless CMS admin console as a single pane of glass: content editing and analytics in one interface. It replaces Google Analytics, Adobe Analytics, and every third-party tracking script. The client owns 100% of their data. No third-party tracking scripts means zero ad-blocker interference.
 
-The HUD is not a generic dashboard. It is an aerospace-grade instrument panel built with the same deterministic constraints as the rest of Inertia. It reads from pre-aggregated PostgreSQL summary tables, never raw event rows. It renders with fixed-size DOM elements, never infinite scroll. It uses color as function, never decoration.
+The HUD is not a generic dashboard. It is an aerospace-grade instrument panel built with the same deterministic constraints as the rest of Valence. It reads from pre-aggregated PostgreSQL summary tables, never raw event rows. It renders with fixed-size DOM elements, never infinite scroll. It uses color as function, never decoration.
 
 ## Role & Context
 
-You are building the HUD package (`packages/hud/`) for the Inertia framework. The target users are local service business owners in the DFW metro area: barbershops, contractors, legal practices, medical clinics, restaurants. These are not data analysts. They need to open the dashboard, understand what happened this week, and close it. The HUD must communicate complex telemetry in the simplest possible visual language without dumbing down the data.
+You are building the HUD package (`packages/hud/`) for the Valence framework. The target users are local service business owners in the DFW metro area: barbershops, contractors, legal practices, medical clinics, restaurants. These are not data analysts. They need to open the dashboard, understand what happened this week, and close it. The HUD must communicate complex telemetry in the simplest possible visual language without dumbing down the data.
 
 Secondary users are the studio operator (Forrest) who needs deeper diagnostic views: ingestion pipeline health, buffer saturation, payload rejection rates.
 

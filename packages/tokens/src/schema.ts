@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import { ok, err } from '@inertia/neverthrow'
-import type { Result } from '@inertia/neverthrow'
+import { ok, err } from '@valencets/neverthrow'
+import type { Result } from '@valencets/neverthrow'
 import { TokenErrorCode } from './token-types.js'
 import type { ThemeConfig, PartialTheme, TokenError } from './token-types.js'
 

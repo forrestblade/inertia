@@ -1,5 +1,5 @@
 {
-  "name": "@inertia/db",
+  "name": "@valencets/db",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -21,7 +21,7 @@
     "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
-    "@inertia/neverthrow": "workspace:*",
+    "@valencets/neverthrow": "workspace:*",
     "postgres": "3.4.8",
     "zod": "4.3.6"
   },

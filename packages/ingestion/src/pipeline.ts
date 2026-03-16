@@ -1,4 +1,4 @@
-import type { Result, ResultAsync } from '@inertia/neverthrow'
+import type { Result, ResultAsync } from '@valencets/neverthrow'
 import { safeJsonParse } from './safe-json-parse.js'
 import type { ParseFailure } from './safe-json-parse.js'
 import { validateTelemetryPayload } from './schemas.js'

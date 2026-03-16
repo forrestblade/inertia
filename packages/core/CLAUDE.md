@@ -1,6 +1,6 @@
 # packages/core
 
-Telemetry engine and HTML-over-the-wire router. The two most critical subsystems in Inertia.
+Telemetry engine and HTML-over-the-wire router. The two most critical subsystems in Valence.
 
 ## Module Map
 

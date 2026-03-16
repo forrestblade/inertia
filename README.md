@@ -1,4 +1,4 @@
-# Inertia
+# Valence
 
 Deterministic web framework applying JSF aerospace coding standards to TypeScript, Web Components, and PostgreSQL. Proprietary engine for a solo web studio targeting local service businesses.
 
@@ -47,8 +47,8 @@ tools/
 Prerequisites: Node.js >= 22, pnpm 10.x
 
 ```bash
-git clone https://github.com/forrestblade/inertia.git
-cd inertia
+git clone https://github.com/forrestblade/valencets.git
+cd valencets
 pnpm install
 ```
 
