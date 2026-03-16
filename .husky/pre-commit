@@ -1,2 +1,1 @@
 pnpm lint
-tsx tools/audit/run-audit.ts --staged

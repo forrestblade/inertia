@@ -1,6 +1,6 @@
 {
   "name": "@valencets/neverthrow",
-  "version": "8.2.0",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "main": "index.js",
@@ -9,5 +9,5 @@
     ".": { "import": "./index.js", "types": "./index.d.ts" }
   },
   "license": "MIT",
-  "description": "Vendored neverthrow v8.2.0 — Result<Ok, Err> monads. Original: https://github.com/supermacro/neverthrow"
+  "description": "Internal: vendored neverthrow v8.2.0 Result monads. Not published."
 }

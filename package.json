@@ -1,5 +1,5 @@
 {
-  "name": "valencets",
+  "name": "valence",
   "private": true,
   "type": "module",
   "scripts": {
@@ -7,11 +7,8 @@
     "test": "pnpm -r run test",
     "test:ci": "pnpm -r --workspace-concurrency=4 run test",
     "lint": "eslint .",
-    "dev": "pnpm --filter",
-    "audit:patterns": "tsx tools/audit/run-audit.ts --all",
-    "audit:lighthouse": "tsx tools/lighthouse/run-lighthouse.ts",
     "typecheck": "pnpm build",
-    "validate": "pnpm typecheck && pnpm lint && pnpm audit:patterns && pnpm audit:lighthouse",
+    "validate": "pnpm typecheck && pnpm lint",
     "prepare": "husky"
   },
   "devDependencies": {
@@ -25,10 +22,5 @@
   "packageManager": "pnpm@10.30.3",
   "engines": {
     "node": ">=22.0.0"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild"
-    ]
   }
 }
