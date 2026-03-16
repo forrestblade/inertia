@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { getDailySummary, getUnsyncedDailySummaries, markSynced, insertDailySummaryFromRemote, getDailyBreakdowns, getDailyTrend } from '../daily-summary-queries.js'
-import type { DbPool } from '../connection.js'
+import type { DbPool } from '@valencets/db'
 
 function makeMockPool (returnValue: unknown = []): DbPool {
   const sql = vi.fn(() => Promise.resolve(returnValue)) as unknown as DbPool['sql']

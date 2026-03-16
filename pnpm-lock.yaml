@@ -68,10 +68,10 @@ importers:
         specifier: workspace:*
         version: link:../neverthrow
       postgres:
-        specifier: 3.4.8
+        specifier: ^3.4.8
         version: 3.4.8
       zod:
-        specifier: 4.3.6
+        specifier: ^4.3.6
         version: 4.3.6
     devDependencies:
       '@types/node':
@@ -85,9 +85,12 @@ importers:
       '@valencets/db':
         specifier: workspace:*
         version: link:../db
-      '@valencets/ui':
+      '@valencets/neverthrow':
         specifier: workspace:*
-        version: link:../ui
+        version: link:../neverthrow
+      postgres:
+        specifier: ^3.4.8
+        version: 3.4.8
     devDependencies:
       '@types/node':
         specifier: ^25.4.0

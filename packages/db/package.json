@@ -1,7 +1,6 @@
 {
   "name": "@valencets/db",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,23 +8,25 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    },
-    "./seed": {
-      "types": "./dist/seed/index.d.ts",
-      "default": "./dist/seed/index.js"
     }
   },
+  "files": ["dist"],
   "scripts": {
     "build": "tsc",
-    "test": "vitest run",
-    "test:integration": "vitest run --config vitest.integration.config.ts"
+    "test": "vitest run"
   },
   "dependencies": {
     "@valencets/neverthrow": "workspace:*",
-    "postgres": "3.4.8",
-    "zod": "4.3.6"
+    "postgres": "^3.4.8",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^25.4.0"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/valencets/valence.git",
+    "directory": "packages/db"
   }
 }

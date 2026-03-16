@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { generateDailySummary } from '../daily-summary-aggregation.js'
-import type { DbPool } from '../connection.js'
+import type { DbPool } from '@valencets/db'
 
 function makeMockPool (returnValues: Record<string, unknown[]>): DbPool {
   let callIndex = 0

@@ -3,8 +3,8 @@
 ## Development Setup
 
 ```bash
-git clone https://github.com/forrestblade/inertia.git
-cd inertia
+git clone https://github.com/valencets/valence.git
+cd valence
 pnpm install
 pnpm test   # Verify everything passes
 pnpm lint   # Verify lint is clean
@@ -18,7 +18,7 @@ Requires Node.js >= 22 and pnpm 10.x. The `packageManager` field in `package.jso
 
 These will fail code review. No exceptions.
 
-- **No `try/catch/throw`** in business logic. Use `Result<Ok, Err>` monads from neverthrow. The ONE permitted boundary is `safeJsonParse()` in `packages/ingestion/`.
+- **No `try/catch/throw`** in business logic. Use `Result<Ok, Err>` monads from neverthrow.
 - **No `switch` statements.** Use static dictionary maps.
 - **No `new` keyword** for telemetry objects at runtime. Pre-allocate at boot.
 - **No `Record<string, any>`** or any loose typing. TypeScript strict mode is enforced.
@@ -51,15 +51,15 @@ The project uses strict mode with the following compiler options enforced:
 Logical semantic micro-commits using conventional format:
 
 ```
-feat(telemetry): implement ring buffer flush mechanics
-fix(ingestion): handle empty payload edge case
+feat(telemetry): implement daily aggregation pipeline
+fix(db): handle connection timeout edge case
 refactor(router): extract fragment swap to dedicated module
-test(hud): add malformed JSON fallback tests for HudTable
+test(core): add ring buffer saturation tests
 ci: add GitHub Actions lint and test pipeline
 chore: sync pnpm-lock.yaml
 ```
 
-Scope is the package or subsystem name: `telemetry`, `ingestion`, `db`, `router`, `components`, `tokens`, `hud`, `critical-css`, `studio`.
+Scope is the package or subsystem name: `core`, `db`, `telemetry`, `ui`, `cms`, `router`, `docs`.
 
 Commits are enforced via Husky pre-commit hooks that run lint before each commit.
 
@@ -70,23 +70,6 @@ Commits are enforced via Husky pre-commit hooks that run lint before each commit
 3. Ensure `pnpm test` and `pnpm lint` both pass.
 4. Write tests for new functionality. Follow the existing pattern: happy-dom environment, `beforeAll` dynamic import, `createElement`/`attach` helpers.
 5. Open a PR against `master`. CI will run lint and tests automatically.
-
-## Project Structure
-
-Features for deployed sites live in `sites/<site-name>/features/<feature-name>/`:
-
-```
-features/<feature-name>/
-  components/    Web Components (Custom Elements)
-  templates/     HTML fragments returned by server routes
-  server/        Server-side route handlers (return HTML, not JSON)
-  types/         TypeScript interfaces (monomorphic, explicit)
-  schemas/       Zod schemas (.safeParse() only)
-  telemetry/     Feature-specific IntentType definitions
-  config/        Constants and static dictionary maps
-```
-
-Only create directories you actually use. Not every feature needs all of these.
 
 ## Architecture Guidelines
 
@@ -99,5 +82,5 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for full details.
 
 ## File Boundaries
 
-- **Safe to edit**: `packages/`, `sites/`, `tools/`, `docs/`
+- **Safe to edit**: `packages/`, `docs/`
 - **Never touch**: `node_modules/`, `.husky/` (edit via config only), any `dist/` output

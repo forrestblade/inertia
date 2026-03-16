@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { getSessionSummaries, getEventSummaries, getConversionSummaries, getIngestionHealth, insertIngestionHealth } from '../summary-queries.js'
-import { DbErrorCode } from '../types.js'
-import type { DbPool } from '../connection.js'
+import { DbErrorCode } from '@valencets/db'
+import type { DbPool } from '@valencets/db'
 import type { SummaryPeriod } from '../summary-types.js'
 
 const period: SummaryPeriod = {

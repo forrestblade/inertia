@@ -14,36 +14,6 @@ export interface DbError {
   readonly message: string
 }
 
-export interface SessionRow {
-  readonly session_id: string
-  readonly created_at: Date
-  readonly referrer: string | null
-  readonly device_type: string
-  readonly operating_system: string | null
-}
-
-export interface EventRow {
-  readonly event_id: number
-  readonly session_id: string
-  readonly created_at: Date
-  readonly event_category: string
-  readonly dom_target: string | null
-  readonly payload: Record<string, unknown>
-}
-
-export interface InsertableSession {
-  readonly referrer: string | null
-  readonly device_type: string
-  readonly operating_system: string | null
-}
-
-export interface InsertableEvent {
-  readonly session_id: string
-  readonly event_category: string
-  readonly dom_target: string | null
-  readonly payload: Record<string, unknown>
-}
-
 export interface DbConfig {
   readonly host: string
   readonly port: number

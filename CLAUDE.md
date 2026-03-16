@@ -4,22 +4,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # Valence Framework
 
-Deterministic web framework applying JSF aerospace coding standards to TypeScript, Web Components, and PostgreSQL. Proprietary engine for a solo web studio delivering physical web server appliances to local service businesses.
+Schema-driven web framework with built-in CMS, telemetry, and a zero-dependency UI primitive library. TypeScript, Web Components, PostgreSQL.
+
+## What Valence Is
+
+Valence is a web framework where content management and analytics are first-class primitives. Define a schema, get a database, an admin interface, validation, and conversion tracking out of the box. Every UI component extends a protocol base class (`ValElement`) that enforces accessibility, i18n, CMS traceability, and telemetry emission at the platform level.
+
+Valence is **deployment-agnostic**. It runs anywhere Node.js and PostgreSQL run: a VPS, a container, a bare-metal server, edge hardware. The framework does not care where it's deployed. Deployment strategy is an application concern, not a framework concern.
 
 ## Tech Stack
 
-- Language: Vanilla ES6/ES7 + TypeScript (strict mode, zero `any`)
-- UI: Native Web Components (Custom Elements), no React/Angular/Vue on public-facing pages
-- Styling: PostCSS + Tailwind CSS (design token driven, OKLCh color space)
-- Routing: HTML-over-the-wire, `history.pushState()`, DOMParser fragment swaps, beforeSwap/afterSwap lifecycle hooks
-- Server: Node.js or Bun
-- CMS: Payload CMS 3.x (self-hosted, PostgreSQL-backed, MIT license). React exists in admin panel only, never in public pages.
-- Database: PostgreSQL (client-owned, immutable append-only ledger)
-- Analytics: Self-hosted first-party telemetry engine (ring buffer → ingestion → PostgreSQL → HUD)
-- Linting: Neostandard
-- Validation: Zod (`.safeParse()` only, never `.parse()`)
-- Error handling: `@valencets/neverthrow` (vendored Result monads, originally neverthrow v8.2.0)
-- Package manager: pnpm workspaces (monorepo)
+| Layer          | Technology                             | Notes                                           |
+| -------------- | -------------------------------------- | ----------------------------------------------- |
+| Language       | TypeScript (strict mode, zero `any`)   | ES2022 target, ESNext modules                   |
+| UI             | Native Web Components via `ValElement` | Protocol base class with 4 pillars              |
+| Styling        | CSS custom properties (design tokens)  | Tailwind for light DOM layout                   |
+| Routing        | HTML-over-the-wire                     | `history.pushState()`, DOMParser fragment swaps |
+| Server         | Node.js (http module)                  | No Express, no Fastify                          |
+| Database       | PostgreSQL                             | Tagged template SQL via `postgres` driver       |
+| Validation     | Zod 4.x                                | `.safeParse()` exclusively                      |
+| Error handling | Result monads                          | Vendored neverthrow in `packages/neverthrow/`   |
+| Linting        | Neostandard (ESLint 9)                 | Pre-commit hook enforced                        |
+| Testing        | Vitest 4.x + happy-dom                 | ~991 tests across monorepo                      |
+| Package mgr    | pnpm 10.x workspaces                   | Monorepo, `node >= 22`                          |
+| Build          | TypeScript compiler (`tsc`)            | Per-package, outputs to `dist/`                 |
 
 ## The Four Pillars (Non-Negotiable)
 
@@ -28,83 +36,165 @@ Deterministic web framework applying JSF aerospace coding standards to TypeScrip
 3. **AV Rule 3** — Cyclomatic complexity < 20 per function. Early returns, static dictionary maps, micro-componentization. No `switch` statements. No enums (const unions only).
 4. **14kB Protocol Limit** — Critical shell (inline CSS + initial DOM) must fit in first 10 TCP packets (~14kB compressed). No external stylesheets in critical path.
 
-## Infrastructure Model
-
-### Hardware (Client Appliance)
-- Fanless x86 mini-PC (Intel N100, 8GB+ RAM, dual NIC preferred)
-- NAS-grade NVMe SSD (WD Red SN700, high TBW for PostgreSQL write loads)
-- Inline 12V DC mini-UPS (survives power blips, cleaners unplugging outlets)
-- No Raspberry Pi (SD cards corrupt under PostgreSQL WAL). No ZimaBoard (cost/margin).
-
-### Network (Disposable Infrastructure)
-- Appliance establishes persistent outbound WireGuard tunnel to a stateless $4/mo VPS (Hetzner/DigitalOcean)
-- VPS runs Caddy as a reverse proxy: handles public internet traffic + SSL, pipes down the tunnel
-- VPS is disposable. If it dies, spin a new one in 60 seconds. The site lives on the appliance, not the VPS.
-- No Cloudflare Tunnels (surrenders control to Big Tech, violates ownership thesis)
-
-### Gliding Failover
-- On every CMS publish, the appliance compiles a static HTML snapshot and rsyncs it to the VPS
-- If the appliance goes offline, Caddy serves the static snapshot automatically
-- Dynamic telemetry pauses but the public storefront never goes dark
-- When the appliance reconnects, live serving resumes seamlessly
-
-### Public-Facing Copy Rule
-- Never mention specific hardware brand names (N100, NVMe, WD Red) on client-facing pages
-- Use: "industrial-grade x86 edge server" or "dedicated server appliance"
-- Protects margins, prevents clients googling retail parts, maintains enterprise aesthetic
-
-## Architecture Reference
-
-Read `docs/ARCHITECTURE.md` for full details covering:
-- Telemetry engine (circular buffer, object pool, flush mechanics, schema versioning)
-- Ingestion node (monadic pipeline, Black Hole strategy, HMAC signature verification)
-- Router (anticipatory prefetch, fragment swap, beforeSwap/afterSwap hooks, Web Component lifecycle)
-- Database schema (sessions/events/daily_summaries tables, JSONB optimization, 1/80th rule)
-- Fleet dashboard (multi-tenant aggregation, health indicators, cross-client comparison)
-- Offline conversion tracking (DNI, promo codes, proxy actions)
-- Gliding failover (static snapshot + VPS fallback)
-
-## Project Structure
+## Package Structure
 
 ```
 valencets/
 ├── packages/
-│   ├── core/           # Telemetry engine, router, event delegation
-│   ├── components/     # Web Component primitives
-│   ├── tokens/         # Design token engine (OKLCh)
-│   ├── ingestion/      # Server-side monadic pipeline + aggregation endpoint
-│   ├── db/             # PostgreSQL schema, migrations, RBAC, daily summaries, push client
-│   ├── neverthrow/     # Vendored neverthrow v8.2.0 (Result monads, MIT)
-│   └── hud/            # Analytics dashboard (client HUD + fleet dashboard)
-├── tools/
-│   ├── critical-css/   # CSS extraction pipeline
-│   └── build/          # Build tooling
-├── docs/               # Architecture docs, specs, research
+│   ├── core/           # Framework runtime: router, config, CLI, build validator
+│   ├── db/             # PostgreSQL: tagged template queries, migrations, Result types
+│   ├── ui/             # ValElement protocol + Web Component primitives (zero deps)
+│   ├── cms/            # Schema engine, admin UI, auth, media uploads
+│   ├── telemetry/      # Beacon, ingestion, event storage, analytics HUD
+│   └── neverthrow/     # Vendored Result monads (v8.2.0, MIT)
+├── apps/
+│   └── studio/         # Studio website (first Valence deployment, private)
+├── docs/               # Architecture docs, specs
 ├── .husky/             # Git hooks
-└── CLAUDE.md           # You are here
+├── CLAUDE.md           # You are here
+└── CONTRIBUTING.md     # Contributor guide
 ```
+
+## Package Dependency Graph
+
+```
+ui          (standalone, zero internal deps)
+db          (depends on neverthrow, postgres, zod)
+core        (depends on neverthrow)
+telemetry   → db, ui
+cms         → core, db, ui, zod
+```
+
+Three packages with zero cross-workspace dependencies (ui, db, core). Two packages that compose from them (telemetry, cms). Clean DAG, no cycles.
+
+### @valencets/core — Framework Runtime
+
+**Current state: Router + telemetry engine implemented and tested.**
+
+- **Router:** `history.pushState()` navigation, `DOMParser` fragment extraction, `replaceChildren()` swap, `Element.moveBefore()` for persistent Web Components, hover-intent prefetch with velocity calculation, page cache with SWR revalidation.
+- **Telemetry:** `GlobalTelemetryIntent` monomorphic interface, `TelemetryObjectPool` (pre-allocated slots), `TelemetryRingBuffer` (circular buffer), event delegation via `data-*` attributes, `sendBeacon` flush.
+- **Server:** `createServerRouter()` with typed route handlers, `sendHtml()`, `sendJson()`, fragment protocol support.
+- **TODO:** `defineConfig()`, CLI (`valence dev`, `valence migrate`), build validator, critical CSS extraction.
+
+### @valencets/db — PostgreSQL Layer
+
+**Current state: Connection pool, queries, migrations, aggregation implemented and tested.**
+
+The db package currently contains both framework-level database primitives AND studio-specific application code that needs to be migrated out.
+
+**Framework-level (stays in db):**
+
+- `connection.ts` — `createPool()`, config validation, `mapPostgresError()`
+- `queries.ts` — `createSession()`, `insertEvents()`, `getEventsBySession()`, etc.
+- `migration-runner.ts` — `loadMigrations()`, `runMigrations()`, `getMigrationStatus()`
+- `types.ts` — `DbPool`, `DbError`, `DbErrorCode`, `SessionRow`, `EventRow`, `DbConfig`
+
+**Needs migration to @valencets/telemetry:**
+
+- `aggregation.ts` — session/event/conversion summary aggregation
+- `daily-summary-aggregation.ts` — daily summary generation
+- `daily-summary-queries.ts` — daily summary CRUD
+- `daily-summary-types.ts` — daily summary types
+- `summary-queries.ts` — summary table queries
+- `summary-types.ts` — summary table types
+
+**Needs migration to apps/studio/:**
+
+- `fleet-queries.ts` — fleet dashboard queries (studio business logic)
+- `site-queries.ts` — site registry queries (studio business logic)
+- `site-types.ts` — site registry types (studio business logic)
+
+**Driver:** `postgres` (porsager/postgres) — tagged template SQL, parameterized by default, zero deps.
+
+### @valencets/ui — ValElement Protocol + Primitives
+
+**Current state: Package scaffolded, architecture designed, not yet implemented.**
+
+Protocol base class (`ValElement`) that every component extends. Four pillars baked into the base: telemetry emission (opt-in per instance), CMS traceability via `data-cms-id`, i18n via `Intl` and shared `lang` attribute observation, ARIA via `ElementInternals`.
+
+See Linear doc "[@valencets/ui Architecture](https://linear.app/inertiastudio/document/valencetsui-architecture-protocol-base-class-component-inventory-0a551a293c0a)" for full component inventory and design decisions.
+
+Key architectural decisions:
+
+- Interactive components (button, input, dialog) use Shadow DOM with CSS custom properties
+- Layout components (stack, grid, section) use light DOM and can use Tailwind directly
+- Shared singleton locale observer (not one MutationObserver per instance)
+- Template-clone-once pattern (never `innerHTML` on re-render)
+- Form-associated custom elements via `ElementInternals`
+
+### @valencets/cms — Schema Engine + Admin
+
+**Current state: Package scaffolded, architecture designed, not yet implemented.**
+
+Schema engine: `collection()` + `field.*` API generates Postgres tables, Zod validators, and admin UI from a single TypeScript definition. Server-rendered admin panel built on `@valencets/ui`. Session-based auth with Argon2id. Local filesystem media storage.
+
+See Linear doc "[Valence CMS Architecture Summary](https://linear.app/inertiastudio/document/valence-cms-architecture-summary-c6760d2c193c)" for full spec.
+
+### @valencets/telemetry — Analytics
+
+**Current state: Package scaffolded, core telemetry engine exists in @valencets/core, needs extraction.**
+
+Client beacon (page path, referrer, session ID, events). Server ingestion endpoint. Pre-allocated ring buffer for event storage. Daily summary aggregation. Analytics HUD. Zero third-party scripts in the browser.
+
+The client-side telemetry engine (ring buffer, object pool, event delegation, flush) currently lives in `@valencets/core`. The server-side ingestion, aggregation, and HUD need to be assembled from code currently scattered across `@valencets/db` and the studio app.
+
+## Banned Patterns
+
+These will fail code review. No exceptions.
+
+| Pattern                         | Why                | Use Instead                         |
+| ------------------------------- | ------------------ | ----------------------------------- |
+| `try { } catch { }`             | AV Rule 208        | `Result<Ok, Err>` monads            |
+| `switch (x) { }`                | AV Rule 3          | Static dictionary maps              |
+| `enum Foo { }`                  | No enums           | `const Foo = [...] as const`        |
+| `new TelemetryObj()` at runtime | AV Rule 206        | Pre-allocate at boot                |
+| `Record<string, any>`           | Loose typing       | Explicit interfaces                 |
+| `.parse()` on Zod               | Throws on failure  | `.safeParse()` only                 |
+| `import React`                  | No VDOM frameworks | Native Web Components               |
+| `localStorage`/`sessionStorage` | Fragile state      | Server-delivered HTML               |
+| `process.env` outside config    | Scattered config   | Centralized `loadConfig()`          |
+| Third-party analytics           | Self-hosted only   | Valence telemetry engine            |
+| `throw new Error(...)`          | AV Rule 208        | `err(...)` or `Promise.reject(...)` |
+| `export default`                | Named exports only | `export function/class/const`       |
+
+## Error Handling Pattern
+
+Every domain uses the const union + interface pattern:
+
+```typescript
+export const FooErrorCode = {
+  NOT_FOUND: "NOT_FOUND",
+  INVALID_INPUT: "INVALID_INPUT",
+} as const;
+
+export type FooErrorCode = (typeof FooErrorCode)[keyof typeof FooErrorCode];
+
+export interface FooError {
+  readonly code: FooErrorCode;
+  readonly message: string;
+}
+```
+
+All async operations return `ResultAsync<T, E>`. All sync operations return `Result<T, E>`. Chain via `.andThen()`, `.map()`, `.match()`.
 
 ## Commands
 
-- `pnpm install` — Install all workspace dependencies
-- `pnpm build` — Build all packages (also serves as typecheck)
-- `pnpm test` — Run tests across all workspaces (vitest + happy-dom)
-- `pnpm test --filter=core` — Run tests for a single package
-- `pnpm vitest run src/path/__tests__/file.test.ts` — Run a single test file (from within package dir)
-- `pnpm lint` — Neostandard lint check (ESLint 9 flat config, enforces `complexity: 20`)
-- `pnpm validate` — Full CI gate: typecheck + lint + pattern audit + Lighthouse
-- `pnpm audit:patterns` — Check all code for banned patterns (try/catch, switch, enum, etc.)
-- `pnpm audit:lighthouse` — Lighthouse audit (fails on anything below 100)
-
-### Pre-commit Hook
-
-Husky runs on every commit: `pnpm lint` + pattern audit on staged files only (`--staged`). If it fails, fix the issue and create a new commit (do not `--amend`).
+```bash
+pnpm install              # Install all workspace dependencies
+pnpm build                # Build all packages (tsc in each)
+pnpm test                 # Run tests across all workspaces
+pnpm test:ci              # Run tests with concurrency limit (CI)
+pnpm lint                 # Neostandard lint check
+pnpm validate             # Full CI gate: typecheck + lint
+pnpm dev --filter=studio  # Dev server for studio app
+```
 
 ## Testing
 
-- Framework: Vitest with happy-dom environment (all packages)
-- Test location: `src/__tests__/*.test.ts` in packages
-- Pattern: `beforeAll` dynamic import, `createElement`/`attach` helpers for Web Components
+- **Framework:** Vitest 4.x with happy-dom environment
+- **Test location:** `src/__tests__/*.test.ts` in packages
+- **Pattern:** `beforeAll` dynamic import, `createElement`/`attach` helpers for Web Components
+- **TDD discipline:** RED → GREEN → REFACTOR commits
 - Test both `Ok` and `Err` branches of all Result-returning functions
 
 ## Code Rules
@@ -114,51 +204,56 @@ Husky runs on every commit: `pnpm lint` + pattern audit on staged files only (`-
 - All interfaces explicitly defined. No inferred return types on public functions.
 - File naming: `kebab-case.ts` for modules, `PascalCase.ts` for Web Component classes
 - Comments explain WHY, not WHAT
-- Do not arbitrarily refactor `let` to `const` or vice versa. Respect intentional declarations.
 - No enums. Use const unions: `const BusinessType = ['barbershop', 'legal', ...] as const`
 
 ## Commit Convention
 
 Logical semantic micro-commits using conventional format:
-- `feat(telemetry): implement ring buffer flush mechanics`
-- `fix(ingestion): handle empty payload edge case`
-- `refactor(router): extract fragment swap to dedicated module`
-- `test(hud): RED — add fleet dashboard health indicator tests`
 
-TDD commits must be tagged: `RED`, `GREEN`, or `REFACTOR` in the message.
+```
+feat(scope): description        # New feature
+fix(scope): description         # Bug fix
+refactor(scope): description    # Code improvement, no behavior change
+test(scope): description        # Adding/modifying tests
+docs(scope): description        # Documentation
+chore(scope): description       # Dependencies, config, tooling
+```
 
-## Post-Commit Indexing
+**Scopes:** `core`, `db`, `ui`, `cms`, `telemetry`, `studio`
 
-After every commit, re-index the codebase and docs so search tools stay current:
+**TDD tags:** RED, GREEN, REFACTOR must appear in the commit message for TDD commits.
 
-1. `mcp__jcodemunch__index_folder` with `path: "/home/forrest/dev/valencets"` and `incremental: true`
-2. `mcp__jdocmunch__index_local` with `path: "/home/forrest/dev/valencets"` and `incremental: true`
+## Cross-Package Import Rules
 
-Always use `incremental: true` to avoid full re-index on every commit.
-
-## Banned Patterns
-
-These will fail code review. No exceptions.
-
-- `try { } catch { }` in business logic (use Result monads)
-- `switch` statements (use static dictionary maps)
-- `enum` keyword (use const unions)
-- `new` keyword for telemetry objects at runtime (pre-allocate at boot)
-- `Record<string, any>` or any loose typing
-- `import React` or any Virtual DOM framework in public-facing code
-- `.parse()` on Zod schemas (use `.safeParse()` only)
-- Third-party analytics scripts (Google Analytics, Adobe, etc.)
-- `localStorage`/`sessionStorage` for critical application state
-- `process.env` outside the centralized config module
-- Cloudflare Tunnels (use WireGuard + VPS relay)
-- Specific hardware brand names on public-facing pages
-
-## When Compacting
-
-Always preserve: the Four Pillars, infrastructure model (N100 + WireGuard + VPS + gliding failover), banned patterns list, current implementation phase, and any active file paths being worked on.
+| Package                | Can Import From                                            |
+| ---------------------- | ---------------------------------------------------------- |
+| `@valencets/core`      | `@valencets/neverthrow` only                               |
+| `@valencets/db`        | `@valencets/neverthrow`, `postgres`, `zod`                 |
+| `@valencets/ui`        | Nothing (zero deps)                                        |
+| `@valencets/cms`       | `@valencets/core`, `@valencets/db`, `@valencets/ui`, `zod` |
+| `@valencets/telemetry` | `@valencets/db`, `@valencets/ui`                           |
 
 ## File Boundaries
 
-- Safe to edit: `packages/`, `tools/`, `docs/`
-- Never touch: `node_modules/`, `.husky/` (edit via config only), any `dist/` output
-- Read for context: `docs/ARCHITECTURE.md`, package-level `CLAUDE.md` files
+- **Safe to edit:** `packages/`, `apps/`, `docs/`
+- **Never touch:** `node_modules/`, `.husky/` (edit via config only), any `dist/` output
+- **Read for context:** `docs/ARCHITECTURE.md`, package-level `CLAUDE.md` files
+
+## Current Development Priority
+
+1. `@valencets/ui` — ValElement base class + first 6 components (button, input, form, stack, grid, heading)
+2. `@valencets/cms` — Schema engine (`collection()`, `field.*`), migration generator, query builder
+3. Clean up `@valencets/db` — Move telemetry-specific and studio-specific code to correct packages
+4. `@valencets/telemetry` — Extract and consolidate telemetry code from core and db
+5. `@valencets/core` — Add `defineConfig()`, CLI tooling
+
+## What NOT to Build Yet
+
+- npm create valence@latest scaffolding
+- Docs site (valenceframework.dev)
+- Rich text editor (Lexical integration)
+- JSON API / headless mode
+- Revision history / immutable ledger
+- Multi-role RBAC (single admin user for v1)
+- Media optimization pipeline (just file upload for v1)
+- Lifecycle hooks engine

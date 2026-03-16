@@ -1,38 +1,36 @@
 # packages/db
 
-PostgreSQL immutable ledger. Client-owned database for self-hosted analytics.
+Framework-level database toolkit. Provides connection pooling, error mapping, and a migration runner. Does NOT contain application schemas, queries, or migrations -- those belong in consuming packages (e.g., telemetry) or apps (e.g., studio).
 
-## Schema
+## Module Map
 
-Two core tables: `sessions` and `events`. See `docs/ARCHITECTURE.md` section: PostgreSQL Schema for full DDL.
+```
+src/
+├── types.ts              # DbErrorCode (const object + type), DbError, DbConfig
+├── connection.ts         # validateDbConfig, createPool, closePool, mapPostgresError, DbPool
+├── migration-runner.ts   # loadMigrations, runMigrations, getMigrationStatus, parseMigrationFilename, sortMigrations, validateMigrations, MigrationFile
+├── index.ts              # Barrel exports
+└── __tests__/
+    ├── types.test.ts          # 10 tests
+    ├── connection.test.ts     # 13 tests
+    └── migration-runner.test.ts # 15 tests
+```
 
-Session liveness is derived from the last event timestamp — no `is_active` column. This avoids UPDATE operations which conflict with INSERT+SELECT-only RBAC.
-
-## Immutability
-
-- Application service account: INSERT + SELECT only
-- UPDATE, DELETE, TRUNCATE revoked at engine level
-- Corrections are compensating events, never mutations
-- ON DELETE RESTRICT on foreign keys (never cascade deletes)
-
-## JSONB Rules
-
-- The `payload` column stores business-specific data
-- Apply the **1/80th Rule**: if a JSONB key appears in >1/80th of rows, extract to a typed column
-- GIN index uses `jsonb_path_ops` (not default) for containment queries
-- Keep payloads under 2kB to avoid TOAST overhead
-
-## No Cross-Package Imports
-
-DB defines its own types (`InsertableEvent`, `SessionRow`). Wiring happens at the app layer. Never import from `@valencets/core` or `@valencets/ingestion`.
+38 total tests.
 
 ## Driver
 
-`postgres` (porsager/postgres). Native ESM, tagged template SQL (parameterized by default), zero deps, TypeScript-first. Import as `import postgres from 'postgres'` — default import (third-party API, not our export convention).
+`postgres` (porsager/postgres). Native ESM, tagged template SQL (parameterized by default), zero deps, TypeScript-first. Import as `import postgres from 'postgres'` -- default import (third-party API, not our export convention).
 
-## Migrations
+## No Cross-Package Imports
 
-All schema changes via migration files in `migrations/`. Filename format: `NNN-name.sql` (e.g., `001-init.sql`). The migration runner creates its own `_migrations` tracking table.
+DB defines its own types (`DbConfig`, `DbPool`, `DbError`). Wiring happens at the app layer. Never import from `@valencets/core` or `@valencets/ingestion`.
+
+## Dependencies
+
+- `@valencets/neverthrow` (workspace:*) -- Result monads
+- `postgres` (^3.4.8) -- PostgreSQL driver
+- `zod` (^4.3.6) -- Config validation via `.safeParse()` only
 
 ## TDD Protocol
 
@@ -42,17 +40,6 @@ Write tests BEFORE implementation. Every feature follows red-green-refactor:
 2. Write the minimum code to make it pass
 3. Refactor while keeping tests green
 
-## Module Map
-
-```
-src/
-├── types.ts              # DbError, SessionRow, EventRow, InsertableSession, InsertableEvent, DbConfig
-├── connection.ts         # validateDbConfig, createPool, closePool, mapPostgresError
-├── migration-runner.ts   # loadMigrations, runMigrations, getMigrationStatus
-├── queries.ts            # createSession, getSessionById, insertEvents, insertEvent, getEventsBySession, getEventsByTimeRange
-└── index.ts              # Barrel exports
-```
-
 ## Development Order
 
-Build schema-first: types → connection → migration runner → SQL migrations → query helpers → barrel exports. Each module is test-driven and merged only when all tests pass.
+Build schema-first: types -> connection -> migration runner -> barrel exports. Each module is test-driven and merged only when all tests pass.

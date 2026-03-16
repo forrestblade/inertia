@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { DbErrorCode } from '../types.js'
-import type { DbError, SessionRow, EventRow, InsertableSession, InsertableEvent, DbConfig } from '../types.js'
+import type { DbError, DbConfig } from '../types.js'
 
 describe('DbErrorCode', () => {
   it('has CONNECTION_FAILED code', () => {
@@ -53,68 +53,11 @@ describe('type construction', () => {
     expect(error.message).toBe('refused')
   })
 
-  it('SessionRow can be constructed', () => {
-    const row: SessionRow = {
-      session_id: 'abc-123',
-      created_at: new Date('2026-01-01'),
-      referrer: 'https://example.com',
-      device_type: 'desktop',
-      operating_system: 'Linux'
-    }
-    expect(row.session_id).toBe('abc-123')
-    expect(row.device_type).toBe('desktop')
-  })
-
-  it('SessionRow allows null referrer and os', () => {
-    const row: SessionRow = {
-      session_id: 'abc-123',
-      created_at: new Date(),
-      referrer: null,
-      device_type: 'mobile',
-      operating_system: null
-    }
-    expect(row.referrer).toBeNull()
-    expect(row.operating_system).toBeNull()
-  })
-
-  it('EventRow can be constructed', () => {
-    const row: EventRow = {
-      event_id: 1,
-      session_id: 'abc-123',
-      created_at: new Date(),
-      event_category: 'CLICK',
-      dom_target: '#btn',
-      payload: { action: 'submit' }
-    }
-    expect(row.event_id).toBe(1)
-    expect(row.event_category).toBe('CLICK')
-  })
-
-  it('InsertableSession can be constructed', () => {
-    const session: InsertableSession = {
-      referrer: null,
-      device_type: 'tablet',
-      operating_system: 'iOS'
-    }
-    expect(session.device_type).toBe('tablet')
-  })
-
-  it('InsertableEvent can be constructed', () => {
-    const event: InsertableEvent = {
-      session_id: 'abc-123',
-      event_category: 'SCROLL',
-      dom_target: null,
-      payload: {}
-    }
-    expect(event.session_id).toBe('abc-123')
-    expect(event.dom_target).toBeNull()
-  })
-
   it('DbConfig can be constructed', () => {
     const config: DbConfig = {
       host: 'localhost',
       port: 5432,
-      database: 'inertia',
+      database: 'mydb',
       username: 'app',
       password: 'secret',
       max: 10,

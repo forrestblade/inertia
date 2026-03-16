@@ -1,1 +1,47 @@
-// @valencets/telemetry — Beacon client, server ingestion, events table, daily summary cron, and HUD dashboard
+// Summary types
+export type {
+  SessionSummaryRow,
+  EventSummaryRow,
+  ConversionSummaryRow,
+  IngestionHealthRow,
+  SummaryPeriod
+} from './summary-types.js'
+
+// Daily summary types
+export type {
+  DailySummaryRow,
+  InsertableDailySummary,
+  DailySummaryPayload,
+  DailyBreakdowns,
+  TopReferrerEntry,
+  TopPageEntry
+} from './daily-summary-types.js'
+
+// Aggregation queries (session/event/conversion summaries)
+export {
+  aggregateSessionSummary,
+  aggregateEventSummary,
+  aggregateConversionSummary
+} from './aggregation.js'
+
+// Summary read queries
+export {
+  getSessionSummaries,
+  getEventSummaries,
+  getConversionSummaries,
+  getIngestionHealth,
+  insertIngestionHealth
+} from './summary-queries.js'
+
+// Daily summary aggregation
+export { generateDailySummary } from './daily-summary-aggregation.js'
+
+// Daily summary queries
+export {
+  getDailySummary,
+  getUnsyncedDailySummaries,
+  markSynced,
+  insertDailySummaryFromRemote,
+  getDailyTrend,
+  getDailyBreakdowns
+} from './daily-summary-queries.js'
