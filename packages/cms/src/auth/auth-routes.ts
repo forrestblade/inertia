@@ -3,6 +3,7 @@ import type { DbPool } from '@valencets/db'
 import type { CollectionRegistry } from '../schema/registry.js'
 import type { RestRouteEntry } from '../api/rest-api.js'
 import { verifyPassword } from './password.js'
+import { createRateLimiter } from './rate-limit.js'
 import { createSession, validateSession, destroySession, buildSessionCookie, buildExpiredSessionCookie } from './session.js'
 import { ResultAsync } from 'neverthrow'
 import { CmsErrorCode } from '../schema/types.js'
@@ -101,6 +102,7 @@ export function createAuthRoutes (
   _collections: CollectionRegistry
 ): Map<string, RestRouteEntry> {
   const routes = new Map<string, RestRouteEntry>()
+  const loginLimiter = createRateLimiter({ maxAttempts: 5, windowMs: 900_000 })
 
   routes.set('/api/users/login', {
     POST: async (req, res) => {
@@ -111,6 +113,11 @@ export function createAuthRoutes (
 
       const { email, password } = parseResult.value
       if (!email || !password) { sendErrorJson(res, 'Email and password required', 400); return }
+
+      if (!loginLimiter.check(email)) {
+        sendErrorJson(res, 'Too many login attempts', 429)
+        return
+      }
 
       const userResult = await queryUser(pool, email)
       if (userResult.isErr()) { sendErrorJson(res, 'Login failed', 401); return }
@@ -123,6 +130,7 @@ export function createAuthRoutes (
         return
       }
 
+      loginLimiter.reset(email)
       const sessionResult = await createSession(user.id, pool)
       if (sessionResult.isErr()) { sendErrorJson(res, 'Login failed', 500); return }
 

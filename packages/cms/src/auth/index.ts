@@ -11,3 +11,6 @@ export type { AuthContext, AuthMiddleware } from './middleware.js'
 export { generateCsrfToken, validateCsrfToken } from './csrf.js'
 
 export { createAuthRoutes } from './auth-routes.js'
+
+export { createRateLimiter } from './rate-limit.js'
+export type { RateLimiter } from './rate-limit.js'
