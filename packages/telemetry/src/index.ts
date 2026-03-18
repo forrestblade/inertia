@@ -45,3 +45,19 @@ export {
   getDailyTrend,
   getDailyBreakdowns
 } from './daily-summary-queries.js'
+
+// Beacon types
+export {
+  BeaconIntentType,
+  BeaconValidationErrorCode,
+  MAX_BEACON_EVENTS,
+  isValidIntentType
+} from './beacon-types.js'
+export type { BeaconEvent, BeaconValidationError } from './beacon-types.js'
+
+// Beacon validation
+export { validateBeaconPayload } from './beacon-validation.js'
+
+// Ingestion
+export { ingestBeacon } from './ingestion.js'
+export type { IngestResult } from './ingestion.js'
