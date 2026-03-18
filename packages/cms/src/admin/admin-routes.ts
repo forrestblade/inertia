@@ -11,6 +11,40 @@ import { renderListView } from './list-view.js'
 import { renderEditView } from './edit-view.js'
 import { createLocalApi } from '../api/local-api.js'
 import { createGlobalRegistry } from '../schema/registry.js'
+import { validateSession } from '../auth/session.js'
+
+type AdminRouteHandler = (req: IncomingMessage, res: ServerResponse, ctx: Record<string, string>) => Promise<void>
+
+interface AdminOptions {
+  readonly requireAuth?: boolean | undefined
+}
+
+function wrapWithAuth (pool: DbPool, handler: AdminRouteHandler): AdminRouteHandler {
+  return async (req, res, ctx) => {
+    const cookieHeader = req.headers.cookie ?? ''
+    const sessionId = parseCookieValue(cookieHeader, 'cms_session')
+    if (!sessionId) {
+      res.writeHead(401, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'Unauthorized' }))
+      return
+    }
+    const result = await validateSession(sessionId, pool)
+    if (result.isErr()) {
+      res.writeHead(401, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'Unauthorized' }))
+      return
+    }
+    return handler(req, res, ctx)
+  }
+}
+
+function parseCookieValue (cookieHeader: string, name: string): string | null {
+  const match = cookieHeader.split(';')
+    .map(c => c.trim())
+    .find(c => c.startsWith(`${name}=`))
+  if (!match) return null
+  return match.slice(name.length + 1)
+}
 
 import type { DocumentData } from '../db/query-builder.js'
 
@@ -51,24 +85,28 @@ function sendHtml (res: ServerResponse, html: string, statusCode: number = 200):
 
 export function createAdminRoutes (
   pool: DbPool,
-  collections: CollectionRegistry
+  collections: CollectionRegistry,
+  options: AdminOptions = {}
 ): Map<string, RestRouteEntry> {
+  const wrap = options.requireAuth
+    ? (handler: AdminRouteHandler): AdminRouteHandler => wrapWithAuth(pool, handler)
+    : (handler: AdminRouteHandler): AdminRouteHandler => handler
   const routes = new Map<string, RestRouteEntry>()
   const allCollections = collections.getAll()
   const globals = createGlobalRegistry()
   const api = createLocalApi(pool, collections, globals)
 
   routes.set('/admin', {
-    GET: async (_req, res) => {
+    GET: wrap(async (_req, res) => {
       const content = renderDashboard(allCollections)
       const html = renderLayout({ title: 'Dashboard', content, collections: allCollections })
       sendHtml(res, html)
-    }
+    })
   })
 
   for (const col of allCollections) {
     routes.set(`/admin/${col.slug}`, {
-      GET: async (_req, res) => {
+      GET: wrap(async (_req, res) => {
         const result = await api.find({ collection: col.slug })
         const docs = result.match(
           (rows) => rows as Array<{ id: string, [key: string]: string | number | boolean | null }>,
@@ -81,11 +119,11 @@ export function createAdminRoutes (
           collections: allCollections
         })
         sendHtml(res, html)
-      }
+      })
     })
 
     routes.set(`/admin/${col.slug}/new`, {
-      GET: async (_req, res) => {
+      GET: wrap(async (_req, res) => {
         const content = renderEditView(col, null)
         const html = renderLayout({
           title: `New ${col.labels?.singular ?? col.slug}`,
@@ -93,8 +131,8 @@ export function createAdminRoutes (
           collections: allCollections
         })
         sendHtml(res, html)
-      },
-      POST: async (req, res) => {
+      }),
+      POST: wrap(async (req, res) => {
         const bodyResult = await safeReadFormBody(req)
         if (bodyResult.isErr()) { sendHtml(res, 'Bad request', 400); return }
         const result = await api.create({ collection: col.slug, data: bodyResult.value })
@@ -105,7 +143,7 @@ export function createAdminRoutes (
           },
           (err) => sendHtml(res, `Error: ${err.message}`, 400)
         )
-      }
+      })
     })
   }
 
