@@ -50,7 +50,7 @@ Five packages under `packages/`, connected by workspace dependencies. `neverthro
 
 @valencets/ui                  (scaffolded, no deps yet)
 
-@valencets/cms                 (scaffolded, depends on core, db, ui, zod)
+@valencets/cms                 (v0.1 complete, depends on db, neverthrow, zod, argon2)
 ```
 
 ### Package Status
@@ -61,7 +61,7 @@ Five packages under `packages/`, connected by workspace dependencies. `neverthro
 | `packages/db/` | Built | 38 | PostgreSQL connection pool, config validation, migration runner, error mapping. |
 | `packages/telemetry/` | Built | 59 | Summary table queries, daily summary aggregation, fleet data types. |
 | `packages/ui/` | Scaffolded | -- | Web Component primitives and design tokens. Placeholder only. |
-| `packages/cms/` | Scaffolded | -- | Content management layer. Placeholder only. |
+| `packages/cms/` | v0.1 complete | 270 tests | Schema engine, admin UI, auth, REST API, media, query builder |
 
 ### Module Boundaries
 
