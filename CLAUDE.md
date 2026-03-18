@@ -130,6 +130,8 @@ These will fail code review. No exceptions.
 | `enum Foo { }`                  | No enums           | `const Foo = [...] as const`        |
 | `new TelemetryObj()` at runtime | AV Rule 206        | Pre-allocate at boot                |
 | `Record<string, any>`           | Loose typing       | Explicit interfaces                 |
+| `Record<string, unknown>`       | Loose typing       | Explicit interfaces or typed unions |
+| `unknown` as a property type    | Loose typing       | `string \| number \| boolean \| null` or explicit union |
 | `.parse()` on Zod               | Throws on failure  | `.safeParse()` only                 |
 | `import React`                  | No VDOM frameworks | Native Web Components               |
 | `localStorage`/`sessionStorage` | Fragile state      | Server-delivered HTML               |

@@ -12,10 +12,12 @@ export const WhereOperator = {
 
 export type WhereOperator = typeof WhereOperator[keyof typeof WhereOperator]
 
+export type SqlValue = string | number | boolean | null | readonly string[] | readonly number[]
+
 export interface WhereCondition {
   readonly field: string
   readonly operator: WhereOperator
-  readonly value: unknown
+  readonly value: SqlValue
 }
 
 export interface WhereClause {

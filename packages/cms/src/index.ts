@@ -57,5 +57,23 @@ export type {
   PaginatedResult,
   QueryBuilderFactory,
   CollectionQueryBuilder,
-  MigrationOutput
+  MigrationOutput,
+  SqlValue
 } from './db/index.js'
+
+export { resolveAccess } from './access/index.js'
+export type {
+  AccessControlFunction,
+  AccessArgs,
+  CollectionAccess,
+  FieldAccess
+} from './access/index.js'
+
+export { runHooks } from './hooks/index.js'
+export type {
+  HookFunction,
+  HookArgs,
+  HookData,
+  CollectionHooks,
+  FieldHooks
+} from './hooks/index.js'

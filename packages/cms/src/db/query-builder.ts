@@ -3,12 +3,24 @@ import type { DbPool } from '@valencets/db'
 import type { CollectionRegistry } from '../schema/registry.js'
 import { CmsErrorCode } from '../schema/types.js'
 import type { CmsError } from '../schema/types.js'
-import type { WhereOperator, PaginatedResult } from './query-types.js'
+import type { WhereOperator, PaginatedResult, SqlValue } from './query-types.js'
+
+export interface DocumentRow {
+  readonly id: string
+  readonly created_at?: string | undefined
+  readonly updated_at?: string | undefined
+  readonly deleted_at?: string | null | undefined
+  readonly [key: string]: SqlValue | undefined
+}
+
+export interface DocumentData {
+  readonly [key: string]: SqlValue
+}
 
 interface WhereEntry {
   readonly field: string
   readonly operator: WhereOperator
-  readonly value: unknown
+  readonly value: SqlValue
 }
 
 interface QueryState {
@@ -66,7 +78,7 @@ function buildLimitOffsetSql (state: QueryState): string {
   return sql
 }
 
-function getWhereValues (state: QueryState): unknown[] {
+function getWhereValues (state: QueryState): SqlValue[] {
   return state.wheres
     .filter(w => w.operator !== 'exists')
     .map(w => w.value)
@@ -75,10 +87,10 @@ function getWhereValues (state: QueryState): unknown[] {
 function executeQuery<T> (
   pool: DbPool,
   queryStr: string,
-  params: unknown[]
+  params: SqlValue[]
 ): ResultAsync<T, CmsError> {
   return ResultAsync.fromPromise(
-    pool.sql(queryStr as never, ...params as never[]).then((rows: unknown) => rows as T),
+    pool.sql(queryStr as never, ...params as never[]).then((rows) => rows as T),
     (e: unknown): CmsError => ({
       code: CmsErrorCode.INTERNAL,
       message: e instanceof Error ? e.message : 'Query failed'
@@ -87,19 +99,19 @@ function executeQuery<T> (
 }
 
 export interface CollectionQueryBuilder {
-  where (field: string, value: unknown): CollectionQueryBuilder
-  where (field: string, operator: WhereOperator, value: unknown): CollectionQueryBuilder
+  where (field: string, value: SqlValue): CollectionQueryBuilder
+  where (field: string, operator: WhereOperator, value: SqlValue): CollectionQueryBuilder
   orderBy (field: string, direction: 'asc' | 'desc'): CollectionQueryBuilder
   limit (n: number): CollectionQueryBuilder
   offset (n: number): CollectionQueryBuilder
   withDeleted (): CollectionQueryBuilder
-  all<T = Record<string, unknown>> (): ResultAsync<T[], CmsError>
-  first<T = Record<string, unknown>> (): ResultAsync<T | null, CmsError>
+  all<T = DocumentRow> (): ResultAsync<T[], CmsError>
+  first<T = DocumentRow> (): ResultAsync<T | null, CmsError>
   count (): ResultAsync<number, CmsError>
-  insert<T = Record<string, unknown>> (data: Record<string, unknown>): ResultAsync<T, CmsError>
-  update<T = Record<string, unknown>> (data: Record<string, unknown>): ResultAsync<T, CmsError>
-  delete<T = Record<string, unknown>> (): ResultAsync<T, CmsError>
-  page<T = Record<string, unknown>> (pageNum: number, perPage: number): ResultAsync<PaginatedResult<T>, CmsError>
+  insert<T = DocumentRow> (data: DocumentData): ResultAsync<T, CmsError>
+  update<T = DocumentRow> (data: DocumentData): ResultAsync<T, CmsError>
+  delete<T = DocumentRow> (): ResultAsync<T, CmsError>
+  page<T = DocumentRow> (pageNum: number, perPage: number): ResultAsync<PaginatedResult<T>, CmsError>
 }
 
 function createBuilder (
@@ -113,10 +125,10 @@ function createBuilder (
     return null
   }
 
-  function whereImpl (fieldOrName: string, operatorOrValue: unknown, maybeValue?: unknown): CollectionQueryBuilder {
+  function whereImpl (fieldOrName: string, operatorOrValue: SqlValue | WhereOperator, maybeValue?: SqlValue): CollectionQueryBuilder {
     const hasOperator = maybeValue !== undefined
     const operator: WhereOperator = hasOperator ? operatorOrValue as WhereOperator : 'equals'
-    const value = hasOperator ? maybeValue : operatorOrValue
+    const value: SqlValue = hasOperator ? maybeValue : operatorOrValue as SqlValue
     return createBuilder(pool, registry, {
       ...state,
       wheres: [...state.wheres, { field: fieldOrName, operator, value }]
@@ -177,7 +189,7 @@ function createBuilder (
         .map(rows => Number(rows[0]?.count ?? 0))
     },
 
-    insert<T> (data: Record<string, unknown>) {
+    insert<T> (data: DocumentData) {
       const err = guardSlug()
       if (err) return errAsync(err)
       const keys = Object.keys(data)
@@ -189,7 +201,7 @@ function createBuilder (
         .map(rows => rows[0] as T)
     },
 
-    update<T> (data: Record<string, unknown>) {
+    update<T> (data: DocumentData) {
       const err = guardSlug()
       if (err) return errAsync(err)
       const keys = Object.keys(data)

@@ -20,7 +20,7 @@ export interface FieldBaseConfig {
   readonly required?: boolean | undefined
   readonly unique?: boolean | undefined
   readonly index?: boolean | undefined
-  readonly defaultValue?: unknown
+  readonly defaultValue?: string | number | boolean | null | undefined
   readonly hidden?: boolean | undefined
   readonly localized?: boolean | undefined
   readonly label?: string | undefined
