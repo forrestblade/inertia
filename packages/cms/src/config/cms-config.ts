@@ -12,6 +12,7 @@ import { createCollectionRegistry, createGlobalRegistry } from '../schema/regist
 import { createLocalApi } from '../api/local-api.js'
 import { createRestRoutes } from '../api/rest-api.js'
 import { createAdminRoutes } from '../admin/admin-routes.js'
+import { injectAuthFields } from '../auth/auth-config.js'
 
 export interface CmsConfig {
   readonly db: DbPool
@@ -38,7 +39,8 @@ export function buildCms (inputConfig: CmsConfig): Result<CmsInstance, CmsError>
   const globals = createGlobalRegistry()
 
   for (const col of config.collections) {
-    const result = collections.register(col)
+    const prepared = injectAuthFields(col)
+    const result = collections.register(prepared)
     if (result.isErr()) return err(result.error)
   }
 
