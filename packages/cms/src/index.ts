@@ -60,7 +60,9 @@ export type {
   CollectionQueryBuilder,
   MigrationOutput,
   SchemaChanges,
-  SqlValue
+  SqlValue,
+  DocumentRow,
+  DocumentData
 } from './db/index.js'
 
 export { resolveAccess } from './access/index.js'
@@ -98,6 +100,8 @@ export {
   createAuthRoutes
 } from './auth/index.js'
 export type { AuthConfig, AuthContext, AuthMiddleware } from './auth/index.js'
+export { createRateLimiter } from './auth/index.js'
+export type { RateLimiter } from './auth/index.js'
 
 export { createLocalApi, createRestRoutes } from './api/index.js'
 export type { LocalApi, RestRouteHandler, RestRouteEntry } from './api/index.js'

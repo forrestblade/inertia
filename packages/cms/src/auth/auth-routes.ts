@@ -1,14 +1,13 @@
-import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { DbPool } from '@valencets/db'
 import type { CollectionRegistry } from '../schema/registry.js'
 import type { RestRouteEntry } from '../api/rest-api.js'
+import { sendJson, sendErrorJson, safeReadBody, safeJsonParse } from '../api/http-utils.js'
+import type { DocumentData } from '../db/query-builder.js'
 import { verifyPassword } from './password.js'
 import { createRateLimiter } from './rate-limit.js'
+import { parseCookie } from './cookie.js'
 import { safeQuery } from '../db/safe-query.js'
 import { createSession, validateSession, destroySession, buildSessionCookie, buildExpiredSessionCookie } from './session.js'
-import { ResultAsync } from 'neverthrow'
-import { CmsErrorCode } from '../schema/types.js'
-import type { CmsError } from '../schema/types.js'
 
 interface UserRow {
   readonly id: string
@@ -17,77 +16,17 @@ interface UserRow {
   readonly name: string
 }
 
-function sendJson (res: ServerResponse, data: Record<string, string | number | boolean | null>, statusCode: number = 200): void {
-  const body = JSON.stringify(data)
-  res.writeHead(statusCode, {
-    'Content-Type': 'application/json; charset=utf-8',
-    'Content-Length': Buffer.byteLength(body)
-  })
-  res.end(body)
+interface LoginBody {
+  readonly email: string
+  readonly password: string
 }
 
-function sendErrorJson (res: ServerResponse, message: string, statusCode: number): void {
-  const body = JSON.stringify({ error: message })
-  res.writeHead(statusCode, {
-    'Content-Type': 'application/json; charset=utf-8',
-    'Content-Length': Buffer.byteLength(body)
-  })
-  res.end(body)
-}
-
-function safeReadBody (req: IncomingMessage): ResultAsync<string, CmsError> {
-  return ResultAsync.fromPromise(
-    new Promise<string>((resolve, reject) => {
-      const chunks: Buffer[] = []
-      let received = 0
-      req.on('data', (chunk: Buffer) => {
-        received += chunk.length
-        if (received > 1_048_576) {
-          req.removeAllListeners('data')
-          reject(new Error('Body too large'))
-          return
-        }
-        chunks.push(chunk)
-      })
-      req.on('end', () => resolve(Buffer.concat(chunks).toString('utf-8')))
-      req.on('error', (e: Error) => reject(e))
-    }),
-    (e: unknown): CmsError => ({
-      code: CmsErrorCode.INVALID_INPUT,
-      message: e instanceof Error ? e.message : 'Failed to read body'
-    })
-  )
-}
-
-function safeJsonParse<T> (body: string): ResultAsync<T, CmsError> {
-  return ResultAsync.fromPromise(
-    Promise.resolve().then(() => JSON.parse(body) as T),
-    (): CmsError => ({
-      code: CmsErrorCode.INVALID_INPUT,
-      message: 'Invalid JSON'
-    })
-  )
-}
-
-function parseCookie (cookieHeader: string, name: string): string | null {
-  const match = cookieHeader.split(';')
-    .map(c => c.trim())
-    .find(c => c.startsWith(`${name}=`))
-  if (!match) return null
-  return match.slice(name.length + 1)
-}
-
-function queryUser (pool: DbPool, email: string): ResultAsync<UserRow | null, CmsError> {
+function queryUser (pool: DbPool, email: string) {
   return safeQuery<UserRow[]>(
     pool,
     'SELECT id, email, password_hash, name FROM users WHERE email = $1 AND deleted_at IS NULL LIMIT 1',
     [email]
   ).map(rows => rows[0] ?? null)
-}
-
-interface LoginBody {
-  readonly email: string
-  readonly password: string
 }
 
 export function createAuthRoutes (
@@ -101,29 +40,30 @@ export function createAuthRoutes (
     POST: async (req, res) => {
       const bodyResult = await safeReadBody(req)
       if (bodyResult.isErr()) { sendErrorJson(res, bodyResult.error.message, 400); return }
-      const parseResult = await safeJsonParse<LoginBody>(bodyResult.value)
+      const parseResult = await safeJsonParse(bodyResult.value)
       if (parseResult.isErr()) { sendErrorJson(res, parseResult.error.message, 400); return }
 
-      const { email, password } = parseResult.value
+      const data = parseResult.value as DocumentData & LoginBody
+      const { email, password } = data
       if (!email || !password) { sendErrorJson(res, 'Email and password required', 400); return }
 
-      if (!loginLimiter.check(email)) {
+      if (!loginLimiter.check(email as string)) {
         sendErrorJson(res, 'Too many login attempts', 429)
         return
       }
 
-      const userResult = await queryUser(pool, email)
+      const userResult = await queryUser(pool, email as string)
       if (userResult.isErr()) { sendErrorJson(res, 'Login failed', 401); return }
-      const user = userResult.value
+      const user = userResult.value as UserRow | null
       if (!user) { sendErrorJson(res, 'Invalid credentials', 401); return }
 
-      const verifyResult = await verifyPassword(password, user.password_hash)
+      const verifyResult = await verifyPassword(password as string, user.password_hash)
       if (verifyResult.isErr() || !verifyResult.value) {
         sendErrorJson(res, 'Invalid credentials', 401)
         return
       }
 
-      loginLimiter.reset(email)
+      loginLimiter.reset(email as string)
       const sessionResult = await createSession(user.id, pool)
       if (sessionResult.isErr()) { sendErrorJson(res, 'Login failed', 500); return }
 
@@ -172,7 +112,7 @@ export function createAuthRoutes (
         return
       }
 
-      sendJson(res, userResult.value as Record<string, string | number | boolean | null>)
+      sendJson(res, userResult.value as DocumentData)
     }
   })
 

@@ -1,5 +1,6 @@
 import type { CollectionConfig } from '../schema/collection.js'
 import { renderFieldInput } from './field-renderers.js'
+import { escapeHtml } from './escape.js'
 
 interface DocRow {
   readonly id?: string | undefined
@@ -9,8 +10,8 @@ interface DocRow {
 export function renderEditView (col: CollectionConfig, doc: DocRow | null): string {
   const isNew = doc === null
   const action = isNew
-    ? `/api/${col.slug}`
-    : `/api/${col.slug}/${doc.id}`
+    ? `/api/${escapeHtml(col.slug)}`
+    : `/api/${escapeHtml(col.slug)}/${escapeHtml(String(doc.id ?? ''))}`
   const method = isNew ? 'POST' : 'PATCH'
 
   const fieldInputs = col.fields.map(f => {

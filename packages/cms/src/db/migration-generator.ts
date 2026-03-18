@@ -1,5 +1,9 @@
+import { ok, err } from 'neverthrow'
+import type { Result } from 'neverthrow'
 import type { CollectionConfig } from '../schema/collection.js'
 import type { FieldConfig } from '../schema/field-types.js'
+import { CmsErrorCode } from '../schema/types.js'
+import type { CmsError } from '../schema/types.js'
 import { getColumnType, getColumnConstraints } from './column-map.js'
 import { isValidIdentifier } from './sql-sanitize.js'
 
@@ -9,57 +13,66 @@ export interface MigrationOutput {
   readonly down: string
 }
 
-function assertIdentifier (name: string): void {
+function checkIdentifier (name: string): CmsError | null {
   if (!isValidIdentifier(name)) {
-    throw new Error(`Invalid SQL identifier: ${name}`)
+    return { code: CmsErrorCode.INVALID_INPUT, message: `Invalid SQL identifier: ${name}` }
   }
+  return null
 }
 
-function buildColumnDef (f: FieldConfig): string {
-  assertIdentifier(f.name)
+function buildColumnDef (f: FieldConfig): Result<string, CmsError> {
+  const idErr = checkIdentifier(f.name)
+  if (idErr) return err(idErr)
   const colType = getColumnType(f)
   const constraints = getColumnConstraints(f)
   const parts = [`"${f.name}" ${colType}`]
   if (constraints) parts.push(constraints)
-  return parts.join(' ')
+  return ok(parts.join(' '))
 }
 
-function buildForeignKeys (fields: readonly FieldConfig[]): string[] {
+function buildForeignKeys (fields: readonly FieldConfig[]): Result<string[], CmsError> {
   const fks: string[] = []
   for (const f of fields) {
     if ((f.type === 'relation' || f.type === 'media') && 'relationTo' in f) {
-      assertIdentifier(f.name)
-      assertIdentifier(f.relationTo)
+      const nameErr = checkIdentifier(f.name)
+      if (nameErr) return err(nameErr)
+      const relErr = checkIdentifier(f.relationTo)
+      if (relErr) return err(relErr)
       fks.push(`  FOREIGN KEY ("${f.name}") REFERENCES "${f.relationTo}"("id")`)
     }
   }
-  return fks
+  return ok(fks)
 }
 
-function buildIndexStatements (collection: CollectionConfig): string[] {
-  assertIdentifier(collection.slug)
+function buildIndexStatements (collection: CollectionConfig): Result<string[], CmsError> {
+  const slugErr = checkIdentifier(collection.slug)
+  if (slugErr) return err(slugErr)
   const statements: string[] = []
   for (const f of collection.fields) {
     const needsIndex = f.index === true || f.type === 'relation' || f.type === 'media'
     if (needsIndex) {
-      assertIdentifier(f.name)
+      const nameErr = checkIdentifier(f.name)
+      if (nameErr) return err(nameErr)
       statements.push(
         `CREATE INDEX IF NOT EXISTS "idx_${collection.slug}_${f.name}" ON "${collection.slug}" ("${f.name}");`
       )
     }
   }
-  return statements
+  return ok(statements)
 }
 
 export function generateCreateTableSql (collection: CollectionConfig): string {
-  assertIdentifier(collection.slug)
+  const slugErr = checkIdentifier(collection.slug)
+  if (slugErr) return `-- ERROR: ${slugErr.message}`
 
   const columns: string[] = [
     '  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid()'
   ]
 
   for (const f of collection.fields) {
-    columns.push(`  ${buildColumnDef(f)}`)
+    const colResult = buildColumnDef(f)
+    if (colResult.isErr()) return `-- ERROR: ${colResult.error.message}`
+    columns.push(`  ${colResult.value}`)
   }
 
   if (collection.timestamps) {
@@ -69,17 +82,19 @@ export function generateCreateTableSql (collection: CollectionConfig): string {
 
   columns.push('  "deleted_at" TIMESTAMPTZ')
 
-  const fks = buildForeignKeys(collection.fields)
-  const allEntries = [...columns, ...fks]
+  const fkResult = buildForeignKeys(collection.fields)
+  if (fkResult.isErr()) return `-- ERROR: ${fkResult.error.message}`
+  const allEntries = [...columns, ...fkResult.value]
 
   const parts: string[] = [
     `CREATE TABLE IF NOT EXISTS "${collection.slug}" (\n${allEntries.join(',\n')}\n);`
   ]
 
-  const indexes = buildIndexStatements(collection)
-  if (indexes.length > 0) {
+  const indexResult = buildIndexStatements(collection)
+  if (indexResult.isErr()) return `-- ERROR: ${indexResult.error.message}`
+  if (indexResult.value.length > 0) {
     parts.push('')
-    parts.push(...indexes)
+    parts.push(...indexResult.value)
   }
 
   return parts.join('\n')
@@ -92,21 +107,25 @@ export interface SchemaChanges {
 }
 
 export function generateAlterTableSql (slug: string, changes: SchemaChanges): string {
-  assertIdentifier(slug)
+  const slugErr = checkIdentifier(slug)
+  if (slugErr) return `-- ERROR: ${slugErr.message}`
   const statements: string[] = []
 
   for (const f of changes.added) {
-    assertIdentifier(f.name)
-    statements.push(`ADD COLUMN ${buildColumnDef(f)}`)
+    const colResult = buildColumnDef(f)
+    if (colResult.isErr()) return `-- ERROR: ${colResult.error.message}`
+    statements.push(`ADD COLUMN ${colResult.value}`)
   }
 
   for (const name of changes.removed) {
-    assertIdentifier(name)
+    const nameErr = checkIdentifier(name)
+    if (nameErr) return `-- ERROR: ${nameErr.message}`
     statements.push(`DROP COLUMN "${name}"`)
   }
 
   for (const f of changes.changed) {
-    assertIdentifier(f.name)
+    const nameErr = checkIdentifier(f.name)
+    if (nameErr) return `-- ERROR: ${nameErr.message}`
     const colType = getColumnType(f)
     statements.push(`ALTER COLUMN "${f.name}" TYPE ${colType}`)
   }
@@ -115,12 +134,13 @@ export function generateAlterTableSql (slug: string, changes: SchemaChanges): st
   return `ALTER TABLE "${slug}"\n  ${statements.join(',\n  ')};`
 }
 
-export function generateCreateTable (collection: CollectionConfig): MigrationOutput {
-  assertIdentifier(collection.slug)
+export function generateCreateTable (collection: CollectionConfig): Result<MigrationOutput, CmsError> {
+  const slugErr = checkIdentifier(collection.slug)
+  if (slugErr) return err(slugErr)
   const timestamp = Date.now()
-  return {
+  return ok({
     name: `${timestamp}_create_${collection.slug}`,
     up: generateCreateTableSql(collection),
     down: `DROP TABLE IF EXISTS "${collection.slug}" CASCADE;`
-  }
+  })
 }

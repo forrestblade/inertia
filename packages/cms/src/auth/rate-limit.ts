@@ -1,3 +1,4 @@
+// Intentionally mutable — count is incremented in-place by check()
 interface RateLimitEntry {
   count: number
   firstAttempt: number

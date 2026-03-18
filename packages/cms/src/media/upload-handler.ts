@@ -69,7 +69,12 @@ export function createUploadHandler (uploadDir: string): (req: IncomingMessage, 
 
     const data = bodyResult.value
     const storedName = generateStoredName(originalName)
-    const storedPath = join(resolvedDir, storedName)
+    const storedPath = resolve(join(resolvedDir, storedName))
+    if (!storedPath.startsWith(resolvedDir)) {
+      res.writeHead(403, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'Forbidden' }))
+      return
+    }
 
     const writeResult = await ResultAsync.fromPromise(
       writeFile(storedPath, data),

@@ -12,6 +12,8 @@ import { renderEditView } from './edit-view.js'
 import { createLocalApi } from '../api/local-api.js'
 import { createGlobalRegistry } from '../schema/registry.js'
 import { validateSession } from '../auth/session.js'
+import { parseCookie } from '../auth/cookie.js'
+import { escapeHtml } from './escape.js'
 
 type AdminRouteHandler = (req: IncomingMessage, res: ServerResponse, ctx: Record<string, string>) => Promise<void>
 
@@ -22,7 +24,7 @@ interface AdminOptions {
 function wrapWithAuth (pool: DbPool, handler: AdminRouteHandler): AdminRouteHandler {
   return async (req, res, ctx) => {
     const cookieHeader = req.headers.cookie ?? ''
-    const sessionId = parseCookieValue(cookieHeader, 'cms_session')
+    const sessionId = parseCookie(cookieHeader, 'cms_session')
     if (!sessionId) {
       res.writeHead(401, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ error: 'Unauthorized' }))
@@ -36,14 +38,6 @@ function wrapWithAuth (pool: DbPool, handler: AdminRouteHandler): AdminRouteHand
     }
     return handler(req, res, ctx)
   }
-}
-
-function parseCookieValue (cookieHeader: string, name: string): string | null {
-  const match = cookieHeader.split(';')
-    .map(c => c.trim())
-    .find(c => c.startsWith(`${name}=`))
-  if (!match) return null
-  return match.slice(name.length + 1)
 }
 
 import type { DocumentData } from '../db/query-builder.js'
@@ -141,7 +135,7 @@ export function createAdminRoutes (
             res.writeHead(302, { Location: `/admin/${col.slug}` })
             res.end()
           },
-          (err) => sendHtml(res, `Error: ${err.message}`, 400)
+          (err) => sendHtml(res, `Error: ${escapeHtml(err.message)}`, 400)
         )
       })
     })

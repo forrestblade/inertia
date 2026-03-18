@@ -144,7 +144,9 @@ describe('generateCreateTable()', () => {
       slug: 'posts',
       fields: [field.text({ name: 'title' })]
     })
-    const migration = generateCreateTable(posts)
+    const result = generateCreateTable(posts)
+    expect(result.isOk()).toBe(true)
+    const migration = result._unsafeUnwrap()
     expect(migration.up).toContain('CREATE TABLE')
     expect(migration.down).toContain('DROP TABLE')
     expect(migration.down).toContain('"posts"')
@@ -155,7 +157,9 @@ describe('generateCreateTable()', () => {
       slug: 'posts',
       fields: [field.text({ name: 'title' })]
     })
-    const migration = generateCreateTable(posts)
+    const result = generateCreateTable(posts)
+    expect(result.isOk()).toBe(true)
+    const migration = result._unsafeUnwrap()
     expect(migration.name).toMatch(/^\d+_create_posts$/)
   })
 })
