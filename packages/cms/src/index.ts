@@ -40,3 +40,22 @@ export {
   isValidSlug,
   isValidEmail
 } from './validation/index.js'
+
+export {
+  WhereOperator,
+  createQueryBuilder,
+  getColumnType,
+  getColumnConstraints,
+  generateCreateTable,
+  generateCreateTableSql
+} from './db/index.js'
+
+export type {
+  WhereCondition,
+  WhereClause,
+  OrderByClause,
+  PaginatedResult,
+  QueryBuilderFactory,
+  CollectionQueryBuilder,
+  MigrationOutput
+} from './db/index.js'
