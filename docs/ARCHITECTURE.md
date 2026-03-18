@@ -16,7 +16,8 @@ Architectural reference for Valence. Read the section relevant to what you're wo
 10. [Server Utilities](#server-utilities)
 11. [Database Layer](#database-layer)
 12. [Telemetry Data Layer](#telemetry-data-layer)
-13. [14kB Critical Path](#14kb-critical-path)
+13. [Design Tokens](#design-tokens)
+14. [14kB Critical Path](#14kb-critical-path)
 
 ---
 
@@ -62,8 +63,8 @@ Five packages under `packages/`, connected by workspace dependencies. `neverthro
 |---|---|---|---|
 | `packages/core/` | Built | 243 | Telemetry engine, HTML-over-the-wire router, view transitions, server islands, server utilities. |
 | `packages/db/` | Built | 38 | PostgreSQL connection pool, config validation, migration runner, error mapping. |
-| `packages/telemetry/` | Built | 142 | Beacon validation, ingestion pipeline, event queries, summary aggregation, daily summaries. 46 integration tests against real PostgreSQL. |
-| `packages/ui/` | Built | 344 | ValElement protocol, 18 Web Component primitives, hydration directives. Zero deps. |
+| `packages/telemetry/` | Built | 59 | Summary table queries, daily summary aggregation, fleet data types. |
+| `packages/ui/` | Built | 368 | ValElement protocol, 18 Web Component primitives, hydration directives, OKLCH tokens, Tailwind preset, theme contract. Zero deps. |
 | `packages/cms/` | v0.1 complete | 270 tests | Schema engine, admin UI, auth, REST API, media, query builder |
 
 ### Module Boundaries
@@ -243,7 +244,7 @@ Old events in the immutable ledger remain valid forever. No migration. No rewrit
 
 ## Ingestion Pipeline
 
-Status: **Implemented** in `@valencets/telemetry`. The ingestion pipeline validates beacon payloads (`validateBeaconPayload`), creates sessions, and batch-inserts events via `ingestBeacon`. The design patterns below guided the implementation.
+Status: Design reference. The original `packages/ingestion/` has been removed. This pipeline will be rebuilt as part of `packages/cms/` or a dedicated package. The patterns documented here remain the architectural target.
 
 ### Monadic Pipeline
 
@@ -611,59 +612,64 @@ Location: `packages/telemetry/src/daily-summary-queries.ts`
 - `getDailyTrend(pool, siteId, start, end)` -- fetch session/pageview/conversion counts across a date range for sparkline rendering
 - `getDailyBreakdowns(pool, siteId, start, end)` -- merge top pages, top referrers, and intent counts across multiple days
 
-### Beacon Types & Validation
+---
 
-Location: `packages/telemetry/src/beacon-types.ts`, `packages/telemetry/src/beacon-validation.ts`
+## Design Tokens
 
-`BeaconEvent` mirrors the wire format of `GlobalTelemetryIntent` from `@valencets/core` minus the client-only `isDirty` flag. `BeaconIntentType` enumerates all 11 intent types identically to the core `IntentType` enum.
+Location: `packages/ui/src/tokens/`
 
-`validateBeaconPayload(raw: string)` returns `Result<ReadonlyArray<BeaconEvent>, BeaconValidationError>`. Validation checks:
+### OKLCH Color Space
 
-- JSON parse, array shape, max 256 events per payload
-- Required fields: id, timestamp, type, targetDOMNode, x_coord, y_coord, schema_version, site_id, business_type, path, referrer
-- Intent type membership, site_id non-empty, schema_version positive integer, timestamp non-negative
-- Strips client-only fields (`isDirty`) from validated output
+All 51 primitive color values use the OKLCH color space (`oklch(L C H)`). OKLCH is perceptually uniform: the same lightness value produces the same perceived brightness across all hues (unlike HSL where yellow at L=50% is visually brighter than blue at L=50%).
 
-9 error codes: `INVALID_JSON`, `EMPTY_PAYLOAD`, `NOT_AN_ARRAY`, `INVALID_INTENT_TYPE`, `INVALID_SITE_ID`, `PAYLOAD_TOO_LARGE`, `INVALID_SCHEMA_VERSION`, `MISSING_FIELD`, `INVALID_FIELD_TYPE`.
+Five color scales (gray, blue, red, green, amber), each with 10-11 stops. Shadow colors use `oklch(0 0 0 / alpha)`. Semantic tokens reference primitives via `var()` — no hardcoded colors in component CSS.
 
-### Event Queries
+Benefits:
+- Consistent contrast ratios across hues for accessibility
+- Mathematically invertible lightness for dark mode palettes
+- Native P3 wide-gamut support without redesign
+- 95%+ browser support
 
-Location: `packages/telemetry/src/event-types.ts`, `packages/telemetry/src/event-queries.ts`
+### Token Architecture
 
-Migrated from stale `@valencets/db` dist artifacts (VAL-77). Six functions operating on the `sessions` and `events` base tables:
+Two CSS files, loaded in order:
 
-- `createSession(pool, session)` -- insert a session, return the row
-- `getSessionById(pool, sessionId)` -- fetch by UUID
-- `insertEvent(pool, event)` -- insert a single event with JSONB payload
-- `insertEvents(pool, events)` -- batch-insert via `pool.sql()` helper
-- `getEventsBySession(pool, sessionId)` -- all events for a session, ordered by time
-- `getEventsByTimeRange(pool, start, end)` -- all events in a time window
+1. **`primitives.css`** — raw values: 51 OKLCH colors, 13 spacing steps, 9 type sizes, 4 radii, 3 shadows, 3 durations, 3 easings
+2. **`semantic.css`** — contextual aliases: `--val-color-primary` → `var(--val-blue-600)`. Components use only semantic tokens. Dark mode via `prefers-color-scheme` media query.
 
-Types: `SessionRow`, `EventRow`, `InsertableSession`, `InsertableEvent`.
+### Theme Contract
 
-### Ingestion Service
+Location: `packages/ui/src/tokens/theme-contract.ts`
 
-Location: `packages/telemetry/src/ingestion.ts`
+Formalizes which tokens a valid theme must define:
 
-`ingestBeacon(pool, events)` receives validated `BeaconEvent` arrays and persists them:
+- `THEME_TOKENS_REQUIRED` — 15 semantic tokens (surfaces, text, interactive, feedback, border, focus)
+- `THEME_TOKENS_DARK` — 6 tokens that must be overridden in dark mode (strict subset of required)
+- `validateTheme()` — reads computed styles from `:root`, returns missing token names. Empty array = valid theme.
 
-1. Creates a session via `createSession` with `device_type: 'beacon'`
-2. Maps events to `InsertableEvent` with JSONB payloads containing path, coordinates, site metadata
-3. Batch-inserts via `insertEvents`
+Third-party themes are CSS files that override semantic token values. Load after `semantic.css`. Components don't change. The Tailwind preset picks up new values automatically.
 
-Returns `ResultAsync<IngestResult, DbError>` where `IngestResult` contains `eventsInserted` and `sessionId`.
+```typescript
+import { validateTheme } from '@valencets/ui'
+const missing = validateTheme()
+if (missing.length > 0) console.warn('Theme missing tokens:', missing)
+```
 
-### Database Migrations
+### Tailwind Preset
 
-Location: `packages/telemetry/migrations/`
+Location: `packages/ui/src/tailwind/preset.ts`
 
-Three migration files create the telemetry schema:
+Optional preset mapping all `--val-*` tokens to Tailwind theme utilities. Components use Shadow DOM (Tailwind can't penetrate), so component internals stay as CSS custom properties. The preset serves the layout layer around components.
 
-- `001-base-tables.sql` -- `sessions` (UUID PK, referrer, device_type, OS) + `events` (BIGSERIAL PK, session FK, category, JSONB payload) with indexes
-- `002-summary-tables.sql` -- `session_summaries`, `event_summaries`, `conversion_summaries`, `ingestion_health` with UNIQUE constraints for upsert
-- `003-daily-summaries.sql` -- `daily_summaries` (one denormalized row per site per day) with UNIQUE(site_id, date)
+```typescript
+// tailwind.config.ts
+import { valencePreset } from '@valencets/ui/tailwind'
+export default { presets: [valencePreset], content: ['./src/**/*.{html,ts}'] }
+```
 
-Integration tests run these migrations against a real PostgreSQL instance via `vitest.integration.config.ts`.
+Maps 102 tokens across: colors (14 semantic + 5 primitive scales), spacing (13 steps), border-radius (4), font-size (9), font-family (2), box-shadow (3), transition-duration (3), transition-timing-function (3).
+
+Tailwind is an optional peer dependency. The preset is a plain object with zero runtime imports.
 
 ---
 
