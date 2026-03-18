@@ -10,10 +10,13 @@ Architectural reference for Valence. Read the section relevant to what you're wo
 4. [Telemetry Engine](#telemetry-engine)
 5. [Ingestion Pipeline (Design Reference)](#ingestion-pipeline)
 6. [HTML-over-the-Wire Router](#html-over-the-wire-router)
-7. [Server Utilities](#server-utilities)
-8. [Database Layer](#database-layer)
-9. [Telemetry Data Layer](#telemetry-data-layer)
-10. [14kB Critical Path](#14kb-critical-path)
+7. [View Transitions](#view-transitions)
+8. [Server Islands](#server-islands)
+9. [Hydration Directives](#hydration-directives)
+10. [Server Utilities](#server-utilities)
+11. [Database Layer](#database-layer)
+12. [Telemetry Data Layer](#telemetry-data-layer)
+13. [14kB Critical Path](#14kb-critical-path)
 
 ---
 
@@ -25,7 +28,7 @@ Four rules. Break one, fix it before you merge.
 GC pauses drop frames and stutter UI. Pre-allocate all structures at boot, mutate in-place, never create/destroy during runtime. The telemetry engine uses a ring buffer and object pool for exactly this reason.
 
 **No exceptions.**
-Exceptions create invisible control flow. Every fallible function returns `Result<Ok, Err>`. The compiler forces you to handle both branches. One `try/catch` exists in the entire codebase — wrapping `JSON.parse`, because it throws by design.
+Exceptions create invisible control flow. Every fallible function returns `Result<Ok, Err>`. The compiler forces you to handle both branches. One `try/catch` exists in the entire codebase -- wrapping `JSON.parse`, because it throws by design.
 
 **Complexity < 20.**
 Every `if`, `for`, `while`, `&&`, `||` adds a decision path. Past 20, you can't exhaustively test it. Early returns, dictionary maps, small functions. No switch statements. No enums (const unions only).
@@ -57,7 +60,7 @@ Five packages under `packages/`, connected by workspace dependencies. `neverthro
 
 | Package | Status | Tests | Description |
 |---|---|---|---|
-| `packages/core/` | Built | 223 | Telemetry engine, HTML-over-the-wire router, server utilities. |
+| `packages/core/` | Built | 243 | Telemetry engine, HTML-over-the-wire router, view transitions, server islands, server utilities. |
 | `packages/db/` | Built | 38 | PostgreSQL connection pool, config validation, migration runner, error mapping. |
 | `packages/telemetry/` | Built | 59 | Summary table queries, daily summary aggregation, fleet data types. |
 | `packages/ui/` | Built | 344 | ValElement protocol, 18 Web Component primitives, hydration directives. Zero deps. |
@@ -116,9 +119,9 @@ function closePool (pool: DbPool): ResultAsync<void, DbError>
 
 Chaining uses `.map()`, `.andThen()`, and `.match()`. Never `.unwrap()` or `.expect()`.
 
-### The One Permitted Boundary
+### JSON.parse Boundary
 
-`safeJsonParse` is the single `try/catch` in the codebase. It wraps `JSON.parse` -- a function that throws by design and cannot be replaced with a safer alternative:
+`safeJsonParse` is the single `try/catch` in the codebase. `JSON.parse` throws by design and there is no safer alternative:
 
 ```typescript
 function safeJsonParse(raw: string): Result<unknown, ParseFailure> {
@@ -184,7 +187,7 @@ Location: `packages/core/src/telemetry/object-pool.ts`
 
 Pre-allocates `N` `GlobalTelemetryIntent` objects at boot via `createEmptyIntent()`. Capacity must be a power of two (validated at creation via `Result`). Provides `getSlot(index)` for direct access and `resetSlot(index)` to zero out a slot's fields without destroying the object. `resetAll()` zeros every slot in a single pass.
 
-No objects are created or destroyed after initialization. This is AV Rule 206 applied to JavaScript: the pool is the memory budget, and the buffer operates within it.
+No objects are created or destroyed after initialization. The pool is the memory budget, and the buffer operates within it. Pre-allocation eliminates GC pressure during runtime when every millisecond of frame time matters.
 
 ### TelemetryRingBuffer
 
@@ -252,13 +255,13 @@ Status: Design reference. The original `packages/ingestion/` has been removed. T
    - `Ok`: append to PostgreSQL immutable ledger
    - `Err`: log to internal audit stream, return HTTP 200 OK
 
-### The Black Hole Strategy
+### Silent Accept on Bad Data
 
-Why return 200 on bad data? HTTP 4xx/5xx responses trigger automated retry mechanisms in browsers and service workers. Thousands of concurrent clients retrying simultaneously equals a self-inflicted DDoS. Return 200 OK. Client clears its buffer. Bad data is silently logged for developer auditing. Server stays indestructible.
+Why return 200 on bad data? HTTP 4xx/5xx responses trigger automated retry mechanisms in browsers and service workers. Thousands of concurrent clients retrying simultaneously equals a self-inflicted DDoS. Return 200 OK. Client clears its buffer. Bad data goes to an internal audit log for developer review. The server stays up.
 
 ### HMAC Verification
 
-For signed payloads (daily summary pushes from remote appliances): extract `X-Valence-Signature` header, verify HMAC-SHA256 with `crypto.timingSafeEqual`. Timing-safe comparison prevents timing attacks. The Black Hole pattern applies: invalid signatures return 200 OK, never revealing authentication failures.
+For signed payloads (daily summary pushes from remote appliances): extract `X-Valence-Signature` header, verify HMAC-SHA256 with `crypto.timingSafeEqual`. Timing-safe comparison prevents timing attacks. Invalid signatures still return 200 OK -- never reveal authentication failures to the caller.
 
 ---
 
@@ -326,6 +329,89 @@ LRU cache backed by `sessionStorage` (when available, falls back to in-memory). 
 
 ---
 
+## View Transitions
+
+Location: `packages/core/src/router/view-transitions.ts`
+
+Wraps the browser's View Transitions API around the router's fragment swap. When `document.startViewTransition` is available, DOM mutations happen inside the transition callback. When it's not, the swap runs directly -- no polyfill, no fallback animation, just the swap.
+
+**How it works:**
+
+1. `applyTransitionNames(container)` scans for `[transition:name]` attributes and sets `style.viewTransitionName` on each matching element
+2. `wrapInTransition(doSwap, liveContainer)` applies transition names to the live DOM, calls `document.startViewTransition()` with the swap function inside, then re-applies names to the new content after swap
+3. `clearTransitionNames(container)` removes all `viewTransitionName` styles after the transition finishes (or fails)
+
+**Markup:**
+
+```html
+<header transition:name="site-header">...</header>
+<main transition:name="page-content">...</main>
+```
+
+`transition:name` sets the `view-transition-name` CSS property for matched element pairing across navigations. `transition:persist` is an alias for `data-valence-persist` -- same persistent element behavior, friendlier attribute name.
+
+---
+
+## Server Islands
+
+Location: `packages/core/src/router/server-islands.ts`
+
+Deferred server-rendered fragments. The page shell ships immediately with placeholder elements. After initial render, placeholders marked with `[server:defer]` and a `src` attribute fetch their content from server endpoints and swap it in.
+
+**How it works:**
+
+1. `initServerIslands(config?)` scans the document for `[server:defer][src]` elements
+2. Each island fetches its `src` URL with an `X-Valence-Fragment: 1` header
+3. On success, the placeholder's `innerHTML` is replaced with the response HTML
+4. On failure, a `valence:island-error` custom event bubbles up with status/error details
+5. On success, a `valence:island-loaded` custom event bubbles up
+6. The `valence:after-swap` event triggers a re-scan, so islands inside router-swapped content are picked up automatically
+
+**Markup:**
+
+```html
+<div server:defer src="/api/weather-widget">
+  <p>Loading weather...</p>
+</div>
+```
+
+A `WeakSet` tracks loaded islands to prevent duplicate fetches. The returned `IslandHandle` provides `destroy()` (aborts in-flight requests, removes the event listener) and `scanAndLoad()` for manual re-scans.
+
+On the server side, `sendIslandHtml(res, html, options?)` sends island content with the `X-Valence-Fragment: 1` header and optional `Cache-Control` for CDN caching.
+
+---
+
+## Hydration Directives
+
+Location: `packages/ui/src/core/val-element.ts`
+
+`ValElement` supports four declarative hydration directives that control when a Web Component actually initializes. Until the directive fires, the element sits in the DOM as inert HTML -- no shadow DOM, no template clone, no JS execution.
+
+**Directives:**
+
+- `hydrate:load` -- hydrate immediately on `connectedCallback` (default behavior, same as no directive)
+- `hydrate:idle` -- defer until `requestIdleCallback` fires (browser is idle)
+- `hydrate:visible` -- defer until `IntersectionObserver` reports the element is in the viewport
+- `hydrate:media="(query)"` -- defer until a `matchMedia` query matches (e.g., `hydrate:media="(min-width: 768px)"`)
+
+**How it works:**
+
+The `connectedCallback` gate checks for a hydration directive on first call. If a non-`load` directive is found, state moves to `'pending'` and the appropriate scheduler is set up. When the condition fires, `connectedCallback` re-runs and the element initializes normally -- template clone, shadow DOM, locale observer subscription.
+
+`disconnectedCallback` cleans up any pending hydration scheduler (cancels idle callback, disconnects intersection observer, removes media query listener).
+
+**Markup:**
+
+```html
+<val-accordion hydrate:idle>...</val-accordion>
+<val-carousel hydrate:visible>...</val-carousel>
+<val-sidebar hydrate:media="(min-width: 1024px)">...</val-sidebar>
+```
+
+This keeps the initial JS execution budget tight. Below-the-fold components and non-critical UI stay inert until they're actually needed.
+
+---
+
 ## Server Utilities
 
 Location: `packages/core/src/server/`
@@ -351,6 +437,7 @@ Pure utility functions with no state:
 - `sendError(res, error)` -- renders a minimal HTML error page from a `ServerError`
 - `isFragmentRequest(req)` -- checks for `X-Valence-Fragment: 1` header
 - `readBody(req, maxBytes?)` -- collects request body chunks into a string (Promise-based, rejects if body exceeds `MAX_BODY_BYTES` default 1 MiB)
+- `sendIslandHtml(res, html, options?)` -- sends island fragment HTML with `X-Valence-Fragment: 1` header and optional `Cache-Control` max-age for CDN caching
 
 ### Server Types
 
