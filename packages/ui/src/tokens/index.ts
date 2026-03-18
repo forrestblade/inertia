@@ -6,3 +6,10 @@
 // CSS custom properties pierce shadow DOM — no adoption needed.
 
 export const TOKEN_PREFIX = 'val' as const
+
+export {
+  THEME_TOKENS_REQUIRED,
+  THEME_TOKENS_DARK,
+  validateTheme,
+} from './theme-contract.js'
+export type { ThemeToken, DarkThemeToken } from './theme-contract.js'
