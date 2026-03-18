@@ -5,6 +5,7 @@ import type { CmsError } from '../schema/types.js'
 import type { DbPool } from '@valencets/db'
 import type { CollectionRegistry } from '../schema/registry.js'
 import type { RestRouteEntry } from '../api/rest-api.js'
+import type { DocumentData } from '../db/query-builder.js'
 import { renderLayout } from './layout.js'
 import { renderDashboard } from './dashboard.js'
 import { renderListView } from './list-view.js'
@@ -40,8 +41,6 @@ function wrapWithAuth (pool: DbPool, handler: AdminRouteHandler): AdminRouteHand
     return handler(req, res, ctx)
   }
 }
-
-import type { DocumentData } from '../db/query-builder.js'
 
 function safeReadFormBody (req: IncomingMessage): ResultAsync<DocumentData, CmsError> {
   return ResultAsync.fromPromise(

@@ -19,7 +19,7 @@ export function createSession (userId: string, pool: DbPool): ResultAsync<string
   ).andThen((rows) => {
     const row = rows[0]
     if (!row) {
-      return errAsync({ code: CmsErrorCode.INTERNAL, message: 'No session returned' } as CmsError)
+      return errAsync({ code: CmsErrorCode.INTERNAL, message: 'No session returned' })
     }
     return okAsync(row.id)
   })
@@ -33,7 +33,7 @@ export function validateSession (sessionId: string, pool: DbPool): ResultAsync<s
   ).andThen((rows) => {
     const row = rows[0]
     if (!row) {
-      return errAsync({ code: CmsErrorCode.NOT_FOUND, message: 'Session not found or expired' } as CmsError)
+      return errAsync({ code: CmsErrorCode.NOT_FOUND, message: 'Session not found or expired' })
     }
     return okAsync(row.user_id)
   })

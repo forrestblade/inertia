@@ -3,8 +3,9 @@ import type { CmsError } from '../schema/types.js'
 import type { DbPool } from '@valencets/db'
 import type { CollectionRegistry } from '../schema/registry.js'
 import type { RestRouteEntry } from '../api/rest-api.js'
-import { sendJson, sendErrorJson, safeReadBody, safeJsonParse } from '../api/http-utils.js'
 import type { DocumentData } from '../db/query-builder.js'
+import { z } from 'zod'
+import { sendJson, sendErrorJson, safeReadBody, safeJsonParse } from '../api/http-utils.js'
 import { verifyPassword } from './password.js'
 import { createRateLimiter } from './rate-limit.js'
 import { parseCookie } from './cookie.js'
@@ -18,10 +19,10 @@ interface UserRow {
   readonly name: string
 }
 
-interface LoginBody {
-  readonly email: string
-  readonly password: string
-}
+const loginSchema = z.object({
+  email: z.string().min(1),
+  password: z.string().min(1)
+})
 
 function queryUser (pool: DbPool, email: string): ResultAsync<UserRow | null, CmsError> {
   return safeQuery<UserRow[]>(
@@ -45,27 +46,32 @@ export function createAuthRoutes (
       const parseResult = await safeJsonParse(bodyResult.value)
       if (parseResult.isErr()) { sendErrorJson(res, parseResult.error.message, 400); return }
 
-      const data = parseResult.value as DocumentData & LoginBody
-      const { email, password } = data
-      if (!email || !password) { sendErrorJson(res, 'Email and password required', 400); return }
+      const validation = loginSchema.safeParse(parseResult.value)
+      if (!validation.success) {
+        const issues = validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join('; ')
+        sendErrorJson(res, `Validation failed: ${issues}`, 400)
+        return
+      }
 
-      if (!loginLimiter.check(email as string)) {
+      const { email, password } = validation.data
+
+      if (!loginLimiter.check(email)) {
         sendErrorJson(res, 'Too many login attempts', 429)
         return
       }
 
-      const userResult = await queryUser(pool, email as string)
+      const userResult = await queryUser(pool, email)
       if (userResult.isErr()) { sendErrorJson(res, 'Login failed', 401); return }
-      const user = userResult.value as UserRow | null
+      const user = userResult.value
       if (!user) { sendErrorJson(res, 'Invalid credentials', 401); return }
 
-      const verifyResult = await verifyPassword(password as string, user.password_hash)
+      const verifyResult = await verifyPassword(password, user.password_hash)
       if (verifyResult.isErr() || !verifyResult.value) {
         sendErrorJson(res, 'Invalid credentials', 401)
         return
       }
 
-      loginLimiter.reset(email as string)
+      loginLimiter.reset(email)
       const sessionResult = await createSession(user.id, pool)
       if (sessionResult.isErr()) { sendErrorJson(res, 'Login failed', 500); return }
 

@@ -100,7 +100,7 @@ export {
   createAuthRoutes
 } from './auth/index.js'
 export type { AuthConfig, AuthContext, AuthMiddleware } from './auth/index.js'
-export { createRateLimiter } from './auth/index.js'
+export { createRateLimiter, parseCookie } from './auth/index.js'
 export type { RateLimiter } from './auth/index.js'
 
 export { createLocalApi, createRestRoutes } from './api/index.js'
@@ -112,7 +112,8 @@ export {
   renderListView,
   renderEditView,
   renderFieldInput,
-  createAdminRoutes
+  createAdminRoutes,
+  escapeHtml
 } from './admin/index.js'
 
 export { isUploadEnabled, getMediaFields, getMimeType, createServeHandler, createUploadHandler } from './media/index.js'
