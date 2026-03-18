@@ -1,0 +1,48 @@
+/* @valencets/ui — semantic design tokens
+ * Contextual tokens that reference primitives. Components use ONLY these.
+ * Dark mode via prefers-color-scheme — no JS required. */
+
+:root {
+  /* --- Surface --- */
+  --val-color-bg: var(--val-gray-50);
+  --val-color-bg-elevated: #ffffff;
+  --val-color-bg-muted: var(--val-gray-100);
+
+  /* --- Text --- */
+  --val-color-text: var(--val-gray-900);
+  --val-color-text-muted: var(--val-gray-500);
+  --val-color-text-inverted: #ffffff;
+
+  /* --- Interactive --- */
+  --val-color-primary: var(--val-blue-600);
+  --val-color-primary-hover: var(--val-blue-700);
+  --val-color-primary-text: #ffffff;
+
+  /* --- Feedback --- */
+  --val-color-error: var(--val-red-500);
+  --val-color-success: var(--val-green-500);
+  --val-color-warning: var(--val-amber-500);
+
+  /* --- Border + Focus --- */
+  --val-color-border: var(--val-gray-200);
+  --val-color-border-focus: var(--val-blue-500);
+  --val-focus-ring: 0 0 0 2px var(--val-color-bg), 0 0 0 4px var(--val-color-border-focus);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* --- Surface (dark) --- */
+    --val-color-bg: var(--val-gray-950);
+    --val-color-bg-elevated: var(--val-gray-900);
+    --val-color-bg-muted: var(--val-gray-800);
+
+    /* --- Text (dark) --- */
+    --val-color-text: var(--val-gray-50);
+    --val-color-text-muted: var(--val-gray-400);
+
+    /* --- Border (dark) --- */
+    --val-color-border: var(--val-gray-700);
+
+    /* primary, error, success, warning stay the same */
+  }
+}

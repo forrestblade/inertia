@@ -8,13 +8,15 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
-    }
+    },
+    "./tokens/primitives.css": "./dist/tokens/primitives.css",
+    "./tokens/semantic.css": "./dist/tokens/semantic.css"
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp src/tokens/*.css dist/tokens/",
     "test": "vitest run"
   },
   "license": "MIT",
