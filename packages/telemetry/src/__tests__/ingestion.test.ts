@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { ingestBeacon } from '../ingestion.js'
 import type { BeaconEvent } from '../beacon-types.js'
-import { makeMockPool } from './test-helpers.js'
+import type { DbPool } from '@valencets/db'
 
 function makeBeaconEvent (overrides: Partial<BeaconEvent> = {}): BeaconEvent {
   return {
@@ -20,43 +20,59 @@ function makeBeaconEvent (overrides: Partial<BeaconEvent> = {}): BeaconEvent {
   }
 }
 
+function makeIngestionMockPool (): DbPool {
+  const sessionRow = {
+    session_id: '123e4567-e89b-12d3-a456-426614174000',
+    referrer: 'google.com',
+    device_type: 'beacon',
+    operating_system: 'dental',
+    created_at: new Date()
+  }
+  const batchResult = Object.assign([], { count: 2 })
+
+  let callIndex = 0
+  const sql = vi.fn((...args: ReadonlyArray<unknown>) => {
+    if (Array.isArray(args[0]) && 'raw' in (args[0] as object)) {
+      // Tagged template call
+      callIndex++
+      if (callIndex === 1) return Promise.resolve([sessionRow]) // createSession
+      return Promise.resolve(batchResult) // insertEvents
+    }
+    // Helper call: sql(values, 'col1', ...) — return placeholder
+    return sql
+  }) as unknown as DbPool['sql']
+  Object.defineProperty(sql, 'json', { value: (v: unknown) => v })
+  return { sql }
+}
+
 describe('ingestBeacon', () => {
   it('creates a session and inserts events', async () => {
-    const sessionRow = { session_id: '123e4567-e89b-12d3-a456-426614174000' }
-    const pool = makeMockPool(sessionRow)
-    // Second call returns empty (for event insert)
-    const sqlFn = pool.sql as ReturnType<typeof vi.fn>
-    sqlFn.mockResolvedValueOnce([sessionRow]) // createSession
-    sqlFn.mockResolvedValueOnce([]) // insertEvents
-
+    const pool = makeIngestionMockPool()
     const events = [makeBeaconEvent(), makeBeaconEvent({ id: 'evt-002' })]
     const result = await ingestBeacon(pool, events)
     expect(result.isOk()).toBe(true)
 
     const value = result._unsafeUnwrap()
     expect(value.eventsInserted).toBe(2)
-    expect(value.sessionId).toBe(sessionRow.session_id)
+    expect(value.sessionId).toBe('123e4567-e89b-12d3-a456-426614174000')
   })
 
   it('returns error when pool rejects', async () => {
-    const pool = makeMockPool()
-    const sqlFn = pool.sql as ReturnType<typeof vi.fn>
-    sqlFn.mockRejectedValueOnce(new Error('connection refused'))
+    const sql = vi.fn(() => Promise.reject(new Error('connection refused'))) as unknown as DbPool['sql']
+    Object.defineProperty(sql, 'json', { value: (v: unknown) => v })
+    const pool: DbPool = { sql }
 
     const result = await ingestBeacon(pool, [makeBeaconEvent()])
     expect(result.isErr()).toBe(true)
   })
 
-  it('uses referrer from first event for session', async () => {
-    const sessionRow = { session_id: 'test-session-id' }
-    const pool = makeMockPool()
+  it('passes referrer from first event to session', async () => {
+    const pool = makeIngestionMockPool()
     const sqlFn = pool.sql as ReturnType<typeof vi.fn>
-    sqlFn.mockResolvedValueOnce([sessionRow])
-    sqlFn.mockResolvedValueOnce([])
-
     const events = [makeBeaconEvent({ referrer: 'bing.com' })]
     await ingestBeacon(pool, events)
 
+    // Verify sql was called (createSession + insertEvents)
     expect(sqlFn).toHaveBeenCalled()
   })
 })

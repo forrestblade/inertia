@@ -61,3 +61,16 @@ export { validateBeaconPayload } from './beacon-validation.js'
 // Ingestion
 export { ingestBeacon } from './ingestion.js'
 export type { IngestResult } from './ingestion.js'
+
+// Event types (migrated from @valencets/db)
+export type { SessionRow, EventRow, InsertableSession, InsertableEvent } from './event-types.js'
+
+// Event queries (migrated from @valencets/db)
+export {
+  createSession,
+  getSessionById,
+  insertEvent,
+  insertEvents,
+  getEventsBySession,
+  getEventsByTimeRange
+} from './event-queries.js'

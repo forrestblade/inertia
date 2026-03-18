@@ -8,6 +8,7 @@ import {
   getEventsByTimeRange
 } from '../event-queries.js'
 import { makeMockPool, makeErrorPool } from './test-helpers.js'
+import type { DbPool } from '@valencets/db'
 
 const mockSession = {
   session_id: '123e4567-e89b-12d3-a456-426614174000',
@@ -101,9 +102,19 @@ describe('insertEvent', () => {
 
 describe('insertEvents', () => {
   it('returns count of inserted events', async () => {
-    const pool = makeMockPool()
-    const sqlFn = pool.sql as ReturnType<typeof vi.fn>
-    sqlFn.mockResolvedValueOnce({ count: 3 })
+    // insertEvents uses pool.sql as both helper (sql(values, ...)) and tagged template (sql`...`)
+    // Mock needs to handle both: helper returns itself (for interpolation), template resolves with count
+    const mockResult = Object.assign([], { count: 3 })
+    const sql = vi.fn((...args: ReadonlyArray<unknown>) => {
+      // Tagged template call: first arg is TemplateStringsArray
+      if (Array.isArray(args[0]) && 'raw' in (args[0] as object)) {
+        return Promise.resolve(mockResult)
+      }
+      // Helper call: sql(values, 'col1', ...) — return a placeholder for interpolation
+      return sql
+    }) as unknown as DbPool['sql']
+    Object.defineProperty(sql, 'json', { value: (v: unknown) => v })
+    const pool: DbPool = { sql }
 
     const events = [
       { session_id: mockSession.session_id, event_category: 'CLICK', dom_target: null, payload: {} },
