@@ -7,7 +7,7 @@ interface DocRow {
   readonly [key: string]: string | number | boolean | null | undefined
 }
 
-export function renderEditView (col: CollectionConfig, doc: DocRow | null): string {
+export function renderEditView (col: CollectionConfig, doc: DocRow | null, csrfToken: string = ''): string {
   const isNew = doc === null
   const action = isNew
     ? `/api/${escapeHtml(col.slug)}`
@@ -19,8 +19,11 @@ export function renderEditView (col: CollectionConfig, doc: DocRow | null): stri
     return renderFieldInput(f, value)
   }).join('\n')
 
+  const csrfField = csrfToken ? `<input type="hidden" name="_csrf" value="${escapeHtml(csrfToken)}">` : ''
+
   return `
 <form action="${action}" method="POST" data-method="${method}">
+  ${csrfField}
   ${fieldInputs}
   <button type="submit">${isNew ? 'Create' : 'Save'}</button>
 </form>`
