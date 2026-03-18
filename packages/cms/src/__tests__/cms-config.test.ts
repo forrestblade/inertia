@@ -52,6 +52,24 @@ describe('buildCms()', () => {
     expect(result._unsafeUnwrapErr().code).toBe('DUPLICATE_SLUG')
   })
 
+  it('auto-injects auth fields on auth-enabled collections', () => {
+    const config: CmsConfig = {
+      db: makeMockPool(),
+      secret: 'test-secret',
+      collections: [
+        collection({ slug: 'users', auth: true, fields: [field.text({ name: 'name' })] })
+      ]
+    }
+    const result = buildCms(config)
+    expect(result.isOk()).toBe(true)
+    const cms = result._unsafeUnwrap()
+    const users = cms.collections.get('users')
+    expect(users.isOk()).toBe(true)
+    const fieldNames = users._unsafeUnwrap().fields.map(f => f.name)
+    expect(fieldNames).toContain('email')
+    expect(fieldNames).toContain('password_hash')
+  })
+
   it('applies plugins in order', () => {
     const calls: number[] = []
     const plugin1: Plugin = (cfg) => { calls.push(1); return cfg }
