@@ -15,6 +15,15 @@ export interface RestRouteEntry {
   readonly DELETE?: RestRouteHandler | undefined
 }
 
+function requireJsonContentType (req: IncomingMessage, res: ServerResponse): boolean {
+  const ct = req.headers['content-type'] ?? ''
+  if (!ct.includes('application/json')) {
+    sendErrorJson(res, 'Content-Type must be application/json', 415)
+    return false
+  }
+  return true
+}
+
 export function createRestRoutes (
   pool: DbPool,
   collections: CollectionRegistry,
@@ -36,6 +45,7 @@ export function createRestRoutes (
         )
       },
       POST: async (req, res) => {
+        if (!requireJsonContentType(req, res)) return
         const bodyResult = await safeReadBody(req)
         if (bodyResult.isErr()) { sendErrorJson(res, bodyResult.error.message, 400); return }
         const parseResult = await safeJsonParse(bodyResult.value)
@@ -56,7 +66,9 @@ export function createRestRoutes (
 
     routes.set(`/api/${slug}/:id`, {
       GET: async (req, res) => {
-        const id = req.url?.split('/').pop() ?? ''
+        const rawId = req.url?.split('/').pop() ?? ''
+        const id = rawId.split('?')[0] ?? ''
+        if (!id) { sendErrorJson(res, 'Missing document ID', 400); return }
         const result = await api.findByID({ collection: slug, id })
         result.match(
           (doc) => doc ? sendJson(res, doc as DocumentData) : sendErrorJson(res, 'Not found', 404),
@@ -64,6 +76,7 @@ export function createRestRoutes (
         )
       },
       PATCH: async (req, res) => {
+        if (!requireJsonContentType(req, res)) return
         const id = req.url?.split('/').pop() ?? ''
         const bodyResult = await safeReadBody(req)
         if (bodyResult.isErr()) { sendErrorJson(res, bodyResult.error.message, 400); return }

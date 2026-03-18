@@ -1,3 +1,5 @@
+import type { ResultAsync } from 'neverthrow'
+import type { CmsError } from '../schema/types.js'
 import type { DbPool } from '@valencets/db'
 import type { CollectionRegistry } from '../schema/registry.js'
 import type { RestRouteEntry } from '../api/rest-api.js'
@@ -21,7 +23,7 @@ interface LoginBody {
   readonly password: string
 }
 
-function queryUser (pool: DbPool, email: string) {
+function queryUser (pool: DbPool, email: string): ResultAsync<UserRow | null, CmsError> {
   return safeQuery<UserRow[]>(
     pool,
     'SELECT id, email, password_hash, name FROM users WHERE email = $1 AND deleted_at IS NULL LIMIT 1',

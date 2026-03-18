@@ -27,8 +27,8 @@ function renderTextarea (f: FieldConfig, value: string): string {
 function renderNumberInput (f: FieldConfig, value: string): string {
   const req = f.required ? ' required' : ''
   let attrs = ''
-  if ('min' in f && f.min !== undefined) attrs += ` min="${f.min}"`
-  if ('max' in f && f.max !== undefined) attrs += ` max="${f.max}"`
+  if ('min' in f && f.min !== undefined) attrs += ` min="${escapeHtml(String(f.min))}"`
+  if ('max' in f && f.max !== undefined) attrs += ` max="${escapeHtml(String(f.max))}"`
   return `<label>${escapeHtml(f.label ?? f.name)}<input type="number" name="${escapeHtml(f.name)}" value="${escapeHtml(value)}"${attrs}${req}></label>`
 }
 
@@ -61,6 +61,6 @@ function renderGroup (f: FieldConfig, _value: string): string {
 
 export function renderFieldInput (f: FieldConfig, value: string): string {
   const renderer = RENDERER_MAP[f.type]
-  if (!renderer) return `<p>Unsupported field type: ${f.type}</p>`
+  if (!renderer) return `<p>Unsupported field type: ${escapeHtml(f.type)}</p>`
   return renderer(f, value)
 }

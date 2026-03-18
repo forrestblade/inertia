@@ -13,7 +13,7 @@ import { createLocalApi } from '../api/local-api.js'
 import { createGlobalRegistry } from '../schema/registry.js'
 import { validateSession } from '../auth/session.js'
 import { parseCookie } from '../auth/cookie.js'
-import { generateCsrfToken } from '../auth/csrf.js'
+import { generateCsrfToken, validateCsrfToken } from '../auth/csrf.js'
 import { escapeHtml } from './escape.js'
 
 type AdminRouteHandler = (req: IncomingMessage, res: ServerResponse, ctx: Record<string, string>) => Promise<void>
@@ -90,7 +90,26 @@ export function createAdminRoutes (
   const allCollections = collections.getAll()
   const globals = createGlobalRegistry()
   const api = createLocalApi(pool, collections, globals)
+  const CSRF_TTL_MS = 3_600_000
   const csrfTokens = new Map<string, number>()
+
+  function evictExpiredTokens (): void {
+    const now = Date.now()
+    for (const [token, createdAt] of csrfTokens) {
+      if (now - createdAt > CSRF_TTL_MS) csrfTokens.delete(token)
+    }
+  }
+
+  function validateCsrf (submitted: string): boolean {
+    evictExpiredTokens()
+    for (const [stored] of csrfTokens) {
+      if (validateCsrfToken(submitted, stored)) {
+        csrfTokens.delete(stored)
+        return true
+      }
+    }
+    return false
+  }
 
   routes.set('/admin', {
     GET: wrap(async (_req, res) => {
@@ -135,12 +154,11 @@ export function createAdminRoutes (
         if (bodyResult.isErr()) { sendHtml(res, 'Bad request', 400); return }
         const formData = bodyResult.value
         const submittedToken = String(formData._csrf ?? '')
-        if (!submittedToken || !csrfTokens.has(submittedToken)) {
+        if (!submittedToken || !validateCsrf(submittedToken)) {
           res.writeHead(403, { 'Content-Type': 'text/html; charset=utf-8' })
           res.end('Forbidden: invalid CSRF token')
           return
         }
-        csrfTokens.delete(submittedToken)
         const { _csrf, ...data } = formData
         const result = await api.create({ collection: col.slug, data })
         result.match(

@@ -12,9 +12,7 @@ import { safeQuery } from '../db/safe-query.js'
 interface FindArgs {
   readonly collection: string
   readonly where?: Record<string, string | number | boolean | null> | undefined
-  readonly sort?: string | undefined
   readonly limit?: number | undefined
-  readonly page?: number | undefined
 }
 
 interface FindByIDArgs {
@@ -143,7 +141,7 @@ export function createLocalApi (
       const setClauses = keys.map((k, i) => `"${k}" = $${i + 1}`).join(', ')
       const params = Object.values(args.data)
       const table = `"global_${args.slug}"`
-      return safeQuery<DocumentRow[]>(pool, `UPDATE ${table} SET ${setClauses} RETURNING *`, params)
+      return safeQuery<DocumentRow[]>(pool, `UPDATE ${table} SET ${setClauses} WHERE "deleted_at" IS NULL RETURNING *`, params)
         .map(rows => rows[0] as DocumentRow)
     }
   }

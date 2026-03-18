@@ -9,7 +9,7 @@ interface FieldValueMap {
   number: number
   boolean: boolean
   select: string
-  date: Date
+  date: string
   slug: string
   media: string
   relation: string

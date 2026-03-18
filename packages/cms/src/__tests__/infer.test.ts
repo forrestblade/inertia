@@ -24,7 +24,7 @@ describe('InferFieldType', () => {
   })
 
   it('maps date → Date', () => {
-    expectTypeOf<InferFieldType<DateFieldConfig>>().toEqualTypeOf<Date>()
+    expectTypeOf<InferFieldType<DateFieldConfig>>().toEqualTypeOf<string>()
   })
 
   it('maps slug → string', () => {
