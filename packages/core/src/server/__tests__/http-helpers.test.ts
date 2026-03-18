@@ -38,11 +38,11 @@ describe('sendHtml', () => {
   it('merges extra headers when provided', () => {
     const res = mockRes()
     sendHtml(res, '<p>Test</p>', 200, {
-      'X-Inertia-Version': 'abc123',
-      'X-Inertia-Title': 'Test Page'
+      'X-Valence-Version': 'abc123',
+      'X-Valence-Title': 'Test Page'
     })
-    expect(res._headers['X-Inertia-Version']).toBe('abc123')
-    expect(res._headers['X-Inertia-Title']).toBe('Test Page')
+    expect(res._headers['X-Valence-Version']).toBe('abc123')
+    expect(res._headers['X-Valence-Title']).toBe('Test Page')
     expect(res._headers['Content-Type']).toBe('text/html; charset=utf-8')
   })
 
@@ -55,8 +55,8 @@ describe('sendHtml', () => {
 })
 
 describe('isFragmentRequest', () => {
-  it('returns true when X-Inertia-Fragment is 1', () => {
-    const req = { headers: { 'x-inertia-fragment': '1' } } as unknown as IncomingMessage
+  it('returns true when X-Valence-Fragment is 1', () => {
+    const req = { headers: { 'x-valence-fragment': '1' } } as unknown as IncomingMessage
     expect(isFragmentRequest(req)).toBe(true)
   })
 

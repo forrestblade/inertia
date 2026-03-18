@@ -30,7 +30,7 @@ export function sendError (res: ServerResponse, error: ServerError): void {
 }
 
 export function isFragmentRequest (req: IncomingMessage): boolean {
-  return req.headers['x-inertia-fragment'] === '1'
+  return req.headers['x-valence-fragment'] === '1'
 }
 
 // 1 MiB — generous for HTML form posts, blocks abuse
