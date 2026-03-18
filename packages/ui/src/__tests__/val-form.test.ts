@@ -188,6 +188,39 @@ describe('ValForm', () => {
     })
   })
 
+  describe('nested form scoping', () => {
+    it('does not collect fields from nested val-form', () => {
+      const outerTag = defineTestElement('val-form', ValForm)
+      const innerTag = defineTestElement('val-form', ValForm)
+
+      const outer = document.createElement(outerTag) as InstanceType<typeof ValForm>
+      const inner = document.createElement(innerTag) as InstanceType<typeof ValForm>
+
+      // Create field for outer form
+      const outerField = document.createElement(fieldTag) as InstanceType<typeof MockField>
+      outerField.setAttribute('name', 'outer-field')
+      container.appendChild(outerField)
+      outerField.value = 'outer-val'
+      outerField.remove()
+
+      // Create field for inner form
+      const innerField = document.createElement(fieldTag) as InstanceType<typeof MockField>
+      innerField.setAttribute('name', 'inner-field')
+      container.appendChild(innerField)
+      innerField.value = 'inner-val'
+      innerField.remove()
+
+      inner.appendChild(innerField)
+      outer.appendChild(outerField)
+      outer.appendChild(inner)
+      container.appendChild(outer)
+
+      const data = outer.collectData()
+      expect(data).toHaveProperty('outer-field')
+      expect(data).not.toHaveProperty('inner-field')
+    })
+  })
+
   describe('CMS traceability', () => {
     it('reads data-cms-id', () => {
       const el = create()

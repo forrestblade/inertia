@@ -72,7 +72,9 @@ export class ValForm extends ValElement {
   }
 
   private getFormElements (): Array<HTMLElement & { checkValidity?: () => boolean, formResetCallback?: () => void }> {
-    return Array.from(this.querySelectorAll('[name]')) as Array<HTMLElement & { checkValidity?: () => boolean, formResetCallback?: () => void }>
+    // Only collect elements that belong to THIS form — exclude those inside nested forms
+    const all = Array.from(this.querySelectorAll('[name]')) as Array<HTMLElement & { checkValidity?: () => boolean, formResetCallback?: () => void }>
+    return all.filter(el => el.closest('[role="form"]') === this)
   }
 
   private attemptSubmit (): void {

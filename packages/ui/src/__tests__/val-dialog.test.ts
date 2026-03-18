@@ -112,6 +112,37 @@ describe('ValDialog', () => {
     })
   })
 
+  describe('focus restore', () => {
+    it('restores focus to previously focused element on close', () => {
+      const trigger = document.createElement('button')
+      container.appendChild(trigger)
+      trigger.focus()
+
+      const el = create()
+      el.show()
+      el.close()
+
+      expect(document.activeElement).toBe(trigger)
+    })
+  })
+
+  describe('stacked dialogs', () => {
+    it('only topmost dialog closes on Escape', () => {
+      const el1 = create({ open: '' })
+      const el2 = create({ open: '' })
+
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+
+      // el2 (topmost) should close, el1 should stay open
+      expect(el2.hasAttribute('open')).toBe(false)
+      expect(el1.hasAttribute('open')).toBe(true)
+
+      // Now el1 is topmost, Escape closes it
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
+      expect(el1.hasAttribute('open')).toBe(false)
+    })
+  })
+
   describe('telemetry', () => {
     it('emits val:interaction on open', () => {
       const el = create()

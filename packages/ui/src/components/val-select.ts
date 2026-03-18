@@ -270,7 +270,8 @@ export class ValSelect extends ValFormElement {
   }
 
   private handleOutsideClick = (e: Event): void => {
-    if (!this.contains(e.target as Node) && !this.shadowRoot!.contains(e.target as Node)) {
+    const target = e.target as Node | null
+    if (target === null || (!this.contains(target) && !this.shadowRoot!.contains(target))) {
       this.close()
     }
   }

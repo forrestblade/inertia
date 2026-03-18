@@ -1,15 +1,10 @@
 import { ValElement } from '../core/val-element.js'
+import { resolveSpace } from '../core/resolve-space.js'
 
 const JUSTIFY_MAP: Record<string, string> = {
   between: 'space-between',
   around: 'space-around',
   evenly: 'space-evenly'
-}
-
-function resolveSpace (value: string | null): string {
-  if (value === null || value === '') return ''
-  if (/^\d+$/.test(value)) return `var(--val-space-${value})`
-  return value
 }
 
 export class ValStack extends ValElement {

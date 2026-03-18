@@ -1,10 +1,5 @@
 import { ValElement } from '../core/val-element.js'
-
-function resolveSpace (value: string | null): string {
-  if (value === null || value === '') return ''
-  if (/^\d+$/.test(value)) return `var(--val-space-${value})`
-  return value
-}
+import { resolveSpace } from '../core/resolve-space.js'
 
 export class ValCard extends ValElement {
   static observedAttributes = ['padding', 'variant']

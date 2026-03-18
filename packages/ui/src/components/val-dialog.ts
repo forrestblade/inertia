@@ -41,12 +41,16 @@ template.innerHTML = `
 </div>
 `
 
+// Track open dialogs for stacked Escape handling
+const openDialogs: ValDialog[] = []
+
 export class ValDialog extends ValElement {
   static observedAttributes = ['open']
 
   private wrapperEl: HTMLElement | null = null
   private backdropEl: HTMLElement | null = null
   private panelEl: HTMLElement | null = null
+  private previouslyFocused: HTMLElement | null = null
 
   protected createTemplate (): HTMLTemplateElement {
     return template
@@ -66,7 +70,7 @@ export class ValDialog extends ValElement {
   disconnectedCallback (): void {
     super.disconnectedCallback()
     this.backdropEl?.removeEventListener('click', this.handleBackdropClick)
-    document.removeEventListener('keydown', this.handleEscape)
+    document.removeEventListener('keydown', this.handleKeydown)
   }
 
   attributeChangedCallback (name: string, old: string | null, val: string | null): void {
@@ -77,6 +81,7 @@ export class ValDialog extends ValElement {
 
   show (): void {
     if (!this.hasAttribute('open')) {
+      this.previouslyFocused = document.activeElement as HTMLElement | null
       this.setAttribute('open', '')
       this.emitInteraction('open')
     }
@@ -86,6 +91,9 @@ export class ValDialog extends ValElement {
     if (this.hasAttribute('open')) {
       this.removeAttribute('open')
       this.emitInteraction('close')
+      // Restore focus to the element that opened the dialog
+      this.previouslyFocused?.focus()
+      this.previouslyFocused = null
     }
   }
 
@@ -94,16 +102,74 @@ export class ValDialog extends ValElement {
     this.wrapperEl!.style.display = isOpen ? 'flex' : 'none'
 
     if (isOpen) {
-      document.addEventListener('keydown', this.handleEscape)
+      openDialogs.push(this)
+      document.addEventListener('keydown', this.handleKeydown)
       this.panelEl?.focus()
     } else {
-      document.removeEventListener('keydown', this.handleEscape)
+      const idx = openDialogs.indexOf(this)
+      if (idx >= 0) openDialogs.splice(idx, 1)
+      document.removeEventListener('keydown', this.handleKeydown)
     }
   }
 
-  private handleEscape = (e: KeyboardEvent): void => {
+  private getFocusableElements (): HTMLElement[] {
+    if (this.panelEl === null) return []
+    const slot = this.panelEl.querySelector('slot')
+    if (slot === null) return []
+    const assigned = slot.assignedElements({ flatten: true })
+    const focusable: HTMLElement[] = []
+    for (const el of assigned) {
+      // Check the element itself and its descendants
+      const candidates = [el, ...el.querySelectorAll('*')]
+      for (const candidate of candidates) {
+        if (candidate instanceof HTMLElement && this.isFocusable(candidate)) {
+          focusable.push(candidate)
+        }
+      }
+    }
+    return focusable
+  }
+
+  private isFocusable (el: HTMLElement): boolean {
+    if (el.hasAttribute('disabled')) return false
+    if (el.getAttribute('tabindex') === '-1') return false
+    const tag = el.tagName
+    if (tag === 'A' && el.hasAttribute('href')) return true
+    if (tag === 'BUTTON' || tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return true
+    if (el.getAttribute('tabindex') !== null) return true
+    return false
+  }
+
+  private handleKeydown = (e: KeyboardEvent): void => {
+    // Only the topmost dialog handles keyboard
+    if (openDialogs[openDialogs.length - 1] !== this) return
+
     if (e.key === 'Escape') {
+      e.preventDefault()
       this.close()
+      return
+    }
+
+    // Focus trap
+    if (e.key === 'Tab') {
+      const focusable = this.getFocusableElements()
+      if (focusable.length === 0) {
+        e.preventDefault()
+        return
+      }
+      const first = focusable[0]!
+      const last = focusable[focusable.length - 1]!
+      if (e.shiftKey) {
+        if (document.activeElement === first || document.activeElement === this.panelEl) {
+          e.preventDefault()
+          last.focus()
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault()
+          first.focus()
+        }
+      }
     }
   }
 
