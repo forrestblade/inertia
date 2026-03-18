@@ -134,4 +134,32 @@ describe('CmsInstance', () => {
     expect(cms.adminRoutes).toBeDefined()
     expect(cms.adminRoutes.has('/admin')).toBe(true)
   })
+
+  it('registers auth routes when auth collection exists', () => {
+    const config: CmsConfig = {
+      db: makeMockPool(),
+      secret: 'test-secret',
+      collections: [
+        collection({ slug: 'users', auth: true, fields: [field.text({ name: 'name' })] })
+      ]
+    }
+    const cms = buildCms(config)._unsafeUnwrap()
+    expect(cms.restRoutes.has('/api/users/login')).toBe(true)
+    expect(cms.restRoutes.has('/api/users/logout')).toBe(true)
+    expect(cms.restRoutes.has('/api/users/me')).toBe(true)
+  })
+
+  it('registers media routes when upload config provided', () => {
+    const config: CmsConfig = {
+      db: makeMockPool(),
+      secret: 'test-secret',
+      collections: [
+        collection({ slug: 'media', upload: true, fields: [field.text({ name: 'alt' })] })
+      ],
+      uploadDir: '/tmp/uploads'
+    }
+    const cms = buildCms(config)._unsafeUnwrap()
+    expect(cms.restRoutes.has('/media/upload')).toBe(true)
+    expect(cms.restRoutes.has('/media/:filename')).toBe(true)
+  })
 })
