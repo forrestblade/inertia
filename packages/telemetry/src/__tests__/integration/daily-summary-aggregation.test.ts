@@ -139,7 +139,6 @@ describe('generateDailySummary', () => {
     expect(result1.isOk()).toBe(true)
 
     // Add some data and re-aggregate
-    // Add some data and re-aggregate
     await pool.sql`
       INSERT INTO session_summaries (period_start, period_end, total_sessions, unique_referrers, device_mobile, device_desktop, device_tablet)
       VALUES (${dayStart}, ${dayEnd}, 5, 3, 2, 2, 1)
