@@ -62,7 +62,7 @@ Five packages under `packages/`, connected by workspace dependencies. `neverthro
 |---|---|---|---|
 | `packages/core/` | Built | 243 | Telemetry engine, HTML-over-the-wire router, view transitions, server islands, server utilities. |
 | `packages/db/` | Built | 38 | PostgreSQL connection pool, config validation, migration runner, error mapping. |
-| `packages/telemetry/` | Built | 59 | Summary table queries, daily summary aggregation, fleet data types. |
+| `packages/telemetry/` | Built | 142 | Beacon validation, ingestion pipeline, event queries, summary aggregation, daily summaries. 46 integration tests against real PostgreSQL. |
 | `packages/ui/` | Built | 344 | ValElement protocol, 18 Web Component primitives, hydration directives. Zero deps. |
 | `packages/cms/` | v0.1 complete | 270 tests | Schema engine, admin UI, auth, REST API, media, query builder |
 
@@ -243,7 +243,7 @@ Old events in the immutable ledger remain valid forever. No migration. No rewrit
 
 ## Ingestion Pipeline
 
-Status: Design reference. The original `packages/ingestion/` has been removed. This pipeline will be rebuilt as part of `packages/cms/` or a dedicated package. The patterns documented here remain the architectural target.
+Status: **Implemented** in `@valencets/telemetry`. The ingestion pipeline validates beacon payloads (`validateBeaconPayload`), creates sessions, and batch-inserts events via `ingestBeacon`. The design patterns below guided the implementation.
 
 ### Monadic Pipeline
 
@@ -610,6 +610,60 @@ Location: `packages/telemetry/src/daily-summary-queries.ts`
 - `insertDailySummaryFromRemote(pool, summary)` -- upsert a `DailySummaryPayload` received from a remote appliance
 - `getDailyTrend(pool, siteId, start, end)` -- fetch session/pageview/conversion counts across a date range for sparkline rendering
 - `getDailyBreakdowns(pool, siteId, start, end)` -- merge top pages, top referrers, and intent counts across multiple days
+
+### Beacon Types & Validation
+
+Location: `packages/telemetry/src/beacon-types.ts`, `packages/telemetry/src/beacon-validation.ts`
+
+`BeaconEvent` mirrors the wire format of `GlobalTelemetryIntent` from `@valencets/core` minus the client-only `isDirty` flag. `BeaconIntentType` enumerates all 11 intent types identically to the core `IntentType` enum.
+
+`validateBeaconPayload(raw: string)` returns `Result<ReadonlyArray<BeaconEvent>, BeaconValidationError>`. Validation checks:
+
+- JSON parse, array shape, max 256 events per payload
+- Required fields: id, timestamp, type, targetDOMNode, x_coord, y_coord, schema_version, site_id, business_type, path, referrer
+- Intent type membership, site_id non-empty, schema_version positive integer, timestamp non-negative
+- Strips client-only fields (`isDirty`) from validated output
+
+9 error codes: `INVALID_JSON`, `EMPTY_PAYLOAD`, `NOT_AN_ARRAY`, `INVALID_INTENT_TYPE`, `INVALID_SITE_ID`, `PAYLOAD_TOO_LARGE`, `INVALID_SCHEMA_VERSION`, `MISSING_FIELD`, `INVALID_FIELD_TYPE`.
+
+### Event Queries
+
+Location: `packages/telemetry/src/event-types.ts`, `packages/telemetry/src/event-queries.ts`
+
+Migrated from stale `@valencets/db` dist artifacts (VAL-77). Six functions operating on the `sessions` and `events` base tables:
+
+- `createSession(pool, session)` -- insert a session, return the row
+- `getSessionById(pool, sessionId)` -- fetch by UUID
+- `insertEvent(pool, event)` -- insert a single event with JSONB payload
+- `insertEvents(pool, events)` -- batch-insert via `pool.sql()` helper
+- `getEventsBySession(pool, sessionId)` -- all events for a session, ordered by time
+- `getEventsByTimeRange(pool, start, end)` -- all events in a time window
+
+Types: `SessionRow`, `EventRow`, `InsertableSession`, `InsertableEvent`.
+
+### Ingestion Service
+
+Location: `packages/telemetry/src/ingestion.ts`
+
+`ingestBeacon(pool, events)` receives validated `BeaconEvent` arrays and persists them:
+
+1. Creates a session via `createSession` with `device_type: 'beacon'`
+2. Maps events to `InsertableEvent` with JSONB payloads containing path, coordinates, site metadata
+3. Batch-inserts via `insertEvents`
+
+Returns `ResultAsync<IngestResult, DbError>` where `IngestResult` contains `eventsInserted` and `sessionId`.
+
+### Database Migrations
+
+Location: `packages/telemetry/migrations/`
+
+Three migration files create the telemetry schema:
+
+- `001-base-tables.sql` -- `sessions` (UUID PK, referrer, device_type, OS) + `events` (BIGSERIAL PK, session FK, category, JSONB payload) with indexes
+- `002-summary-tables.sql` -- `session_summaries`, `event_summaries`, `conversion_summaries`, `ingestion_health` with UNIQUE constraints for upsert
+- `003-daily-summaries.sql` -- `daily_summaries` (one denormalized row per site per day) with UNIQUE(site_id, date)
+
+Integration tests run these migrations against a real PostgreSQL instance via `vitest.integration.config.ts`.
 
 ---
 

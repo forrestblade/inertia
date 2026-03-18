@@ -7,11 +7,11 @@ Day-to-day patterns for working in the Valence codebase.
 ```
 valence/
 ├── packages/
-│   ├── core/           Telemetry engine, client router, server utilities (216 tests)
+│   ├── core/           Telemetry engine, client router, server utilities (256 tests)
 │   ├── db/             PostgreSQL pool, config, migrations, error mapping (38 tests)
-│   ├── telemetry/      Summary queries, daily aggregation, fleet types (59 tests)
-│   ├── ui/             Web Component primitives (scaffolded)
-│   └── cms/            Content management (scaffolded)
+│   ├── telemetry/      Beacon validation, ingestion, event queries, aggregation (142 tests)
+│   ├── ui/             Web Components, ARIA, i18n, hydration directives (344 tests)
+│   └── cms/            Schema-driven CMS, admin, auth, API (270 tests)
 └── docs/               You are here
 ```
 

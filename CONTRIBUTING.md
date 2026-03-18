@@ -7,7 +7,7 @@ git clone https://github.com/valencets/valence.git
 cd valence
 pnpm install
 pnpm build   # Build all packages (required before first test run)
-pnpm test    # ~580 tests across all packages
+pnpm test    # 1,004+ tests across all packages
 pnpm lint    # Neostandard lint
 ```
 
@@ -17,11 +17,11 @@ Requires Node.js >= 22 and pnpm 10.x. The `packageManager` field in `package.jso
 
 ```
 packages/
-  core/        # Router, server, telemetry engine (223 tests)
+  core/        # Router, server, telemetry engine (256 tests)
   db/          # PostgreSQL connection, migrations (38 tests)
-  ui/          # ValElement protocol base class (1 test)
+  ui/          # Web Components + protocol base class (344 tests)
   cms/         # Schema engine, admin, auth, API (270 tests)
-  telemetry/   # Beacon, ingestion, aggregation (59 tests)
+  telemetry/   # Beacon validation, ingestion pipeline, event queries, aggregation (142 tests)
 ```
 
 Each package has:
