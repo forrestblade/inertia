@@ -70,7 +70,7 @@ describe('aggregateSessionSummary', () => {
 
     const row = result._unsafeUnwrap()
     expect(row.total_sessions).toBe(4)
-    expect(row.unique_referrers).toBe(3) // google.com, bing.com, NULL
+    expect(row.unique_referrers).toBe(2) // google.com, bing.com (NULL excluded by COUNT DISTINCT)
     expect(row.device_mobile).toBe(2)
     expect(row.device_desktop).toBe(1)
     expect(row.device_tablet).toBe(1)

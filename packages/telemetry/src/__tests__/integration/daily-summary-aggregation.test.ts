@@ -24,9 +24,10 @@ beforeEach(async () => {
   await pool.sql`DELETE FROM sessions`
 })
 
-const testDate = new Date('2026-03-15')
-const dayStart = new Date('2026-03-15T00:00:00.000Z')
-const dayEnd = new Date('2026-03-16T00:00:00.000Z')
+// Use local-time date to match dayBounds() in daily-summary-aggregation.ts
+const testDate = new Date(2026, 2, 15)
+const dayStart = new Date(testDate.getFullYear(), testDate.getMonth(), testDate.getDate())
+const dayEnd = new Date(dayStart.getTime() + 86_400_000)
 
 async function seedSession (
   deviceType: string,
@@ -55,7 +56,8 @@ async function seedEvent (
 
 describe('generateDailySummary', () => {
   it('aggregates all 7 sub-queries into a single daily summary row', async () => {
-    const ts = new Date('2026-03-15T10:00:00Z')
+    // Use a timestamp within the local-time day bounds
+    const ts = new Date(dayStart.getTime() + 10 * 3600_000)
 
     // Seed sessions
     const s1 = await seedSession('mobile', 'google.com', ts)

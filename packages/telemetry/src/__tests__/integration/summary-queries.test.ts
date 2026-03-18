@@ -103,10 +103,10 @@ describe('getConversionSummaries', () => {
   })
 
   it('returns conversion summaries with top_sources JSON', async () => {
-    const topSources = JSON.stringify([{ referrer: 'google.com', count: 5 }])
+    const topSources = [{ referrer: 'google.com', count: 5 }]
     await pool.sql`
       INSERT INTO conversion_summaries (period_start, period_end, intent_type, total_count, top_sources)
-      VALUES (${period.start}, ${period.end}, 'INTENT_CALL', 10, ${topSources}::jsonb)
+      VALUES (${period.start}, ${period.end}, 'INTENT_CALL', 10, ${pool.sql.json(topSources)})
     `
 
     const result = await getConversionSummaries(pool, period)

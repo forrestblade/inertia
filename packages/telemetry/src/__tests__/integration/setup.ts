@@ -53,6 +53,7 @@ async function doSetup (): Promise<void> {
   }
 
   await adminSql.unsafe(`CREATE DATABASE ${TEST_DB}`)
+  await adminSql.unsafe(`ALTER DATABASE ${TEST_DB} SET timezone = 'UTC'`)
   await adminSql.end()
 
   superuserPool = createPool({
