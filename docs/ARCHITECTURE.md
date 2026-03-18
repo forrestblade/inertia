@@ -16,7 +16,8 @@ Architectural reference for Valence. Read the section relevant to what you're wo
 10. [Server Utilities](#server-utilities)
 11. [Database Layer](#database-layer)
 12. [Telemetry Data Layer](#telemetry-data-layer)
-13. [14kB Critical Path](#14kb-critical-path)
+13. [Design Tokens](#design-tokens)
+14. [14kB Critical Path](#14kb-critical-path)
 
 ---
 
@@ -63,7 +64,7 @@ Five packages under `packages/`, connected by workspace dependencies. `neverthro
 | `packages/core/` | Built | 243 | Telemetry engine, HTML-over-the-wire router, view transitions, server islands, server utilities. |
 | `packages/db/` | Built | 38 | PostgreSQL connection pool, config validation, migration runner, error mapping. |
 | `packages/telemetry/` | Built | 59 | Summary table queries, daily summary aggregation, fleet data types. |
-| `packages/ui/` | Built | 344 | ValElement protocol, 18 Web Component primitives, hydration directives. Zero deps. |
+| `packages/ui/` | Built | 368 | ValElement protocol, 18 Web Component primitives, hydration directives, OKLCH tokens, Tailwind preset, theme contract. Zero deps. |
 | `packages/cms/` | v0.1 complete | 270 tests | Schema engine, admin UI, auth, REST API, media, query builder |
 
 ### Module Boundaries
@@ -610,6 +611,65 @@ Location: `packages/telemetry/src/daily-summary-queries.ts`
 - `insertDailySummaryFromRemote(pool, summary)` -- upsert a `DailySummaryPayload` received from a remote appliance
 - `getDailyTrend(pool, siteId, start, end)` -- fetch session/pageview/conversion counts across a date range for sparkline rendering
 - `getDailyBreakdowns(pool, siteId, start, end)` -- merge top pages, top referrers, and intent counts across multiple days
+
+---
+
+## Design Tokens
+
+Location: `packages/ui/src/tokens/`
+
+### OKLCH Color Space
+
+All 51 primitive color values use the OKLCH color space (`oklch(L C H)`). OKLCH is perceptually uniform: the same lightness value produces the same perceived brightness across all hues (unlike HSL where yellow at L=50% is visually brighter than blue at L=50%).
+
+Five color scales (gray, blue, red, green, amber), each with 10-11 stops. Shadow colors use `oklch(0 0 0 / alpha)`. Semantic tokens reference primitives via `var()` — no hardcoded colors in component CSS.
+
+Benefits:
+- Consistent contrast ratios across hues for accessibility
+- Mathematically invertible lightness for dark mode palettes
+- Native P3 wide-gamut support without redesign
+- 95%+ browser support
+
+### Token Architecture
+
+Two CSS files, loaded in order:
+
+1. **`primitives.css`** — raw values: 51 OKLCH colors, 13 spacing steps, 9 type sizes, 4 radii, 3 shadows, 3 durations, 3 easings
+2. **`semantic.css`** — contextual aliases: `--val-color-primary` → `var(--val-blue-600)`. Components use only semantic tokens. Dark mode via `prefers-color-scheme` media query.
+
+### Theme Contract
+
+Location: `packages/ui/src/tokens/theme-contract.ts`
+
+Formalizes which tokens a valid theme must define:
+
+- `THEME_TOKENS_REQUIRED` — 15 semantic tokens (surfaces, text, interactive, feedback, border, focus)
+- `THEME_TOKENS_DARK` — 6 tokens that must be overridden in dark mode (strict subset of required)
+- `validateTheme()` — reads computed styles from `:root`, returns missing token names. Empty array = valid theme.
+
+Third-party themes are CSS files that override semantic token values. Load after `semantic.css`. Components don't change. The Tailwind preset picks up new values automatically.
+
+```typescript
+import { validateTheme } from '@valencets/ui'
+const missing = validateTheme()
+if (missing.length > 0) console.warn('Theme missing tokens:', missing)
+```
+
+### Tailwind Preset
+
+Location: `packages/ui/src/tailwind/preset.ts`
+
+Optional preset mapping all `--val-*` tokens to Tailwind theme utilities. Components use Shadow DOM (Tailwind can't penetrate), so component internals stay as CSS custom properties. The preset serves the layout layer around components.
+
+```typescript
+// tailwind.config.ts
+import { valencePreset } from '@valencets/ui/tailwind'
+export default { presets: [valencePreset], content: ['./src/**/*.{html,ts}'] }
+```
+
+Maps 102 tokens across: colors (14 semantic + 5 primitive scales), spacing (13 steps), border-radius (4), font-size (9), font-family (2), box-shadow (3), transition-duration (3), transition-timing-function (3).
+
+Tailwind is an optional peer dependency. The preset is a plain object with zero runtime imports.
 
 ---
 

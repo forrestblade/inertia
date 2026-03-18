@@ -18,7 +18,7 @@ It runs on Node.js and PostgreSQL. Deploy it wherever those run.
 
 | Package | What it does | Deps |
 |---------|-------------|------|
-| **@valencets/ui** | 18 Web Components + protocol base class. ARIA, i18n, telemetry, CMS traceability, declarative hydration directives (`hydrate:idle`, `hydrate:visible`, `hydrate:media`, `hydrate:load`). | zero |
+| **@valencets/ui** | 18 Web Components + protocol base class. ARIA, i18n, telemetry, CMS traceability, declarative hydration directives (`hydrate:idle`, `hydrate:visible`, `hydrate:media`, `hydrate:load`). OKLCH design tokens, optional Tailwind preset, theme contract. | zero |
 | **@valencets/core** | Router, server, client telemetry engine. `pushState` nav, fragment swaps, hover-intent prefetch, ring buffer event capture. | zero |
 | **@valencets/db** | PostgreSQL query layer. Tagged template SQL, parameterized by default, `Result<T,E>` returns, migration runner. | zero |
 | **@valencets/cms** | Schema-driven content engine. `collection()` + `field.*` → tables, Zod validators, REST API, admin UI, auth, media. | db |
@@ -51,7 +51,7 @@ git clone https://github.com/valencets/valence.git
 cd valence
 pnpm install
 pnpm build
-pnpm test         # 934+ tests
+pnpm test         # 991+ tests
 ```
 
 ## Constraints
