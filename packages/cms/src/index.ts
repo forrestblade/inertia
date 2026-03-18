@@ -77,3 +77,15 @@ export type {
   CollectionHooks,
   FieldHooks
 } from './hooks/index.js'
+
+export {
+  isAuthEnabled,
+  getAuthConfig,
+  hashPassword,
+  verifyPassword,
+  createSession,
+  validateSession,
+  destroySession,
+  createAuthMiddleware
+} from './auth/index.js'
+export type { AuthConfig, AuthContext } from './auth/index.js'
