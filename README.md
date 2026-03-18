@@ -72,6 +72,8 @@ pnpm test         # 934+ tests
 - [Developer Guide](docs/DEVELOPER-GUIDE.md)
 - [Contributing](CONTRIBUTING.md)
 - [CMS Reference](packages/cms/README.md)
+- [CMS Guide](packages/cms/docs/guide.md)
+- [Troubleshooting](docs/TROUBLESHOOTING.md)
 
 ## License
 
