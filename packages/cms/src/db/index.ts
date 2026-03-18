@@ -12,7 +12,7 @@ export type { QueryBuilderFactory, CollectionQueryBuilder, DocumentRow, Document
 
 export { getColumnType, getColumnConstraints } from './column-map.js'
 
-export { generateCreateTable, generateCreateTableSql } from './migration-generator.js'
-export type { MigrationOutput } from './migration-generator.js'
+export { generateCreateTable, generateCreateTableSql, generateAlterTableSql } from './migration-generator.js'
+export type { MigrationOutput, SchemaChanges } from './migration-generator.js'
 
 export { isValidIdentifier, sanitizeIdentifier, getValidFieldNames, isAllowedField, sanitizeOptionValue } from './sql-sanitize.js'

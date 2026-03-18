@@ -47,7 +47,8 @@ export {
   getColumnType,
   getColumnConstraints,
   generateCreateTable,
-  generateCreateTableSql
+  generateCreateTableSql,
+  generateAlterTableSql
 } from './db/index.js'
 
 export type {
@@ -58,6 +59,7 @@ export type {
   QueryBuilderFactory,
   CollectionQueryBuilder,
   MigrationOutput,
+  SchemaChanges,
   SqlValue
 } from './db/index.js'
 
