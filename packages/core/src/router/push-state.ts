@@ -91,6 +91,9 @@ function revalidateInBackground (
 
       processHtml(result.html, config.contentSelector)
     })
+    .catch(() => {
+      // Background revalidation is fire-and-forget — log but don't propagate
+    })
 }
 
 function isNoCachePath (url: string, noCachePaths: ReadonlyArray<string>): boolean {
