@@ -46,7 +46,7 @@ export function swapContent (liveContainer: Element, newFragment: Element): Resu
 
     // Collect live persistent elements before clearing
     const livePersistedById = new Map<string, Element>()
-    for (const el of liveContainer.querySelectorAll('[data-valence-persist][id]')) {
+    for (const el of liveContainer.querySelectorAll('[data-valence-persist][id], [transition\\:persist][id]')) {
       livePersistedById.set(el.id, el)
     }
 
