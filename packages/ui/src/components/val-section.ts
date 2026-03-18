@@ -1,13 +1,10 @@
 import { ValElement } from '../core/val-element.js'
-
-function resolveSpace (value: string | null): string {
-  if (value === null || value === '') return ''
-  if (/^\d+$/.test(value)) return `var(--val-space-${value})`
-  return value
-}
+import { resolveSpace } from '../core/resolve-space.js'
 
 export class ValSection extends ValElement {
   static observedAttributes = ['max-width', 'padding', 'center']
+
+  private initialized = false
 
   constructor () {
     super({ shadow: false })
@@ -19,8 +16,11 @@ export class ValSection extends ValElement {
 
   connectedCallback (): void {
     super.connectedCallback()
-    this.style.display = 'block'
-    this.setAttribute('role', 'region')
+    if (!this.initialized) {
+      this.style.display = 'block'
+      this.setAttribute('role', 'region')
+      this.initialized = true
+    }
     this.syncStyles()
   }
 

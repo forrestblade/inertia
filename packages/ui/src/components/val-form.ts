@@ -7,6 +7,8 @@ export interface ValSubmitDetail {
 export class ValForm extends ValElement {
   static observedAttributes = ['disabled']
 
+  private initialized = false
+
   constructor () {
     super({ shadow: false })
   }
@@ -17,7 +19,10 @@ export class ValForm extends ValElement {
 
   connectedCallback (): void {
     super.connectedCallback()
-    this.setAttribute('role', 'form')
+    if (!this.initialized) {
+      this.setAttribute('role', 'form')
+      this.initialized = true
+    }
     this.addEventListener('click', this.handleClick)
     this.addEventListener('keydown', this.handleKeydown)
   }
@@ -67,7 +72,9 @@ export class ValForm extends ValElement {
   }
 
   private getFormElements (): Array<HTMLElement & { checkValidity?: () => boolean, formResetCallback?: () => void }> {
-    return Array.from(this.querySelectorAll('[name]')) as Array<HTMLElement & { checkValidity?: () => boolean, formResetCallback?: () => void }>
+    // Only collect elements that belong to THIS form — exclude those inside nested forms
+    const all = Array.from(this.querySelectorAll('[name]')) as Array<HTMLElement & { checkValidity?: () => boolean, formResetCallback?: () => void }>
+    return all.filter(el => el.closest('[role="form"]') === this)
   }
 
   private attemptSubmit (): void {
