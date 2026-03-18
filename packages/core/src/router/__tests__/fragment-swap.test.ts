@@ -230,3 +230,40 @@ describe('supportsMoveBefore', () => {
     expect(supportsMoveBefore).toBe(false)
   })
 })
+
+describe('transition:persist alias', () => {
+  let liveContainer: HTMLElement
+
+  beforeEach(() => {
+    liveContainer = document.createElement('main')
+    document.body.appendChild(liveContainer)
+  })
+
+  afterEach(() => {
+    document.body.innerHTML = ''
+  })
+
+  it('recognizes transition:persist as alias for data-valence-persist with moveBefore', () => {
+    const persistent = document.createElement('div')
+    persistent.id = 'video-bg'
+    persistent.setAttribute('transition:persist', '')
+    persistent.textContent = 'live state'
+    liveContainer.appendChild(persistent)
+
+    const moveBeforeFn = vi.fn(function (this: Element, node: Node, reference: Node | null) {
+      this.insertBefore(node, reference)
+    })
+    liveContainer.moveBefore = moveBeforeFn
+
+    const newMain = document.createElement('main')
+    const newPersistent = document.createElement('div')
+    newPersistent.id = 'video-bg'
+    newPersistent.setAttribute('transition:persist', '')
+    newPersistent.textContent = 'new state'
+    newMain.appendChild(newPersistent)
+
+    swapContent(liveContainer, newMain)
+
+    expect(moveBeforeFn).toHaveBeenCalled()
+  })
+})
