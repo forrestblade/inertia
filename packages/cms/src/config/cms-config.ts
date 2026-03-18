@@ -12,7 +12,11 @@ import { createCollectionRegistry, createGlobalRegistry } from '../schema/regist
 import { createLocalApi } from '../api/local-api.js'
 import { createRestRoutes } from '../api/rest-api.js'
 import { createAdminRoutes } from '../admin/admin-routes.js'
-import { injectAuthFields } from '../auth/auth-config.js'
+import { injectAuthFields, isAuthEnabled } from '../auth/auth-config.js'
+import { createAuthRoutes } from '../auth/auth-routes.js'
+import { isUploadEnabled } from '../media/media-config.js'
+import { createServeHandler } from '../media/serve-handler.js'
+import { createUploadHandler } from '../media/upload-handler.js'
 
 export interface CmsConfig {
   readonly db: DbPool
@@ -20,6 +24,7 @@ export interface CmsConfig {
   readonly collections: readonly CollectionConfig[]
   readonly globals?: readonly GlobalConfig[] | undefined
   readonly plugins?: readonly Plugin[] | undefined
+  readonly uploadDir?: string | undefined
 }
 
 export interface CmsInstance {
@@ -54,6 +59,28 @@ export function buildCms (inputConfig: CmsConfig): Result<CmsInstance, CmsError>
   const api = createLocalApi(config.db, collections, globals)
   const restRoutes = createRestRoutes(config.db, collections, globals)
   const adminRoutes = createAdminRoutes(config.db, collections)
+
+  const hasAuthCollection = config.collections.some(c => isAuthEnabled(c))
+  if (hasAuthCollection) {
+    const authRoutes = createAuthRoutes(config.db, collections)
+    for (const [path, entry] of authRoutes) {
+      restRoutes.set(path, entry)
+    }
+  }
+
+  if (config.uploadDir) {
+    const hasUploadCollection = config.collections.some(c => isUploadEnabled(c))
+    if (hasUploadCollection) {
+      const uploadHandler = createUploadHandler(config.uploadDir)
+      const serveHandler = createServeHandler(config.uploadDir)
+      restRoutes.set('/media/upload', {
+        POST: async (req, res) => { await uploadHandler(req, res) }
+      })
+      restRoutes.set('/media/:filename', {
+        GET: async (req, res) => { await serveHandler(req, res) }
+      })
+    }
+  }
 
   return ok({
     api,
