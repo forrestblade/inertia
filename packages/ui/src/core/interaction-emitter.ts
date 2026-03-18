@@ -2,12 +2,13 @@
 // Always fires. If nobody listens, events vanish — zero cost.
 // @valencets/telemetry registers a document listener when installed.
 
-export interface InteractionDetail {
+export interface InteractionBase {
   component: string
   action: string
   timestamp: number
-  [key: string]: string | number | boolean
 }
+
+export type InteractionDetail = InteractionBase & Record<string, string | number | boolean>
 
 export function emitInteraction (
   element: HTMLElement,
@@ -18,10 +19,10 @@ export function emitInteraction (
     bubbles: true,
     composed: true,
     detail: {
+      ...detail,
       component: element.tagName,
       action,
-      timestamp: Date.now(),
-      ...detail
+      timestamp: Date.now()
     }
   }))
 }

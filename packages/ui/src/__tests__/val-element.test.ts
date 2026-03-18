@@ -182,6 +182,18 @@ describe('ValElement', () => {
   })
 
   describe('Lifecycle', () => {
+    it('does not re-clone template when element is reconnected', () => {
+      const tag = defineTestElement('val-reconnect', ShadowTestElement)
+      const el = document.createElement(tag)
+      container.appendChild(el)
+
+      const childCount = el.shadowRoot!.childNodes.length
+      el.remove()
+      container.appendChild(el)
+
+      expect(el.shadowRoot!.childNodes.length).toBe(childCount)
+    })
+
     it('calls attributeChangedCallback for observed attributes', () => {
       class ObservedElement extends ValElement {
         static observedAttributes = ['variant']

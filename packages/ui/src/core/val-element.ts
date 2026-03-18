@@ -12,6 +12,7 @@ export interface ValElementInit {
 
 export abstract class ValElement extends HTMLElement implements LocaleSubscriber {
   protected readonly internals: ElementInternals | null
+  private _templateCloned = false
 
   constructor (init?: ValElementInit) {
     super()
@@ -31,9 +32,12 @@ export abstract class ValElement extends HTMLElement implements LocaleSubscriber
   // --- Lifecycle ---
 
   connectedCallback (): void {
-    const template = this.createTemplate()
-    const target = this.shadowRoot ?? this
-    target.appendChild(template.content.cloneNode(true))
+    if (!this._templateCloned) {
+      const template = this.createTemplate()
+      const target = this.shadowRoot ?? this
+      target.appendChild(template.content.cloneNode(true))
+      this._templateCloned = true
+    }
     localeObserver.subscribe(this)
   }
 

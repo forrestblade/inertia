@@ -36,7 +36,7 @@ if (typeof HTMLElement.prototype.attachInternals !== 'function') {
     const state = { formValue: null as FormData | string | null }
 
     const internals: MinimalElementInternals = {
-      form: null,
+      get form () { return element.closest('form') },
       get validity () { return currentValidity },
       get validationMessage () { return currentMessage },
       willValidate: true,

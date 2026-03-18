@@ -80,4 +80,16 @@ describe('emitInteraction', () => {
   it('fires without listeners — no error', () => {
     expect(() => emitInteraction(container, 'click')).not.toThrow()
   })
+
+  it('protects base fields from override by extras', () => {
+    const listener = vi.fn()
+    container.addEventListener('val:interaction', listener)
+
+    emitInteraction(container, 'click', { component: 'FAKE', action: 'spoofed', timestamp: 0 })
+
+    const detail = (listener.mock.calls[0]![0] as CustomEvent).detail
+    expect(detail.component).toBe('DIV')
+    expect(detail.action).toBe('click')
+    expect(detail.timestamp).toBeGreaterThan(0)
+  })
 })

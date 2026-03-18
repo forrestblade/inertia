@@ -21,6 +21,13 @@ export function defineTestElement<T extends CustomElementConstructor> (
   // Wrap in anonymous subclass so the same base class can be registered
   // under multiple tag names (custom element registry requires unique constructors).
   const wrapped = class extends (ctor as CustomElementConstructor) {} as unknown as T
+  // Copy own static properties (formAssociated, observedAttributes) that
+  // the custom element registry inspects on the registered constructor.
+  for (const key of Object.getOwnPropertyNames(ctor)) {
+    if (key === 'prototype' || key === 'name' || key === 'length') continue
+    const desc = Object.getOwnPropertyDescriptor(ctor, key)
+    if (desc !== undefined) Object.defineProperty(wrapped, key, desc)
+  }
   customElements.define(unique, wrapped)
   return unique
 }

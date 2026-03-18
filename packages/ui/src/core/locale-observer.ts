@@ -56,6 +56,13 @@ class LocaleObserverImpl {
       this.observer = null
     }
   }
+
+  /** Test-only: disconnect observer and clear all subscribers. */
+  _reset (): void {
+    this.stopObserving()
+    this.subscribers.clear()
+    this.lastLocale = resolveLocale()
+  }
 }
 
 export const localeObserver = new LocaleObserverImpl()
