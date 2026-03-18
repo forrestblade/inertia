@@ -51,7 +51,7 @@ git clone https://github.com/valencets/valence.git
 cd valence
 pnpm install
 pnpm build
-pnpm test         # 934+ tests
+pnpm test         # 1,004+ tests
 ```
 
 ## Constraints

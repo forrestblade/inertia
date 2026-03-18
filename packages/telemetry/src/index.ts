@@ -45,3 +45,32 @@ export {
   getDailyTrend,
   getDailyBreakdowns
 } from './daily-summary-queries.js'
+
+// Beacon types
+export {
+  BeaconIntentType,
+  BeaconValidationErrorCode,
+  MAX_BEACON_EVENTS,
+  isValidIntentType
+} from './beacon-types.js'
+export type { BeaconEvent, BeaconValidationError } from './beacon-types.js'
+
+// Beacon validation
+export { validateBeaconPayload } from './beacon-validation.js'
+
+// Ingestion
+export { ingestBeacon } from './ingestion.js'
+export type { IngestResult } from './ingestion.js'
+
+// Event types (migrated from @valencets/db)
+export type { SessionRow, EventRow, InsertableSession, InsertableEvent } from './event-types.js'
+
+// Event queries (migrated from @valencets/db)
+export {
+  createSession,
+  getSessionById,
+  insertEvent,
+  insertEvents,
+  getEventsBySession,
+  getEventsByTimeRange
+} from './event-queries.js'
