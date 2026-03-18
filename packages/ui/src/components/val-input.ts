@@ -37,7 +37,7 @@ template.innerHTML = `
   input:disabled { cursor: not-allowed; }
 </style>
 <div class="wrapper">
-  <label part="label"><slot></slot></label>
+  <label part="label"><slot name="label"></slot></label>
   <input part="input" />
 </div>
 `
@@ -94,14 +94,15 @@ export class ValInput extends ValFormElement {
       this.syncDisabled()
     } else if (name === 'value') {
       if (val !== null) this.inputEl.value = val
+      this.syncValidity()
     } else if ((SYNCED_ATTRS as readonly string[]).includes(name)) {
       if (val !== null) {
         this.inputEl.setAttribute(name, val)
       } else {
         this.inputEl.removeAttribute(name)
       }
+      this.syncValidity()
     }
-    this.syncValidity()
   }
 
   formResetCallback (): void {

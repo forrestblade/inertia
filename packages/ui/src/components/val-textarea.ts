@@ -40,7 +40,7 @@ template.innerHTML = `
   :host([autoresize]) textarea { resize: none; overflow: hidden; }
 </style>
 <div class="wrapper">
-  <label part="label"><slot></slot></label>
+  <label part="label"><slot name="label"></slot></label>
   <textarea part="textarea"></textarea>
 </div>
 `

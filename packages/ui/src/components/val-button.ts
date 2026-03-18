@@ -36,6 +36,9 @@ template.innerHTML = `
   :host([variant="secondary"]) button:hover {
     background: var(--val-color-bg-muted);
   }
+  :host([variant="secondary"]) button:focus-visible {
+    box-shadow: inset 0 0 0 1px var(--val-color-border), var(--val-focus-ring);
+  }
   :host([variant="ghost"]) button {
     background: transparent;
     color: var(--val-color-text);

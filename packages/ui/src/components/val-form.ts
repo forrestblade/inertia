@@ -101,7 +101,7 @@ export class ValForm extends ValElement {
     if (e.key === 'Enter') {
       const target = e.target as HTMLElement
       const tag = target.tagName.toLowerCase()
-      if (tag === 'input' || tag.startsWith('val-input')) {
+      if (tag === 'input' || tag === 'val-input') {
         e.preventDefault()
         this.attemptSubmit()
       }

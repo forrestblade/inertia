@@ -34,9 +34,11 @@ describe('ValTextarea', () => {
       expect(inner(el)).not.toBeNull()
     })
 
-    it('renders a label with slot', () => {
+    it('renders a label with named slot', () => {
       const el = create()
-      expect(el.shadowRoot!.querySelector('label slot')).not.toBeNull()
+      const slot = el.shadowRoot!.querySelector('label slot')
+      expect(slot).not.toBeNull()
+      expect(slot!.getAttribute('name')).toBe('label')
     })
   })
 

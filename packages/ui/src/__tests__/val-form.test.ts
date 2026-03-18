@@ -23,14 +23,31 @@ class MockField extends ValFormElement {
   }
 }
 
+// Form field that always fails validation
+class InvalidField extends ValFormElement {
+  get value (): string { return '' }
+  set value (_v: string) { /* noop */ }
+
+  protected createTemplate (): HTMLTemplateElement {
+    return document.createElement('template')
+  }
+
+  connectedCallback (): void {
+    super.connectedCallback()
+    this.setValidity({ valueMissing: true }, 'Required')
+  }
+}
+
 describe('ValForm', () => {
   let container: HTMLDivElement
   let fieldTag: string
+  let invalidFieldTag: string
 
   beforeEach(() => {
     container = document.createElement('div')
     document.body.appendChild(container)
     fieldTag = defineTestElement('mock-field', MockField)
+    invalidFieldTag = defineTestElement('invalid-field', InvalidField)
   })
 
   afterEach(() => {
@@ -113,6 +130,25 @@ describe('ValForm', () => {
 
       expect(listener).toHaveBeenCalledOnce()
       expect((listener.mock.calls[0]![0] as CustomEvent).detail.action).toBe('submit')
+    })
+
+    it('emits val:invalid when validation fails', () => {
+      const tag = defineTestElement('val-form', ValForm)
+      const el = document.createElement(tag) as InstanceType<typeof ValForm>
+      const field = document.createElement(invalidFieldTag)
+      field.setAttribute('name', 'required-field')
+      el.appendChild(field)
+      container.appendChild(el)
+
+      const invalidListener = vi.fn()
+      const submitListener = vi.fn()
+      el.addEventListener('val:invalid', invalidListener)
+      el.addEventListener('val:submit', submitListener)
+
+      el.submit()
+
+      expect(invalidListener).toHaveBeenCalledOnce()
+      expect(submitListener).not.toHaveBeenCalled()
     })
 
     it('does not submit when disabled', () => {

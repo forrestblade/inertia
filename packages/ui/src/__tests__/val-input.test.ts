@@ -34,11 +34,13 @@ describe('ValInput', () => {
       expect(inner(el)).not.toBeNull()
     })
 
-    it('renders a label with slot', () => {
+    it('renders a label with named slot', () => {
       const el = create()
       const label = el.shadowRoot!.querySelector('label')
       expect(label).not.toBeNull()
-      expect(label!.querySelector('slot')).not.toBeNull()
+      const slot = label!.querySelector('slot')
+      expect(slot).not.toBeNull()
+      expect(slot!.getAttribute('name')).toBe('label')
     })
   })
 

@@ -14,7 +14,7 @@ template.innerHTML = `
     transition: background var(--val-duration-fast) var(--val-ease-in-out);
     flex-shrink: 0;
   }
-  :host(:focus-visible) .track { box-shadow: var(--val-focus-ring); }
+  .track:focus-visible { box-shadow: var(--val-focus-ring); }
   .track[aria-checked="true"] { background: var(--val-color-primary); }
   .thumb {
     position: absolute;
