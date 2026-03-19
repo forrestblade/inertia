@@ -74,3 +74,11 @@ export {
   getEventsBySession,
   getEventsByTimeRange
 } from './event-queries.js'
+
+// Client initialization
+export { initTelemetry } from './init.js'
+export type { TelemetryConfig, TelemetryHandle } from './init.js'
+
+// Server ingestion handler
+export { createIngestionHandler } from './handler.js'
+export type { IngestionHandlerConfig } from './handler.js'
