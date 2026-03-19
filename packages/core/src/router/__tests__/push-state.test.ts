@@ -853,7 +853,7 @@ describe('initRouter', () => {
     }
   })
 
-  it('failed fetch falls back to window.location.href after retries exhausted', async () => {
+  it('failed fetch returns error after retries exhausted', async () => {
     const mockFetch = vi.fn<typeof fetch>().mockRejectedValue(
       new TypeError('Failed to fetch')
     )
@@ -921,6 +921,8 @@ describe('initRouter', () => {
   })
 
   it('failed navigation removes loading attributes', async () => {
+    vi.useFakeTimers()
+
     const mockFetch = vi.fn<typeof fetch>().mockRejectedValue(
       new TypeError('Failed to fetch')
     )
@@ -935,10 +937,15 @@ describe('initRouter', () => {
     const link = createAnchor('/fail')
     clickAnchor(link)
 
-    await new Promise(resolve => { setTimeout(resolve, 1500) })
+    // Advance past retry backoff (immediate + 1s delay + final attempt)
+    await vi.advanceTimersByTimeAsync(0)
+    await vi.advanceTimersByTimeAsync(1000)
+    await vi.advanceTimersByTimeAsync(0)
 
     expect(link.hasAttribute('aria-busy')).toBe(false)
     expect(link.hasAttribute('data-val-loading')).toBe(false)
+
+    vi.useRealTimers()
   })
 
   it('double-click on same URL while in-flight is ignored', async () => {

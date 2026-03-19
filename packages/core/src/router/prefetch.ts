@@ -29,6 +29,7 @@ export function initPrefetch (
   const cache = new Map<string, CachedResponse>()
   const inFlight = new Set<string>()
   const pendingQueue: string[] = []
+  const pendingSet = new Set<string>()
 
   let lastX = 0
   let lastY = 0
@@ -50,6 +51,7 @@ export function initPrefetch (
     if (inFlight.size >= config.maxConcurrentPrefetches) return
     const next = pendingQueue.shift()
     if (next !== undefined) {
+      pendingSet.delete(next)
       prefetchUrl(next)
     }
   }
@@ -60,8 +62,9 @@ export function initPrefetch (
 
     // Budget check -- queue if at capacity
     if (inFlight.size >= config.maxConcurrentPrefetches) {
-      if (!pendingQueue.includes(url)) {
+      if (!pendingSet.has(url)) {
         pendingQueue.push(url)
+        pendingSet.add(url)
       }
       return ResultAsync.fromSafePromise(Promise.resolve(undefined))
     }
@@ -199,6 +202,7 @@ export function initPrefetch (
       clearIntent()
       cache.clear()
       pendingQueue.length = 0
+      pendingSet.clear()
       inFlight.clear()
     },
     prefetchUrl,
@@ -206,6 +210,7 @@ export function initPrefetch (
     clearCache () {
       cache.clear()
       pendingQueue.length = 0
+      pendingSet.clear()
     },
     cacheSize () {
       return cache.size

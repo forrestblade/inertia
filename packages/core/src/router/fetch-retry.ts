@@ -17,7 +17,7 @@ function isRetryableResponse (response: Response): boolean {
 
 function delay (ms: number, signal: AbortSignal): Promise<void> {
   return new Promise<void>((resolve) => {
-    const id = setTimeout(resolve, ms)
+    const id = setTimeout(() => { signal.removeEventListener('abort', onAbort); resolve() }, ms)
     function onAbort (): void {
       clearTimeout(id)
       resolve()

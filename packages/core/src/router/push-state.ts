@@ -300,7 +300,8 @@ export function initRouter (
     return performNavigation(url, resolved, abortableFetch.fetch, fetchFn, prefetchHandle, pageCacheHandle)
       .map((navResult) => {
         const durationMs = Math.round(performance.now() - startTime)
-        window.history.pushState({ url }, '', url)
+        const pushUrl = hash !== undefined ? url + hash : url
+        window.history.pushState({ url }, '', pushUrl)
         if (hash === undefined || !scrollRestore.scrollToHash(hash)) { window.scrollTo(0, 0) }
 
         // Apply title from header (fragment responses) or parsed HTML
@@ -381,7 +382,7 @@ export function initRouter (
     // Use pathname + search (strips hash fragment) so cache keys are consistent
     // /about#contact and /about resolve to the same server resource
     const url = anchor.pathname + anchor.search
-    const hash = anchor.hash || undefined
+    const hash = anchor.hash !== '' ? anchor.hash : undefined
 
     // Ignore duplicate click on same URL while navigation is in-flight
     if (activeNavigationUrl === url) return
