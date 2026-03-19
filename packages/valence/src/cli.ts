@@ -15,7 +15,8 @@ import { log } from './cli-utils.js'
 import { generateConfigTemplate, generateSecret } from './config-template.js'
 import { landingPage } from './landing-page.js'
 import { loadEnvConfig, loadUserConfig } from './config-loader.js'
-import { resolveStaticPath, resolveMimeType } from '@valencets/core/server'
+import { resolveStaticPath, resolveMimeType, sendHtml } from '@valencets/core/server'
+import { resolvePageRoute } from './page-router.js'
 import { readFileSync, statSync } from 'node:fs'
 import { scaffoldFsd } from './scaffold/fsd-scaffold.js'
 
@@ -544,6 +545,15 @@ async function runDev (): Promise<void> {
         res.end(fileContent)
         return
       }
+    }
+
+    // User pages from src/pages/
+    const srcDir = join(projectDir, 'src')
+    const pageHtmlPath = resolvePageRoute(url.pathname, srcDir)
+    if (pageHtmlPath !== null && existsSync(pageHtmlPath)) {
+      const pageContent = readFileSync(pageHtmlPath, 'utf-8')
+      sendHtml(res, pageContent)
+      return
     }
 
     // Splash page (available at /_splash always, or / when learn mode is off)
