@@ -11,6 +11,7 @@ import type { DbConfig, DbPool } from '@valencets/db'
 import { buildCms } from '@valencets/cms'
 import type { RestRouteEntry } from '@valencets/cms'
 import { readLearnProgress, writeLearnProgress, createInitialProgress } from './learn/index.js'
+import { PAGE_TOKEN_CSS } from './page-tokens.js'
 
 const COMMANDS = {
   init: 'Create a new Valence project',
@@ -927,16 +928,17 @@ function landingPage (port: number): string {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Valence</title>
   <style>
+    ${PAGE_TOKEN_CSS}
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #e2e8f0; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    body { font-family: var(--val-font-sans); background: var(--val-color-bg); color: var(--val-color-text); display: flex; align-items: center; justify-content: center; min-height: 100vh; }
     .container { text-align: center; max-width: 480px; }
-    h1 { font-size: 3rem; font-weight: 300; letter-spacing: 0.1em; margin-bottom: 1rem; }
-    h1 span { font-weight: 600; color: #3b82f6; }
-    p { color: #94a3b8; line-height: 1.6; margin-bottom: 2rem; }
-    .links { display: flex; gap: 1rem; justify-content: center; }
-    a { color: #3b82f6; text-decoration: none; padding: 0.5rem 1rem; border: 1px solid #3b82f6; border-radius: 6px; transition: all 0.15s; }
-    a:hover { background: #3b82f6; color: #0f172a; }
-    code { background: #1e293b; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.85rem; }
+    h1 { font-size: var(--val-text-5xl); font-weight: 300; letter-spacing: 0.1em; margin-bottom: var(--val-space-4); }
+    h1 span { font-weight: 600; color: var(--val-color-primary); }
+    p { color: var(--val-color-text-muted); line-height: 1.6; margin-bottom: var(--val-space-8); }
+    .links { display: flex; gap: var(--val-space-4); justify-content: center; }
+    a { color: var(--val-color-primary); text-decoration: none; padding: var(--val-space-2) var(--val-space-4); border: 1px solid var(--val-color-primary); border-radius: var(--val-radius-md); transition: all var(--val-duration-fast); }
+    a:hover { background: var(--val-color-primary); color: var(--val-color-bg); }
+    code { background: var(--val-color-bg-elevated); padding: var(--val-space-1) var(--val-space-2); border-radius: var(--val-radius-sm); font-size: var(--val-text-sm); }
   </style>
 </head>
 <body>
