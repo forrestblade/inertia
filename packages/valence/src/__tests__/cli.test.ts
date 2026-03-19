@@ -67,6 +67,7 @@ describe('seed data', () => {
     expect(allSql).toContain('INSERT INTO "categories"')
     expect(allSql).toContain('INSERT INTO "posts"')
     expect(allSql).toContain('INSERT INTO "pages"')
-    expect(allSql).toContain('Welcome to Valence')
+    const allValues = queries.flatMap(q => q.values).join('\n')
+    expect(allValues).toContain('Welcome to Valence')
   })
 })

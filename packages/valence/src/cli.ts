@@ -378,6 +378,24 @@ CREATE TABLE IF NOT EXISTS "users" (
     })
     if (migrated) {
       log('Migrations applied.')
+      log('Seeding initial data...')
+      try {
+        const seedPool = createPool({
+          host: 'localhost',
+          port: 5432,
+          database: dbName,
+          username: dbUser,
+          password: dbPassword,
+          max: 5,
+          idle_timeout: 10,
+          connect_timeout: 10
+        })
+        await seedDatabase(seedPool as never)
+        await closePool(seedPool)
+        log('Seed data inserted.')
+      } catch {
+        log('Warning: seed data insertion failed. The database may already have data.')
+      }
     } else {
       log('Warning: migrations failed. Run "valence migrate" after fixing your database connection.')
     }
@@ -684,6 +702,30 @@ async function runMigrationsForProject (projectDir: string, config: DbConfig): P
 
   log(`Applied ${result.value} migration(s).`)
   return true
+}
+
+export async function seedDatabase (pool: { query: (text: string, values?: readonly (string | boolean | null)[]) => Promise<{ rows: Array<Record<string, string>> }> }): Promise<void> {
+  // Insert a default category
+  await pool.query(
+    'INSERT INTO "categories" ("name", "slug", "color") VALUES ($1, $2, $3) ON CONFLICT DO NOTHING',
+    ['General', 'general', 'blue']
+  )
+
+  // Get the category id for the post relation
+  const catResult = await pool.query('SELECT id FROM "categories" WHERE "slug" = $1 LIMIT 1', ['general'])
+  const catId = catResult.rows[0]?.id ?? null
+
+  // Insert a welcome post
+  await pool.query(
+    'INSERT INTO "posts" ("title", "slug", "body", "category", "published") VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING',
+    ['Welcome to Valence', 'welcome-to-valence', '<h2>Hello!</h2><p>This is your first post. Edit it from the admin panel.</p>', catId, true]
+  )
+
+  // Insert an about page
+  await pool.query(
+    'INSERT INTO "pages" ("title", "slug", "content", "status") VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING',
+    ['About', 'about', '<p>This is the about page.</p>', 'published']
+  )
 }
 
 function landingPage (port: number): string {
