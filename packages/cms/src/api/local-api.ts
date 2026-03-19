@@ -10,7 +10,7 @@ import { CmsErrorCode } from '../schema/types.js'
 import { isValidIdentifier } from '../db/sql-sanitize.js'
 import { safeQuery } from '../db/safe-query.js'
 
-interface FindArgs {
+export interface FindArgs {
   readonly collection: string
   readonly where?: Record<string, string | number | boolean | null> | undefined
   readonly orderBy?: { field: string; direction: 'asc' | 'desc' } | undefined
@@ -18,6 +18,7 @@ interface FindArgs {
   readonly perPage?: number | undefined
   readonly search?: string | undefined
   readonly limit?: number | undefined
+  readonly filters?: Record<string, string> | undefined
 }
 
 interface FindByIDArgs {
@@ -79,6 +80,11 @@ export function createLocalApi (
       if (args.where) {
         for (const [k, v] of Object.entries(args.where)) {
           builder = builder.where(k, v)
+        }
+      }
+      if (args.filters) {
+        for (const [k, v] of Object.entries(args.filters)) {
+          if (v !== '') builder = builder.where(k, v)
         }
       }
       if (args.search) builder = builder.search(args.search)
