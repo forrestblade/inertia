@@ -14,6 +14,8 @@
   <img src="https://img.shields.io/badge/node-%3E%3D22-brightgreen" alt="Node >= 22">
   <img src="https://img.shields.io/badge/pnpm-10.x-F69220" alt="pnpm">
   <img src="https://img.shields.io/badge/TypeScript-strict-blue" alt="TypeScript">
+  <img src="https://img.shields.io/badge/PostgreSQL-16+-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL">
+  <a href="https://github.com/neostandard/neostandard"><img src="https://img.shields.io/badge/code_style-neostandard-brightgreen?style=flat" alt="neostandard"></a>
 </p>
 
 ---

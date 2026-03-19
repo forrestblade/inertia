@@ -1,12 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 56" fill="none">
-  <style>
-    .wordmark {
-      font-family: "Inter", "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
-      font-size: 42px;
-      font-weight: 300;
-      letter-spacing: 0.08em;
-      fill: #1a1a1a;
-    }
-  </style>
-  <text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" class="wordmark">valence</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 80" fill="none">
+  <defs>
+    <linearGradient id="orbital" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#3b82f6" stop-opacity="0"/>
+      <stop offset="40%" stop-color="#3b82f6" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.7"/>
+    </linearGradient>
+  </defs>
+  <!-- Orbital arc -->
+  <ellipse cx="180" cy="40" rx="172" ry="32"
+    stroke="url(#orbital)" stroke-width="1.5" fill="none"
+    transform="rotate(-5, 180, 40)"/>
+  <!-- Electron -->
+  <circle cx="350" cy="28" r="4" fill="#3b82f6"/>
+  <!-- Wordmark: bold v + light alence -->
+  <text x="180" y="44" text-anchor="middle"
+    font-family="'Inter', 'Segoe UI', 'Helvetica Neue', sans-serif"
+    font-size="46" letter-spacing="0.1em" fill="#0f172a">
+    <tspan font-weight="600" fill="#3b82f6">v</tspan><tspan font-weight="300">alence</tspan>
+  </text>
 </svg>
