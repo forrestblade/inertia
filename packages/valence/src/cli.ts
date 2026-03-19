@@ -15,6 +15,8 @@ import { log } from './cli-utils.js'
 import { generateConfigTemplate, generateSecret } from './config-template.js'
 import { landingPage } from './landing-page.js'
 import { loadEnvConfig, loadUserConfig } from './config-loader.js'
+import { resolveStaticPath, resolveMimeType } from '@valencets/core/server'
+import { readFileSync, statSync } from 'node:fs'
 import { scaffoldFsd } from './scaffold/fsd-scaffold.js'
 
 const COMMANDS = {
@@ -528,6 +530,20 @@ async function runDev (): Promise<void> {
       res.writeHead(405, { 'Content-Type': 'text/plain' })
       res.end('Method not allowed')
       return
+    }
+
+    // Static files from public/
+    const publicDir = join(projectDir, 'public')
+    const staticResult = resolveStaticPath(url.pathname, publicDir)
+    if (staticResult.isOk()) {
+      const filePath = staticResult.value
+      if (existsSync(filePath) && statSync(filePath).isFile()) {
+        const fileContent = readFileSync(filePath)
+        const mime = resolveMimeType(filePath)
+        res.writeHead(200, { 'Content-Type': mime })
+        res.end(fileContent)
+        return
+      }
     }
 
     // Splash page (available at /_splash always, or / when learn mode is off)
