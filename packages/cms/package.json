@@ -14,7 +14,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && esbuild src/admin/editor/admin-client.ts --bundle --format=iife --outfile=dist/admin-client.js --minify",
     "test": "vitest run"
   },
   "license": "MIT",
@@ -24,15 +24,24 @@
     "directory": "packages/cms"
   },
   "dependencies": {
+    "@lexical/history": "^0.41.0",
+    "@lexical/html": "^0.41.0",
+    "@lexical/link": "^0.41.0",
+    "@lexical/list": "^0.41.0",
+    "@lexical/rich-text": "^0.41.0",
+    "@lexical/selection": "^0.41.0",
+    "@lexical/utils": "^0.41.0",
     "@valencets/core": "workspace:*",
     "@valencets/db": "workspace:*",
     "@valencets/ui": "workspace:*",
     "argon2": "^0.44.0",
+    "lexical": "^0.41.0",
     "neverthrow": "^8.2.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^25.4.0",
+    "esbuild": "^0.27.4",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   }

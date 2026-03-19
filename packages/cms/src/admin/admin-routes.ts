@@ -20,6 +20,8 @@ import { generateCsrfToken, validateCsrfToken } from '../auth/csrf.js'
 import { readStringBody } from '../api/read-body.js'
 import { generateZodSchema, generatePartialSchema } from '../validation/zod-generator.js'
 import { setFlashCookie, readFlash, clearFlashCookie } from './flash.js'
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 
 type AdminRouteHandler = (req: IncomingMessage, res: ServerResponse, ctx: Record<string, string>) => Promise<void>
 
@@ -123,6 +125,23 @@ export function createAdminRoutes (
     return token
   }
 
+  routes.set('/admin/_assets/admin-client.js', {
+    GET: async (_req, res) => {
+      try {
+        const distDir = fileURLToPath(new URL('../../..', import.meta.url))
+        const jsPath = `${distDir}/admin-client.js`
+        const js = readFileSync(jsPath, 'utf-8')
+        res.setHeader('Content-Type', 'application/javascript; charset=utf-8')
+        res.setHeader('Cache-Control', 'public, max-age=3600')
+        res.setHeader('Content-Length', Buffer.byteLength(js))
+        res.writeHead(200)
+        res.end(js)
+      } catch {
+        res.writeHead(404)
+        res.end('Not found')
+      }
+    }
+  })
   routes.set('/admin', {
     GET: wrap(async (_req, res) => {
       const statsPromises = allCollections.map(async (col) => {

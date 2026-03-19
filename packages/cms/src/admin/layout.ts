@@ -326,6 +326,59 @@ export function renderLayout (args: LayoutArgs): string {
     .toast-dismiss:hover { opacity: 1; }
     .toast-fade { opacity: 0; }
 
+    /* --- Richtext Editor --- */
+    .richtext-wrap {
+      border: 1px solid var(--val-color-border);
+      border-radius: var(--val-radius-md);
+      overflow: hidden;
+    }
+    .richtext-toolbar {
+      display: flex;
+      gap: 0.25rem;
+      padding: 0.375rem 0.5rem;
+      background: var(--val-color-bg-muted);
+      border-bottom: 1px solid var(--val-color-border);
+    }
+    .richtext-toolbar-btn {
+      background: none;
+      border: 1px solid transparent;
+      border-radius: var(--val-radius-sm);
+      color: var(--val-color-text-muted);
+      font-size: var(--val-text-sm);
+      font-weight: var(--val-weight-bold);
+      padding: 0.25rem 0.5rem;
+      cursor: pointer;
+      font-family: var(--val-font-sans);
+    }
+    .richtext-toolbar-btn:hover {
+      background: var(--val-color-bg-elevated);
+      color: var(--val-color-text);
+    }
+    .richtext-content {
+      min-height: 200px;
+      padding: 0.75rem;
+      background: var(--val-color-bg-muted);
+      color: var(--val-color-text);
+      font-family: var(--val-font-sans);
+      font-size: var(--val-text-sm);
+      line-height: var(--val-leading-normal);
+      outline: none;
+    }
+    .richtext-content:focus {
+      box-shadow: inset 0 0 0 2px var(--val-color-border-focus);
+    }
+    .richtext-content p { margin-bottom: 0.5rem; }
+    .richtext-content h2 { font-size: var(--val-text-xl); font-weight: var(--val-weight-bold); margin: 1rem 0 0.5rem; }
+    .richtext-content h3 { font-size: var(--val-text-lg); font-weight: var(--val-weight-semibold); margin: 0.75rem 0 0.5rem; }
+    .richtext-content ul, .richtext-content ol { padding-left: 1.5rem; margin-bottom: 0.5rem; }
+    .richtext-content blockquote {
+      border-left: 3px solid var(--val-color-border);
+      padding-left: 0.75rem;
+      color: var(--val-color-text-muted);
+      margin: 0.5rem 0;
+    }
+    .richtext-content a { color: var(--val-blue-400); text-decoration: underline; }
+
     /* --- Responsive --- */
     @media (max-width: 768px) {
       body { flex-direction: column; }
@@ -363,6 +416,7 @@ ${navItems}
     })()
   </script>`
     : ''}
+  <script src="/admin/_assets/admin-client.js" defer></script>
 </body>
 </html>`
 }
