@@ -17,6 +17,8 @@ import { landingPage } from './landing-page.js'
 import { loadEnvConfig, loadUserConfig } from './config-loader.js'
 import { resolveStaticPath, resolveMimeType, sendHtml } from '@valencets/core/server'
 import { resolvePageRoute } from './page-router.js'
+import { regenerateFromConfig } from './codegen/regenerate.js'
+import { startConfigWatcher } from './learn/watcher.js'
 import { readFileSync, statSync } from 'node:fs'
 import { scaffoldFsd } from './scaffold/fsd-scaffold.js'
 
@@ -472,6 +474,27 @@ async function runDev (): Promise<void> {
     }
 
     log('Learn mode active.')
+  }
+
+  // Config watcher — always active, regenerates codegen on changes
+  const configPath = join(projectDir, 'valence.config.ts')
+  if (!configWatcher && existsSync(configPath)) {
+    configWatcher = startConfigWatcher({
+      configPath,
+      onConfigChange: () => {
+        loadUserConfig().then(cfg => {
+          if (!cfg) return
+          currentConfigSlugs = cfg.collections.map(c => c.slug)
+          regenerateFromConfig(projectDir, cfg.collections).match(
+            (result) => {
+              const total = result.added.length + result.updated.length
+              if (total > 0) log(`Regenerated ${total} file(s). Skipped ${result.skipped.length} user-edited.`)
+            },
+            (e) => { log(`Regeneration error: ${e.message}`) }
+          )
+        }).catch(() => {})
+      }
+    })
   }
 
   // eslint-disable-next-line complexity
