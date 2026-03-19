@@ -78,14 +78,14 @@ describe('renderListView()', () => {
       { id: '1', title: 'Hello', slug: 'hello', published: 'true' },
       { id: '2', title: 'World', slug: 'world', published: 'false' }
     ]
-    const html = renderListView(makePostsCollection(), docs)
+    const html = renderListView({ col: makePostsCollection(), docs })
     expect(html).toContain('Hello')
     expect(html).toContain('World')
     expect(html).toContain('/admin/posts/1/edit')
   })
 
   it('shows empty state when no docs', () => {
-    const html = renderListView(makePostsCollection(), [])
+    const html = renderListView({ col: makePostsCollection(), docs: [] })
     expect(html).toContain('No')
   })
 })

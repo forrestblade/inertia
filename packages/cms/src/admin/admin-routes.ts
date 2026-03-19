@@ -338,7 +338,7 @@ export function createAdminRoutes (
           (rows) => rows as Array<{ id: string, [key: string]: string | number | boolean | null }>,
           () => []
         )
-        const content = renderListView(col, docs)
+        const content = renderListView({ col, docs })
         const html = renderLayout({
           title: col.labels?.plural ?? col.slug,
           content,
