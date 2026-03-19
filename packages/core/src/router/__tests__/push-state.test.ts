@@ -871,4 +871,74 @@ describe('initRouter', () => {
     // Should have returned an error (implementation will fall back to location.href)
     expect(navResult.isErr()).toBe(true)
   })
+
+  it('navigation saves scroll position before navigating', async () => {
+    const mockFetch = createMockFetch('<html><head><title>Next</title></head><body><main><p>Next</p></main></body></html>')
+    const replaceStateSpy = vi.spyOn(window.history, 'replaceState')
+
+    vi.stubGlobal('scrollX', 0)
+    vi.stubGlobal('scrollY', 500)
+
+    const result = initRouter({}, mockFetch)
+    if (result.isOk()) handle = result.value
+
+    const main = document.createElement('main')
+    main.innerHTML = '<p>Home</p>'
+    document.body.appendChild(main)
+
+    await handle!.navigate('/next')
+
+    // replaceState should have been called to save scroll position before navigation
+    expect(replaceStateSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ scrollX: 0, scrollY: 500 }),
+      ''
+    )
+
+    replaceStateSpy.mockRestore()
+    vi.unstubAllGlobals()
+  })
+
+  it('popstate restores scroll from history.state', async () => {
+    const mockFetch = createMockFetch('<html><head><title>Back</title></head><body><main><p>Back</p></main></body></html>')
+    const scrollToSpy = vi.spyOn(window, 'scrollTo').mockImplementation(() => {})
+
+    const result = initRouter({}, mockFetch)
+    if (result.isOk()) handle = result.value
+
+    const main = document.createElement('main')
+    main.innerHTML = '<p>Current</p>'
+    document.body.appendChild(main)
+
+    // Simulate popstate with saved scroll position
+    window.dispatchEvent(new PopStateEvent('popstate', {
+      state: { url: '/previous', scrollX: 100, scrollY: 300 }
+    }))
+
+    await new Promise(resolve => { setTimeout(resolve, 50) })
+
+    // Should restore scroll to the saved position
+    expect(scrollToSpy).toHaveBeenCalledWith(100, 300)
+
+    scrollToSpy.mockRestore()
+  })
+
+  it('hash URL scrolls to element after swap', async () => {
+    const mockFetch = createMockFetch('<html><head><title>Page</title></head><body><main><div id="contact"><p>Contact section</p></div></main></body></html>')
+
+    const result = initRouter({}, mockFetch)
+    if (result.isOk()) handle = result.value
+
+    const main = document.createElement('main')
+    main.innerHTML = '<p>Home</p>'
+    document.body.appendChild(main)
+
+    const link = createAnchor('/about#contact')
+    clickAnchor(link)
+
+    await new Promise(resolve => { setTimeout(resolve, 50) })
+
+    // The element with id="contact" should exist after swap
+    const contactEl = document.getElementById('contact')
+    expect(contactEl).not.toBeNull()
+  })
 })

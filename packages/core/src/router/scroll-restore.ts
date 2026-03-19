@@ -1,6 +1,6 @@
 export interface ScrollRestoreHandle {
   readonly saveCurrentPosition: () => void
-  readonly restorePosition: () => void
+  readonly restorePosition: (state?: unknown) => void
   readonly scrollToHash: (hash: string) => boolean
   readonly destroy: () => void
 }
@@ -25,10 +25,10 @@ export function initScrollRestore (): ScrollRestoreHandle {
     )
   }
 
-  function restorePosition (): void {
-    const state = history.state as unknown
-    if (!hasScrollState(state)) return
-    window.scrollTo(state.scrollX, state.scrollY)
+  function restorePosition (state?: unknown): void {
+    const s = (state ?? history.state) as unknown
+    if (!hasScrollState(s)) return
+    window.scrollTo(s.scrollX, s.scrollY)
   }
 
   function scrollToHash (hash: string): boolean {

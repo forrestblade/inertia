@@ -1,4 +1,5 @@
 import { createAbortableFetch } from './fetch-retry.js'
+import { initScrollRestore } from './scroll-restore.js'
 import { ok, err, ResultAsync } from 'neverthrow'
 import type { Result } from 'neverthrow'
 import { RouterErrorCode, resolveConfig } from './router-types.js'
@@ -248,6 +249,7 @@ export function initRouter (
 
   const pageCacheHandle = initPageCache(resolved)
   const abortableFetch = createAbortableFetch(fetchFn)
+  const scrollRestore = initScrollRestore()
 
   // Seed version from DOM if available
   const versionAttr = document.documentElement.getAttribute('data-valence-version')
@@ -255,7 +257,7 @@ export function initRouter (
     pageCacheHandle.setVersion(versionAttr)
   }
 
-  function navigate (url: string): ResultAsync<void, RouterError> {
+  function navigate (url: string, hash?: string): ResultAsync<void, RouterError> {
     const fromUrl = window.location.href
     const detail: NavigationDetail = { fromUrl, toUrl: url }
 
@@ -266,13 +268,14 @@ export function initRouter (
 
     const startTime = performance.now()
 
+    scrollRestore.saveCurrentPosition()
     abortableFetch.abort()
 
     return performNavigation(url, resolved, abortableFetch.fetch, fetchFn, prefetchHandle, pageCacheHandle)
       .map((navResult) => {
         const durationMs = Math.round(performance.now() - startTime)
         window.history.pushState({ url }, '', url)
-        window.scrollTo(0, 0)
+        if (hash === undefined || !scrollRestore.scrollToHash(hash)) { window.scrollTo(0, 0) }
 
         // Apply title from header (fragment responses) or parsed HTML
         if (navResult.title !== null) {
@@ -327,6 +330,7 @@ export function initRouter (
           bubbles: true,
           detail: perfDetail
         }))
+        scrollRestore.restorePosition(popEvent.state)
         return undefined
       })
   }
@@ -346,7 +350,8 @@ export function initRouter (
     // Use pathname + search (strips hash fragment) so cache keys are consistent
     // /about#contact and /about resolve to the same server resource
     const url = anchor.pathname + anchor.search
-    navigate(url)
+    const hash = anchor.hash || undefined
+    navigate(url, hash)
   }
 
   document.body.addEventListener('click', onClick)
@@ -358,6 +363,7 @@ export function initRouter (
       window.removeEventListener('popstate', onPopstate)
       prefetchHandle.destroy()
       abortableFetch.abort()
+      scrollRestore.destroy()
       pageCacheHandle.invalidateAll()
     },
     navigate,
