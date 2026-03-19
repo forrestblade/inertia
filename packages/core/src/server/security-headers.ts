@@ -1,6 +1,8 @@
 import { randomBytes } from 'node:crypto'
 import type { ServerResponse } from 'node:http'
 
+export const CSP_NONCE_PLACEHOLDER = '__CSP_NONCE__'
+
 export const SECURITY_HEADERS: Readonly<Record<string, string>> = Object.freeze({
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',

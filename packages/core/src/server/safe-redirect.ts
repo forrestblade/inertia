@@ -1,7 +1,7 @@
 function hasControlChars (str: string): boolean {
   for (let i = 0; i < str.length; i++) {
     const code = str.charCodeAt(i)
-    if (code >= 0 && code <= 0x1f) return true
+    if (code <= 0x1f) return true
   }
   return false
 }

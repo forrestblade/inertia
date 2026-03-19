@@ -1,4 +1,5 @@
 import type { CollectionConfig } from '../schema/collection.js'
+import { CSP_NONCE_PLACEHOLDER } from '@valencets/core/server'
 import { renderFieldInput } from './field-renderers.js'
 import type { RelationContext } from './field-renderers.js'
 import { escapeHtml } from './escape.js'
@@ -43,7 +44,7 @@ export function renderEditView (col: CollectionConfig, doc: DocRow | null, csrfT
         <button type="button" class="btn btn-danger" id="delete-confirm">Delete</button>
       </div>
     </val-dialog>
-    <script${nonce ? ` nonce="${nonce}"` : ' nonce="__CSP_NONCE__"'}>
+    <script${nonce ? ` nonce="${nonce}"` : ' nonce="' + CSP_NONCE_PLACEHOLDER + '"'}>
       (function () {
         var trigger = document.querySelector('.delete-trigger')
         var dialog = document.getElementById('delete-dialog')
