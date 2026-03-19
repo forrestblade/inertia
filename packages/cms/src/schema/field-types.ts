@@ -1,6 +1,7 @@
 export const FieldType = {
   TEXT: 'text',
   TEXTAREA: 'textarea',
+  RICHTEXT: 'richtext',
   NUMBER: 'number',
   BOOLEAN: 'boolean',
   SELECT: 'select',
@@ -36,6 +37,12 @@ export interface TextFieldConfig extends FieldBaseConfig {
 
 export interface TextareaFieldConfig extends FieldBaseConfig {
   readonly type: 'textarea'
+  readonly minLength?: number | undefined
+  readonly maxLength?: number | undefined
+}
+
+export interface RichtextFieldConfig extends FieldBaseConfig {
+  readonly type: 'richtext'
   readonly minLength?: number | undefined
   readonly maxLength?: number | undefined
 }
@@ -90,6 +97,7 @@ export interface GroupFieldConfig extends FieldBaseConfig {
 export type FieldConfig =
   | TextFieldConfig
   | TextareaFieldConfig
+  | RichtextFieldConfig
   | NumberFieldConfig
   | BooleanFieldConfig
   | SelectFieldConfig

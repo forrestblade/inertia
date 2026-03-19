@@ -4,6 +4,7 @@ import { sanitizeOptionValue, isValidIdentifier } from './sql-sanitize.js'
 const TYPE_MAP: Record<string, string> = {
   text: 'TEXT',
   textarea: 'TEXT',
+  richtext: 'TEXT',
   number: 'INTEGER',
   boolean: 'BOOLEAN',
   select: 'TEXT',

@@ -1,6 +1,7 @@
 import type {
   TextFieldConfig,
   TextareaFieldConfig,
+  RichtextFieldConfig,
   NumberFieldConfig,
   BooleanFieldConfig,
   SelectFieldConfig,
@@ -18,6 +19,10 @@ export const field = {
 
   textarea (opts: Omit<TextareaFieldConfig, 'type'>): TextareaFieldConfig {
     return { type: 'textarea', ...opts }
+  },
+
+  richtext (opts: Omit<RichtextFieldConfig, 'type'>): RichtextFieldConfig {
+    return { type: 'richtext', ...opts }
   },
 
   number (opts: Omit<NumberFieldConfig, 'type'>): NumberFieldConfig {

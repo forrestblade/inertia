@@ -16,8 +16,8 @@ describe('FieldType', () => {
     expect(FieldType.GROUP).toBe('group')
   })
 
-  it('has exactly 10 types', () => {
-    expect(Object.keys(FieldType)).toHaveLength(10)
+  it('has exactly 11 types', () => {
+    expect(Object.keys(FieldType)).toHaveLength(11)
   })
 })
 

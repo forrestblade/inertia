@@ -5,6 +5,7 @@ import type { FieldConfig } from '../schema/field-types.js'
 const FIELD_SCHEMA_MAP: Record<string, (field: FieldConfig) => ZodTypeAny> = {
   text: buildTextSchema,
   textarea: buildTextSchema,
+  richtext: buildTextSchema,
   number: buildNumberSchema,
   boolean: buildBooleanSchema,
   select: buildSelectSchema,

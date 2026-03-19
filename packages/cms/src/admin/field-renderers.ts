@@ -5,6 +5,7 @@ const RENDERER_MAP: Record<string, (f: FieldConfig, value: string) => string> = 
   text: renderTextInput,
   slug: renderTextInput,
   textarea: renderTextarea,
+  richtext: renderRichtextEditor,
   number: renderNumberInput,
   boolean: renderCheckbox,
   select: renderSelect,
@@ -50,6 +51,13 @@ function renderSelect (f: FieldConfig, value: string): string {
 function renderDateInput (f: FieldConfig, value: string): string {
   const req = f.required ? ' required' : ''
   return `<label class="form-field"><span>${escapeHtml(f.label ?? f.name)}</span><input class="form-input" type="date" name="${escapeHtml(f.name)}" value="${escapeHtml(value)}"${req}></label>`
+}
+
+function renderRichtextEditor (f: FieldConfig, value: string): string {
+  const templateTag = value
+    ? `<template class="richtext-initial">${escapeHtml(value)}</template>`
+    : ''
+  return `<label class="form-field"><span>${escapeHtml(f.label ?? f.name)}</span><div class="richtext-wrap"><input type="hidden" name="${escapeHtml(f.name)}" value="${escapeHtml(value)}"><div class="richtext-editor" data-field="${escapeHtml(f.name)}"></div>${templateTag}</div></label>`
 }
 
 function renderGroup (f: FieldConfig, _value: string): string {
