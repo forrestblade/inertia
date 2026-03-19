@@ -36,6 +36,7 @@ type AdminRouteHandler = (req: IncomingMessage, res: ServerResponse, ctx: Record
 interface AdminOptions {
   readonly requireAuth?: boolean | undefined
   readonly telemetryPool?: DbPool | undefined
+  readonly headTags?: readonly string[] | undefined
 }
 
 function wrapWithAuth (pool: DbPool, handler: AdminRouteHandler): AdminRouteHandler {
@@ -109,6 +110,7 @@ export function createAdminRoutes (
     : (handler: AdminRouteHandler): AdminRouteHandler => handler
   const routes = new Map<string, RestRouteEntry>()
   const allCollections = collections.getAll()
+  const headTags = options.headTags
   const globals = createGlobalRegistry()
   const api = createLocalApi(pool, collections, globals)
   const CSRF_TTL_MS = 3_600_000
@@ -262,7 +264,7 @@ export function createAdminRoutes (
     GET: wrap(async (_req, res) => {
       if (!options.telemetryPool) {
         const content = renderAnalyticsView(null)
-        const html = renderLayout({ title: 'Analytics', content, collections: allCollections })
+        const html = renderLayout({ title: 'Analytics', content, collections: allCollections, headTags })
         sendHtml(res, html)
         return
       }
@@ -290,11 +292,11 @@ export function createAdminRoutes (
           topPages: breakdowns.top_pages,
           topReferrers: breakdowns.top_referrers
         })
-        const html = renderLayout({ title: 'Analytics', content, collections: allCollections })
+        const html = renderLayout({ title: 'Analytics', content, collections: allCollections, headTags })
         sendHtml(res, html)
       } catch {
         const content = renderAnalyticsView(null)
-        const html = renderLayout({ title: 'Analytics', content, collections: allCollections })
+        const html = renderLayout({ title: 'Analytics', content, collections: allCollections, headTags })
         sendHtml(res, html)
       }
     })
@@ -319,7 +321,7 @@ export function createAdminRoutes (
       })
       const stats = await Promise.all(statsPromises)
       const content = renderDashboard({ stats })
-      const html = renderLayout({ title: 'Dashboard', content, collections: allCollections })
+      const html = renderLayout({ title: 'Dashboard', content, collections: allCollections, headTags })
       sendHtml(res, html)
     })
   })
@@ -341,6 +343,7 @@ export function createAdminRoutes (
           title: col.labels?.plural ?? col.slug,
           content,
           collections: allCollections,
+          headTags,
           toast
         })
         sendHtml(res, html)
@@ -355,7 +358,8 @@ export function createAdminRoutes (
         const html = renderLayout({
           title: `New ${col.labels?.singular ?? col.slug}`,
           content,
-          collections: allCollections
+          collections: allCollections,
+          headTags
         })
         sendHtml(res, html)
       }),
@@ -453,7 +457,8 @@ export function createAdminRoutes (
         const html = renderLayout({
           title: `Edit ${col.labels?.singular ?? col.slug}`,
           content,
-          collections: allCollections
+          collections: allCollections,
+          headTags
         })
         sendHtml(res, html)
       }),
@@ -511,7 +516,8 @@ export function createAdminRoutes (
         const html = renderLayout({
           title: `History — ${col.labels?.singular ?? col.slug}`,
           content,
-          collections: allCollections
+          collections: allCollections,
+          headTags
         })
         sendHtml(res, html)
       })
@@ -533,7 +539,8 @@ export function createAdminRoutes (
         const html = renderLayout({
           title: `Revision ${rev} — ${col.labels?.singular ?? col.slug}`,
           content,
-          collections: allCollections
+          collections: allCollections,
+          headTags
         })
         sendHtml(res, html)
       })

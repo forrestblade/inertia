@@ -5,7 +5,6 @@ import { stdin, stdout } from 'node:process'
 import { execSync } from 'node:child_process'
 import { createServer } from 'node:http'
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { existsSync } from 'node:fs'
 import { createPool, closePool, loadMigrations, runMigrations } from '@valencets/db'
 import type { DbConfig, DbPool } from '@valencets/db'
 import { buildCms } from '@valencets/cms'
@@ -15,6 +14,12 @@ import { log } from './cli-utils.js'
 import { generateConfigTemplate, generateSecret } from './config-template.js'
 import { landingPage } from './landing-page.js'
 import { loadEnvConfig, loadUserConfig } from './config-loader.js'
+import { resolveStaticPath, resolveMimeType, sendHtml } from '@valencets/core/server'
+import { resolvePageRoute } from './page-router.js'
+import { regenerateFromConfig } from './codegen/regenerate.js'
+import { startConfigWatcher } from './learn/watcher.js'
+import { existsSync, readFileSync, statSync } from 'node:fs'
+import { scaffoldFsd } from './scaffold/fsd-scaffold.js'
 
 const COMMANDS = {
   init: 'Create a new Valence project',
@@ -123,7 +128,6 @@ async function runInit (args: ReadonlyArray<string>): Promise<void> {
   await mkdir(join(dir, 'collections'), { recursive: true })
   await mkdir(join(dir, 'migrations'), { recursive: true })
   await mkdir(join(dir, 'public'), { recursive: true })
-  await mkdir(join(dir, 'templates'), { recursive: true })
   await mkdir(join(dir, 'uploads'), { recursive: true })
 
   const extraDeps: Record<string, string> = {}
@@ -208,38 +212,13 @@ Admin: http://localhost:${serverPort}/admin
 
   await writeFile(join(dir, 'migrations', '001-init.sql'), `CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
-CREATE TABLE IF NOT EXISTS "categories" (
-  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  "name" TEXT NOT NULL,
-  "slug" TEXT NOT NULL UNIQUE,
-  "description" TEXT,
-  "color" TEXT,
-  "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  "updated_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  "deleted_at" TIMESTAMPTZ
-);
-
 CREATE TABLE IF NOT EXISTS "posts" (
   "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   "title" TEXT NOT NULL,
   "slug" TEXT NOT NULL UNIQUE,
   "body" TEXT,
-  "category" UUID REFERENCES "categories"("id"),
   "published" BOOLEAN DEFAULT false,
   "publishedAt" TIMESTAMPTZ,
-  "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  "updated_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  "deleted_at" TIMESTAMPTZ
-);
-
-CREATE TABLE IF NOT EXISTS "pages" (
-  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  "title" TEXT NOT NULL,
-  "slug" TEXT NOT NULL UNIQUE,
-  "content" TEXT,
-  "status" TEXT NOT NULL DEFAULT 'draft',
-  "publishedAt" TIMESTAMPTZ,
-  "seo" JSONB,
   "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   "updated_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   "deleted_at" TIMESTAMPTZ
@@ -309,6 +288,32 @@ CREATE TABLE IF NOT EXISTS "daily_summaries" (
   UNIQUE("site_id", "date")
 );
 `)
+
+  // Scaffold FSD src/ directory from the collections we just wrote
+  const { collection: col, field: f } = await import('@valencets/cms')
+  const initCollections = [
+    col({
+      slug: 'posts',
+      labels: { singular: 'Post', plural: 'Posts' },
+      fields: [
+        f.text({ name: 'title', required: true }),
+        f.slug({ name: 'slug', required: true, unique: true, slugFrom: 'title' }),
+        f.richtext({ name: 'body' }),
+        f.boolean({ name: 'published' }),
+        f.date({ name: 'publishedAt' })
+      ]
+    }),
+    col({
+      slug: 'users',
+      auth: true,
+      fields: [
+        f.text({ name: 'name', required: true }),
+        f.select({ name: 'role', defaultValue: 'editor', options: [{ label: 'Admin', value: 'admin' }, { label: 'Editor', value: 'editor' }] })
+      ]
+    })
+  ]
+  await scaffoldFsd({ projectDir: dir, collections: initCollections })
+  log('FSD source directory scaffolded.')
 
   log('Project scaffolded.')
 
@@ -459,15 +464,44 @@ async function runDev (): Promise<void> {
         configPath,
         onConfigChange: () => {
           markConfigChanged(learnSignals!)
-          // Reload config to get updated slug list
+          // Reload config to get updated slug list + regenerate codegen
           loadUserConfig().then(cfg => {
-            if (cfg) currentConfigSlugs = cfg.collections.map(c => c.slug)
-          }).catch(() => {})
+            if (!cfg) return
+            currentConfigSlugs = cfg.collections.map(c => c.slug)
+            regenerateFromConfig(projectDir, cfg.collections).match(
+              (result) => {
+                const total = result.added.length + result.updated.length
+                if (total > 0) log(`Regenerated ${total} file(s). Skipped ${result.skipped.length} user-edited.`)
+              },
+              (e) => { log(`Regeneration error: ${e.message}`) }
+            )
+          }).catch((e) => { log('Config reload failed: ' + (e instanceof Error ? e.message : 'unknown')) })
         }
       })
     }
 
     log('Learn mode active.')
+  }
+
+  // Config watcher — always active, regenerates codegen on changes
+  const configPath = join(projectDir, 'valence.config.ts')
+  if (!configWatcher && existsSync(configPath)) {
+    configWatcher = startConfigWatcher({
+      configPath,
+      onConfigChange: () => {
+        loadUserConfig().then(cfg => {
+          if (!cfg) return
+          currentConfigSlugs = cfg.collections.map(c => c.slug)
+          regenerateFromConfig(projectDir, cfg.collections).match(
+            (result) => {
+              const total = result.added.length + result.updated.length
+              if (total > 0) log(`Regenerated ${total} file(s). Skipped ${result.skipped.length} user-edited.`)
+            },
+            (e) => { log(`Regeneration error: ${e.message}`) }
+          )
+        }).catch((e) => { log('Config reload failed: ' + (e instanceof Error ? e.message : 'unknown')) })
+      }
+    })
   }
 
   // eslint-disable-next-line complexity
@@ -526,6 +560,29 @@ async function runDev (): Promise<void> {
       }
       res.writeHead(405, { 'Content-Type': 'text/plain' })
       res.end('Method not allowed')
+      return
+    }
+
+    // Static files from public/
+    const publicDir = join(projectDir, 'public')
+    const staticResult = resolveStaticPath(url.pathname, publicDir)
+    if (staticResult.isOk()) {
+      const filePath = staticResult.value
+      if (existsSync(filePath) && statSync(filePath).isFile()) {
+        const fileContent = readFileSync(filePath)
+        const mime = resolveMimeType(filePath)
+        res.writeHead(200, { 'Content-Type': mime })
+        res.end(fileContent)
+        return
+      }
+    }
+
+    // User pages from src/pages/
+    const srcDir = join(projectDir, 'src')
+    const pageHtmlPath = resolvePageRoute(url.pathname, srcDir)
+    if (pageHtmlPath !== null && existsSync(pageHtmlPath)) {
+      const pageContent = readFileSync(pageHtmlPath, 'utf-8')
+      sendHtml(res, pageContent)
       return
     }
 
@@ -717,26 +774,10 @@ async function runMigrationsForProject (projectDir: string, config: DbConfig): P
 }
 
 export async function seedDatabase (pool: DbPool): Promise<void> {
-  // Insert a default category
-  await pool.sql.unsafe(
-    'INSERT INTO "categories" ("name", "slug", "color") VALUES ($1, $2, $3) ON CONFLICT DO NOTHING',
-    ['General', 'general', 'blue']
-  )
-
-  // Get the category id for the post relation
-  const catRows = await pool.sql.unsafe('SELECT id FROM "categories" WHERE "slug" = $1 LIMIT 1', ['general'])
-  const catId = (catRows[0] as { id: string } | undefined)?.id ?? null
-
   // Insert a welcome post
   await pool.sql.unsafe(
-    'INSERT INTO "posts" ("title", "slug", "body", "category", "published") VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING',
-    ['Welcome to Valence', 'welcome-to-valence', '<h2>Hello!</h2><p>This is your first post. Edit it from the admin panel.</p>', catId, true]
-  )
-
-  // Insert an about page
-  await pool.sql.unsafe(
-    'INSERT INTO "pages" ("title", "slug", "content", "status") VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING',
-    ['About', 'about', '<p>This is the about page.</p>', 'published']
+    'INSERT INTO "posts" ("title", "slug", "body", "published") VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING',
+    ['Welcome to Valence', 'welcome-to-valence', '<h2>Hello!</h2><p>This is your first post. Edit it from the admin panel.</p>', true]
   )
 }
 
