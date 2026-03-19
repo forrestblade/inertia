@@ -155,7 +155,7 @@ export function createAdminRoutes (
   routes.set('/admin/_assets/admin-client.js', {
     GET: async (_req, res) => {
       try {
-        const distDir = fileURLToPath(new URL('../../..', import.meta.url))
+        const distDir = fileURLToPath(new URL('..', import.meta.url))
         const jsPath = `${distDir}/admin-client.js`
         const js = readFileSync(jsPath, 'utf-8')
         res.setHeader('Content-Type', 'application/javascript; charset=utf-8')
