@@ -12,13 +12,13 @@ interface ScrollState {
 
 function hasScrollState (state: unknown): state is ScrollState {
   if (state === null || typeof state !== 'object') return false
-  const s = state as Record<string, unknown>
-  return typeof s['scrollX'] === 'number' && typeof s['scrollY'] === 'number'
+  const s = state as { scrollX?: unknown; scrollY?: unknown }
+  return typeof s.scrollX === 'number' && typeof s.scrollY === 'number'
 }
 
 export function initScrollRestore (): ScrollRestoreHandle {
   function saveCurrentPosition (): void {
-    const currentState = (history.state ?? {}) as Record<string, unknown>
+    const currentState = history.state as { url?: string; scrollX?: number; scrollY?: number } | null
     history.replaceState(
       { ...currentState, scrollX: window.scrollX, scrollY: window.scrollY },
       ''
