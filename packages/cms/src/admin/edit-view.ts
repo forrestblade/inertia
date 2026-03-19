@@ -8,7 +8,7 @@ interface DocRow {
   readonly [key: string]: string | number | boolean | Date | null | undefined
 }
 
-export function renderEditView (col: CollectionConfig, doc: DocRow | null, csrfToken: string = '', relationContext?: RelationContext): string {
+export function renderEditView (col: CollectionConfig, doc: DocRow | null, csrfToken: string = '', relationContext?: RelationContext, nonce?: string): string {
   const isNew = doc === null
   const action = isNew
     ? `/admin/${escapeHtml(col.slug)}/new`
@@ -43,7 +43,7 @@ export function renderEditView (col: CollectionConfig, doc: DocRow | null, csrfT
         <button type="button" class="btn btn-danger" id="delete-confirm">Delete</button>
       </div>
     </val-dialog>
-    <script>
+    <script${nonce ? ` nonce="${nonce}"` : ' nonce="__CSP_NONCE__"'}>
       (function () {
         var trigger = document.querySelector('.delete-trigger')
         var dialog = document.getElementById('delete-dialog')

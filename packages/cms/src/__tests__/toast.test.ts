@@ -61,7 +61,7 @@ describe('renderLayout() with toast', () => {
       collections: [col],
       toast: { type: 'success', text: 'Saved' }
     })
-    expect(html).toContain('<script>')
+    expect(html).toContain('<script ')
     expect(html).toContain('toast-fade')
   })
 
@@ -72,7 +72,7 @@ describe('renderLayout() with toast', () => {
       collections: [col]
     })
     expect(html).not.toContain('class="toast')
-    expect(html).not.toContain('<script>')
+    expect(html).not.toContain("querySelector('.toast')")
   })
 
   it('includes toast CSS', () => {

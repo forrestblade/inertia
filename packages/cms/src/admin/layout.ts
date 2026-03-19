@@ -8,6 +8,7 @@ interface LayoutArgs {
   readonly content: string
   readonly collections: readonly CollectionConfig[]
   readonly toast?: FlashMessage | undefined
+  readonly nonce?: string | undefined
 }
 
 export function renderLayout (args: LayoutArgs): string {
@@ -521,7 +522,7 @@ ${navItems}
     ${args.content}
   </main>
   ${toastHtml
-    ? `<script>
+    ? `<script${args.nonce ? ` nonce="${args.nonce}"` : ' nonce="__CSP_NONCE__"'}>
     (function () {
       var t = document.querySelector('.toast')
       if (!t) return
@@ -531,7 +532,7 @@ ${navItems}
     })()
   </script>`
     : ''}
-  <script src="/admin/_assets/admin-client.js" defer></script>
+  <script src="/admin/_assets/admin-client.js"${args.nonce ? ` nonce="${args.nonce}"` : ' nonce="__CSP_NONCE__"'} defer></script>
 </body>
 </html>`
 }
