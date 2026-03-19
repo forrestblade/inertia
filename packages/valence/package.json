@@ -22,11 +22,12 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@valencets/core": "workspace:*",
     "@valencets/cms": "workspace:*",
+    "@valencets/core": "workspace:*",
     "@valencets/db": "workspace:*",
     "@valencets/telemetry": "workspace:*",
-    "neverthrow": "^8.2.0"
+    "neverthrow": "^8.2.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^25.4.0",
