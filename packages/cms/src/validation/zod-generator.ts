@@ -90,7 +90,14 @@ function buildObjectSchema (fields: readonly FieldConfig[]): ZodObject {
     if (builder === undefined) continue
     let fieldSchema = builder(f)
     if (!f.required) {
-      fieldSchema = fieldSchema.optional()
+      if (f.type === 'relation' || f.type === 'media') {
+        fieldSchema = z.preprocess(
+          (val) => (typeof val === 'string' && val === '') ? undefined : val,
+          fieldSchema.optional()
+        )
+      } else {
+        fieldSchema = fieldSchema.optional()
+      }
     }
     shape[f.name] = fieldSchema
   }

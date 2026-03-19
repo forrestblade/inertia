@@ -354,6 +354,9 @@ export function renderLayout (args: LayoutArgs): string {
       background: var(--val-color-bg-elevated);
       color: var(--val-color-text);
     }
+    .richtext-editor {
+      min-height: 200px;
+    }
     .richtext-content {
       min-height: 200px;
       padding: 0.75rem;
