@@ -43,3 +43,30 @@ describe('CLI security', () => {
     expect(source).toMatch(/execFileSync/)
   })
 })
+
+describe('seed data', () => {
+  it('exports a seedDatabase function', async () => {
+    const { seedDatabase } = await import('../cli.js')
+    expect(typeof seedDatabase).toBe('function')
+  })
+
+  it('seedDatabase inserts category, post, and page', async () => {
+    const { seedDatabase } = await import('../cli.js')
+    const queries: Array<{ text: string; values: readonly (string | boolean | null)[] }> = []
+    const mockPool = {
+      query: async (text: string, values: readonly (string | boolean | null)[] = []) => {
+        queries.push({ text, values })
+        if (text.includes('SELECT id FROM')) {
+          return { rows: [{ id: 'cat-uuid-123' }] }
+        }
+        return { rows: [] }
+      }
+    }
+    await seedDatabase(mockPool as never)
+    const allSql = queries.map(q => q.text).join('\n')
+    expect(allSql).toContain('INSERT INTO "categories"')
+    expect(allSql).toContain('INSERT INTO "posts"')
+    expect(allSql).toContain('INSERT INTO "pages"')
+    expect(allSql).toContain('Welcome to Valence')
+  })
+})
