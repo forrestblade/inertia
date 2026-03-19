@@ -1,3 +1,4 @@
+import { createAbortableFetch } from './fetch-retry.js'
 import { ok, err, ResultAsync } from 'neverthrow'
 import type { Result } from 'neverthrow'
 import { RouterErrorCode, resolveConfig } from './router-types.js'
@@ -108,6 +109,7 @@ function performNavigation (
   url: string,
   config: ResolvedRouterConfig,
   fetchFn: typeof fetch,
+  rawFetchFn: typeof fetch,
   prefetchHandle: PrefetchHandle,
   pageCacheHandle: PageCacheHandle
 ): ResultAsync<NavigationResult, RouterError> {
@@ -119,7 +121,7 @@ function performNavigation (
     if (pageCached.isOk()) {
       const result = processHtml(pageCached.value.html, config.contentSelector, config.enableViewTransitions)
       if (result.isOk()) {
-        revalidateInBackground(url, config, fetchFn, pageCacheHandle, pageCached.value.html)
+        revalidateInBackground(url, config, rawFetchFn, pageCacheHandle, pageCached.value.html)
         return ResultAsync.fromSafePromise(
           Promise.resolve({ source: 'cache' as const, version: pageCached.value.version, title: result.value })
         )
@@ -245,6 +247,7 @@ export function initRouter (
   const prefetchHandle = prefetchResult.value
 
   const pageCacheHandle = initPageCache(resolved)
+  const abortableFetch = createAbortableFetch(fetchFn)
 
   // Seed version from DOM if available
   const versionAttr = document.documentElement.getAttribute('data-valence-version')
@@ -263,7 +266,9 @@ export function initRouter (
 
     const startTime = performance.now()
 
-    return performNavigation(url, resolved, fetchFn, prefetchHandle, pageCacheHandle)
+    abortableFetch.abort()
+
+    return performNavigation(url, resolved, abortableFetch.fetch, fetchFn, prefetchHandle, pageCacheHandle)
       .map((navResult) => {
         const durationMs = Math.round(performance.now() - startTime)
         window.history.pushState({ url }, '', url)
@@ -304,7 +309,7 @@ export function initRouter (
 
     const startTime = performance.now()
 
-    performNavigation(url, resolved, fetchFn, prefetchHandle, pageCacheHandle)
+    performNavigation(url, resolved, abortableFetch.fetch, fetchFn, prefetchHandle, pageCacheHandle)
       .map((navResult) => {
         const durationMs = Math.round(performance.now() - startTime)
 
@@ -352,6 +357,7 @@ export function initRouter (
       document.body.removeEventListener('click', onClick)
       window.removeEventListener('popstate', onPopstate)
       prefetchHandle.destroy()
+      abortableFetch.abort()
       pageCacheHandle.invalidateAll()
     },
     navigate,

@@ -1,5 +1,5 @@
 export interface AbortableFetchHandle {
-  readonly fetch: (url: string, init?: RequestInit) => Promise<Response>
+  readonly fetch: typeof fetch
   readonly abort: () => void
   readonly isInFlight: () => boolean
 }
@@ -38,7 +38,7 @@ export function createAbortableFetch (fetchFn: typeof fetch): AbortableFetchHand
     inFlight = false
   }
 
-  async function fetchWithRetry (url: string, init?: RequestInit): Promise<Response> {
+  async function fetchWithRetry (url: string | RequestInfo | URL, init?: RequestInit): Promise<Response> {
     abort()
     controller = new AbortController()
     const { signal } = controller

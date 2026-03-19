@@ -7,7 +7,8 @@ export const RouterErrorCode = {
   PREFETCH_FAILED: 'PREFETCH_FAILED',
   NOT_HTML_RESPONSE: 'NOT_HTML_RESPONSE',
   CACHE_STALE: 'CACHE_STALE',
-  VERSION_MISMATCH: 'VERSION_MISMATCH'
+  VERSION_MISMATCH: 'VERSION_MISMATCH',
+  NAVIGATION_ABORTED: 'NAVIGATION_ABORTED'
 } as const
 
 export type RouterErrorCode = typeof RouterErrorCode[keyof typeof RouterErrorCode]
@@ -29,6 +30,7 @@ export interface RouterConfig {
   readonly noCachePaths?: ReadonlyArray<string>
   readonly persistPageCache?: boolean
   readonly enableViewTransitions?: boolean
+  readonly navigationTimeoutMs?: number
 }
 
 export interface ResolvedRouterConfig {
@@ -43,6 +45,7 @@ export interface ResolvedRouterConfig {
   readonly noCachePaths: ReadonlyArray<string>
   readonly persistPageCache: boolean
   readonly enableViewTransitions: boolean
+  readonly navigationTimeoutMs: number
 }
 
 export interface CachedResponse {
@@ -82,7 +85,8 @@ const DEFAULT_CONFIG: ResolvedRouterConfig = {
   enableFragmentProtocol: true,
   noCachePaths: ['/admin'],
   persistPageCache: true,
-  enableViewTransitions: false
+  enableViewTransitions: false,
+  navigationTimeoutMs: 8000
 }
 
 export function resolveConfig (partial?: RouterConfig): ResolvedRouterConfig {
@@ -98,6 +102,7 @@ export function resolveConfig (partial?: RouterConfig): ResolvedRouterConfig {
     enableFragmentProtocol: partial.enableFragmentProtocol ?? DEFAULT_CONFIG.enableFragmentProtocol,
     noCachePaths: partial.noCachePaths ?? DEFAULT_CONFIG.noCachePaths,
     persistPageCache: partial.persistPageCache ?? DEFAULT_CONFIG.persistPageCache,
-    enableViewTransitions: partial.enableViewTransitions ?? DEFAULT_CONFIG.enableViewTransitions
+    enableViewTransitions: partial.enableViewTransitions ?? DEFAULT_CONFIG.enableViewTransitions,
+    navigationTimeoutMs: partial.navigationTimeoutMs ?? DEFAULT_CONFIG.navigationTimeoutMs
   }
 }

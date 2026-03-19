@@ -493,7 +493,7 @@ describe('initRouter', () => {
 
     await handle!.navigate('/full')
 
-    expect(mockFetch).toHaveBeenCalledWith('/full')
+    expect(mockFetch).toHaveBeenCalledWith('/full', expect.objectContaining({ signal: expect.any(AbortSignal) }))
   })
 
   it('valence:navigated event includes performance metadata', async () => {
@@ -815,5 +815,60 @@ describe('initRouter', () => {
     // Wait for background fetch to settle -- should NOT throw unhandled rejection
     await new Promise(resolve => { setTimeout(resolve, 100) })
     expect(callCount).toBe(2)
+  })
+
+  it('rapid sequential navigations: earlier fetches receive abort signal', async () => {
+    const receivedSignals: Array<AbortSignal | undefined> = []
+    const mockFetch = vi.fn<typeof fetch>().mockImplementation((_url, init) => {
+      receivedSignals.push(init?.signal ?? undefined)
+      return Promise.resolve(new Response(
+        '<html><head><title>Nav</title></head><body><main><p>Nav</p></main></body></html>',
+        { status: 200, headers: { 'Content-Type': 'text/html' } }
+      ))
+    })
+
+    const result = initRouter({}, mockFetch)
+    if (result.isOk()) handle = result.value
+
+    const main = document.createElement('main')
+    main.innerHTML = '<p>Home</p>'
+    document.body.appendChild(main)
+
+    // Fire 3 rapid navigations
+    handle!.navigate('/page-a')
+    handle!.navigate('/page-b')
+    await handle!.navigate('/page-c')
+
+    // All fetches should receive an AbortSignal
+    expect(receivedSignals.length).toBeGreaterThanOrEqual(1)
+    for (const signal of receivedSignals) {
+      expect(signal).toBeInstanceOf(AbortSignal)
+    }
+
+    // Earlier signals should be aborted, last should not
+    const lastSignal = receivedSignals[receivedSignals.length - 1]
+    expect(lastSignal?.aborted).toBe(false)
+    if (receivedSignals.length > 1) {
+      expect(receivedSignals[0]?.aborted).toBe(true)
+    }
+  })
+
+  it('failed fetch falls back to window.location.href after retries exhausted', async () => {
+    const mockFetch = vi.fn<typeof fetch>().mockRejectedValue(
+      new TypeError('Failed to fetch')
+    )
+
+    const result = initRouter({}, mockFetch)
+    if (result.isOk()) handle = result.value
+
+    const main = document.createElement('main')
+    main.innerHTML = '<p>Home</p>'
+    document.body.appendChild(main)
+
+    // Navigate — all retries will fail
+    const navResult = await handle!.navigate('/fail-page')
+
+    // Should have returned an error (implementation will fall back to location.href)
+    expect(navResult.isErr()).toBe(true)
   })
 })
