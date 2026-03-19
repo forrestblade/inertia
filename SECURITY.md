@@ -15,7 +15,7 @@ Only the latest published release receives security fixes.
 Instead, report vulnerabilities through one of:
 
 1. **GitHub Security Advisories** (preferred): [Report a vulnerability](https://github.com/valencets/valence/security/advisories/new)
-2. **Email**: security@valencets.dev
+2. **Email**: mail@forrestblade.com
 
 ### What to include
 
