@@ -103,7 +103,7 @@ export class ValButton extends ValElement {
   }
 
   private syncType (): void {
-    const type = this.getAttribute('type') ?? 'button'
+    const type = (this.getAttribute('type') ?? 'button') as 'button' | 'submit' | 'reset'
     this.buttonEl!.type = type
   }
 
