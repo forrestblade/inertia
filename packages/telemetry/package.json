@@ -8,6 +8,10 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./daily-summary-queries": {
+      "import": "./dist/daily-summary-queries.js",
+      "types": "./dist/daily-summary-queries.d.ts"
     }
   },
   "files": [

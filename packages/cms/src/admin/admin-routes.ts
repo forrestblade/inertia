@@ -262,7 +262,7 @@ export function createAdminRoutes (
       }
       const telPool = options.telemetryPool
       try {
-        const { getDailyBreakdowns, getDailyTrend } = await import('@valencets/telemetry')
+        const { getDailyBreakdowns, getDailyTrend } = await import('@valencets/telemetry/daily-summary-queries')
         const now = new Date()
         const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
         const trendResult = await getDailyTrend(telPool, 'default', thirtyDaysAgo, now)
