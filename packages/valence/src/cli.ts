@@ -15,6 +15,7 @@ import { log } from './cli-utils.js'
 import { generateConfigTemplate, generateSecret } from './config-template.js'
 import { landingPage } from './landing-page.js'
 import { loadEnvConfig, loadUserConfig } from './config-loader.js'
+import { scaffoldFsd } from './scaffold/fsd-scaffold.js'
 
 const COMMANDS = {
   init: 'Create a new Valence project',
@@ -283,6 +284,32 @@ CREATE TABLE IF NOT EXISTS "daily_summaries" (
   UNIQUE("site_id", "date")
 );
 `)
+
+  // Scaffold FSD src/ directory from the collections we just wrote
+  const { collection: col, field: f } = await import('@valencets/cms')
+  const initCollections = [
+    col({
+      slug: 'posts',
+      labels: { singular: 'Post', plural: 'Posts' },
+      fields: [
+        f.text({ name: 'title', required: true }),
+        f.slug({ name: 'slug', required: true, unique: true, slugFrom: 'title' }),
+        f.richtext({ name: 'body' }),
+        f.boolean({ name: 'published' }),
+        f.date({ name: 'publishedAt' })
+      ]
+    }),
+    col({
+      slug: 'users',
+      auth: true,
+      fields: [
+        f.text({ name: 'name', required: true }),
+        f.select({ name: 'role', defaultValue: 'editor', options: [{ label: 'Admin', value: 'admin' }, { label: 'Editor', value: 'editor' }] })
+      ]
+    })
+  ]
+  await scaffoldFsd({ projectDir: dir, collections: initCollections })
+  log('FSD source directory scaffolded.')
 
   log('Project scaffolded.')
 
