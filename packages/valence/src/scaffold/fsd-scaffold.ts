@@ -5,6 +5,8 @@ import { generateEntityInterface } from '../codegen/type-generator.js'
 import { generateApiClient } from '../codegen/api-client-generator.js'
 import { generateBaseClient } from '../codegen/base-client-generator.js'
 import { generateHomePage } from './home-page.js'
+import { generateListPage } from './list-page.js'
+import { generateDetailPage } from './detail-page.js'
 import { generateAppStyles } from './app-styles.js'
 
 interface ScaffoldOptions {
@@ -36,6 +38,13 @@ export async function scaffoldFsd (options: ScaffoldOptions): Promise<void> {
     // Generate API client
     const clientContent = generateApiClient(col)
     await writeFile(join(srcDir, 'entities', col.slug, 'api', 'client.ts'), clientContent)
+
+    // Generate page templates
+    await mkdir(join(srcDir, 'pages', col.slug, 'ui'), { recursive: true })
+    const listContent = generateListPage(col)
+    await writeFile(join(srcDir, 'pages', col.slug, 'ui', 'list.html'), listContent)
+    const detailContent = generateDetailPage(col)
+    await writeFile(join(srcDir, 'pages', col.slug, 'ui', 'detail.html'), detailContent)
   }
 
   // Generate shared base client
