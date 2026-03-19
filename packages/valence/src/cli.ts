@@ -10,13 +10,15 @@ import { createPool, closePool, loadMigrations, runMigrations } from '@valencets
 import type { DbConfig } from '@valencets/db'
 import { buildCms } from '@valencets/cms'
 import type { RestRouteEntry } from '@valencets/cms'
+import { readLearnProgress, writeLearnProgress, createInitialProgress } from './learn/index.js'
 
 const COMMANDS = {
   init: 'Create a new Valence project',
   dev: 'Start the development server',
   migrate: 'Run pending database migrations',
   build: 'Build the project for production',
-  'user:create': 'Create an admin user'
+  'user:create': 'Create an admin user',
+  learn: 'Manage learn mode tutorial'
 } as const
 
 type Command = keyof typeof COMMANDS
@@ -26,7 +28,8 @@ const commandMap: Record<Command, (args: ReadonlyArray<string>) => Promise<void>
   dev: runDev,
   migrate: runMigrate,
   build: runBuild,
-  'user:create': runUserCreate
+  'user:create': runUserCreate,
+  learn: runLearn
 }
 
 export async function run (argv: ReadonlyArray<string>): Promise<void> {
@@ -835,5 +838,60 @@ async function loadUserConfig (): Promise<ReadonlyArray<import('@valencets/cms')
       log(`Config load via tsx failed: ${e2 instanceof Error ? e2.message : 'unknown'}`)
     }
     return null
+  }
+}
+
+// -- learn --
+
+async function runLearn (args: ReadonlyArray<string>): Promise<void> {
+  const projectDir = process.cwd()
+  const progress = await readLearnProgress(projectDir)
+
+  if (args.includes('--off')) {
+    if (!progress) {
+      log('Learn mode is not active. Run "valence init --learn" to enable it.')
+      return
+    }
+    await writeLearnProgress(projectDir, { ...progress, enabled: false })
+    log('Learn mode disabled.')
+    return
+  }
+
+  if (args.includes('--reset')) {
+    if (!progress) {
+      log('Learn mode is not active. Run "valence init --learn" to enable it.')
+      return
+    }
+    const reset = createInitialProgress(progress.initialCounts)
+    await writeLearnProgress(projectDir, reset)
+    log('Learn mode progress reset.')
+    return
+  }
+
+  // Default: --status
+  if (!progress) {
+    log('Learn mode is not active.')
+    log('Run "valence init --learn" to create a project with the tutorial,')
+    log('or create .valence/learn.json manually.')
+    return
+  }
+
+  const completedCount = Object.values(progress.steps).filter(s => s.completed).length
+  log(`Learn mode: ${progress.enabled ? 'enabled' : 'disabled'}`)
+  log(`Progress: ${completedCount} of 6 steps complete`)
+  log(`Started: ${progress.startedAt}`)
+
+  const stepNames: Record<string, string> = {
+    'visit-admin': 'Visit the Admin Panel',
+    'create-post': 'Create a Post',
+    'hit-api': 'Hit the REST API',
+    'add-collection': 'Add a New Collection',
+    'create-user': 'Create an Admin User',
+    'create-file': 'Create a Custom TypeScript File'
+  }
+
+  for (const [id, state] of Object.entries(progress.steps)) {
+    const icon = state.completed ? '\u2713' : ' '
+    log(`  [${icon}] ${stepNames[id] ?? id}`)
   }
 }
