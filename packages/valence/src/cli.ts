@@ -2,7 +2,7 @@ import { writeFile, mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { createInterface } from 'node:readline/promises'
 import { stdin, stdout } from 'node:process'
-import { execSync } from 'node:child_process'
+import { execSync, execFileSync } from 'node:child_process'
 import { createServer } from 'node:http'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { existsSync, readFileSync } from 'node:fs'
@@ -766,11 +766,10 @@ async function loadUserConfig (): Promise<ReadonlyArray<import('@valencets/cms')
         '.catch(e => { process.stderr.write(e.message); process.exit(1); })'
       ].join('')
       const tsxBin = join(process.cwd(), 'node_modules', '.bin', 'tsx')
-      const tsxCmd = existsSync(tsxBin) ? tsxBin : 'npx tsx'
-      const output = execSync(
-        `${tsxCmd} -e "${script.replace(/"/g, '\\"')}"`,
-        { cwd: process.cwd(), stdio: ['pipe', 'pipe', 'pipe'], timeout: 15000 }
-      ).toString().trim()
+      const tsxArgs = ['-e', script]
+      const output = existsSync(tsxBin)
+        ? execFileSync(tsxBin, tsxArgs, { cwd: process.cwd(), stdio: ['pipe', 'pipe', 'pipe'], timeout: 15000 }).toString().trim()
+        : execFileSync('npx', ['tsx', ...tsxArgs], { cwd: process.cwd(), stdio: ['pipe', 'pipe', 'pipe'], timeout: 15000 }).toString().trim()
       if (output) {
         const parsed = JSON.parse(output)
         // Re-hydrate through collection() to get proper CollectionConfig objects
