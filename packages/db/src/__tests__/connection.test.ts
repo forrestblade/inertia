@@ -101,10 +101,9 @@ describe('validateDbConfig extended validation', () => {
     expect(result._unsafeUnwrapErr().code).toBe('INVALID_CONFIG')
   })
 
-  it('returns Err for empty password', () => {
+  it('accepts empty password for local development', () => {
     const result = validateDbConfig({ ...validConfig, password: '' })
-    expect(result.isErr()).toBe(true)
-    expect(result._unsafeUnwrapErr().code).toBe('INVALID_CONFIG')
+    expect(result.isOk()).toBe(true)
   })
 
   it('returns Err for max > 100', () => {

@@ -79,30 +79,36 @@ function log (msg: string): void {
 
 // -- init --
 
+// eslint-disable-next-line complexity
 async function runInit (args: ReadonlyArray<string>): Promise<void> {
+  const nonFlagArgs = args.filter(a => !a.startsWith('--'))
+  const useDefaults = args.includes('--yes') || args.includes('-y')
+
   console.log('\n  Welcome to Valence.\n')
 
-  const rl = createInterface({ input: stdin, output: stdout })
+  const rl = useDefaults ? null : createInterface({ input: stdin, output: stdout })
 
-  const projectName = await ask(rl, 'Project name', args[0] ?? 'my-valence-app')
-  const dbName = await ask(rl, 'Database name', projectName.replace(/[^a-z0-9_]/g, '_'))
-  const dbUser = await ask(rl, 'Database user', 'postgres')
-  const dbPassword = await ask(rl, 'Database password', '')
-  const serverPort = await ask(rl, 'Server port', '3000')
+  const projectName = useDefaults ? (nonFlagArgs[0] ?? 'my-valence-app') : await ask(rl!, 'Project name', nonFlagArgs[0] ?? 'my-valence-app')
+  const dbName = useDefaults ? projectName.replace(/[^a-z0-9_]/g, '_') : await ask(rl!, 'Database name', projectName.replace(/[^a-z0-9_]/g, '_'))
+  const dbUser = useDefaults ? 'postgres' : await ask(rl!, 'Database user', 'postgres')
+  const dbPassword = useDefaults ? '' : await ask(rl!, 'Database password', '')
+  const serverPort = useDefaults ? '3000' : await ask(rl!, 'Server port', '3000')
 
-  console.log()
-  log('Frontend framework:')
-  log('  1. None (plain HTML templates)')
-  log('  2. Astro (recommended for static + islands)')
-  log('  3. Bring your own')
-  const frameworkChoice = await ask(rl, 'Choose', '1')
+  if (!useDefaults) {
+    console.log()
+    log('Frontend framework:')
+    log('  1. None (plain HTML templates)')
+    log('  2. Astro (recommended for static + islands)')
+    log('  3. Bring your own')
+  }
+  const frameworkChoice = useDefaults ? '1' : await ask(rl!, 'Choose', '1')
 
-  const installDeps = await confirm(rl, 'Install dependencies?')
-  const createDb = await confirm(rl, `Create database "${dbName}"?`)
-  const doMigrate = await confirm(rl, 'Run initial migrations?')
-  const initGit = await confirm(rl, 'Initialize git repository?')
+  const installDeps = useDefaults ? true : await confirm(rl!, 'Install dependencies?')
+  const createDb = useDefaults ? true : await confirm(rl!, `Create database "${dbName}"?`)
+  const doMigrate = useDefaults ? true : await confirm(rl!, 'Run initial migrations?')
+  const initGit = useDefaults ? true : await confirm(rl!, 'Initialize git repository?')
 
-  rl.close()
+  if (rl) rl.close()
 
   const dir = join(process.cwd(), projectName)
   console.log()
@@ -137,6 +143,7 @@ async function runInit (args: ReadonlyArray<string>): Promise<void> {
       '@valencets/valence': '^0.2.0',
       '@valencets/cms': '^0.1.0',
       '@valencets/db': '^0.1.0',
+      tsx: '^4.21.0',
       ...extraDeps
     },
     devDependencies: {
@@ -445,7 +452,7 @@ async function runUserCreate (): Promise<void> {
   const email = await ask(rl, 'Email', 'admin@localhost')
   const password = await ask(rl, 'Password', '')
   const name = await ask(rl, 'Name', 'Admin')
-  rl.close()
+  if (rl) rl.close()
 
   if (!password) {
     console.error('  Error: password is required.')
@@ -659,6 +666,7 @@ async function loadUserConfig (): Promise<ReadonlyArray<import('@valencets/cms')
     return null
   }
 
+  // If running under tsx (TS imports work), load directly
   try {
     const mod = await import(configPath)
     const result = mod.default
@@ -666,8 +674,37 @@ async function loadUserConfig (): Promise<ReadonlyArray<import('@valencets/cms')
       return result.value.collections ?? []
     }
     return null
-  } catch (e) {
-    log(`Config load failed: ${e instanceof Error ? e.message : 'unknown error'}`)
+  } catch {
+    // Direct import failed (no tsx loader). Try spawning with tsx.
+    try {
+      const script = [
+        `import('${configPath.replace(/\\/g, '/')}')`,
+        '.then(m => {',
+        '  const r = m.default;',
+        '  if (r && r.isOk && r.isOk()) {',
+        '    process.stdout.write(JSON.stringify(r.value.collections.map(c => ({',
+        '      slug: c.slug, labels: c.labels, auth: c.auth, upload: c.upload,',
+        '      timestamps: c.timestamps, fields: c.fields',
+        '    }))));',
+        '  }',
+        '})',
+        '.catch(e => { process.stderr.write(e.message); process.exit(1); })'
+      ].join('')
+      const tsxBin = join(process.cwd(), 'node_modules', '.bin', 'tsx')
+      const tsxCmd = existsSync(tsxBin) ? tsxBin : 'npx tsx'
+      const output = execSync(
+        `${tsxCmd} -e "${script.replace(/"/g, '\\"')}"`,
+        { cwd: process.cwd(), stdio: ['pipe', 'pipe', 'pipe'], timeout: 15000 }
+      ).toString().trim()
+      if (output) {
+        const parsed = JSON.parse(output)
+        // Re-hydrate through collection() to get proper CollectionConfig objects
+        const { collection: col } = await import('@valencets/cms')
+        return parsed.map((c: Record<string, unknown>) => col(c as Parameters<typeof col>[0]))
+      }
+    } catch (e2) {
+      log(`Config load via tsx failed: ${e2 instanceof Error ? e2.message : 'unknown'}`)
+    }
     return null
   }
 }

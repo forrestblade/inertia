@@ -81,7 +81,7 @@ const configSchema = z.object({
     port: z.number().int().min(1).max(65535),
     database: z.string().min(1),
     username: z.string().min(1),
-    password: z.string().min(1),
+    password: z.string(),
     max: z.number().int().min(1).max(100).optional(),
     idle_timeout: z.number().min(0).optional(),
     connect_timeout: z.number().min(0).optional(),
