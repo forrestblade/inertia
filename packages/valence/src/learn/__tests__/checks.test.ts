@@ -17,14 +17,16 @@ import type { LearnCheckDeps } from '../types.js'
 
 function makeMockPool (counts: { posts?: number; users?: number } = {}) {
   return {
-    query: async (text: string) => {
-      if (text.includes('"posts"')) {
-        return { rows: [{ count: String(counts.posts ?? 0) }] }
+    sql: {
+      unsafe: async (query: string) => {
+        if (query.includes('"posts"')) {
+          return [{ count: String(counts.posts ?? 0) }]
+        }
+        if (query.includes('"users"')) {
+          return [{ count: String(counts.users ?? 0) }]
+        }
+        return []
       }
-      if (text.includes('"users"')) {
-        return { rows: [{ count: String(counts.users ?? 0) }] }
-      }
-      return { rows: [] }
     }
   }
 }
@@ -72,7 +74,7 @@ describe('checkCreatePost', () => {
 
   it('returns false when DB query fails', async () => {
     const pool = {
-      query: async () => { throw new Error('connection refused') }
+      sql: { unsafe: async () => { throw new Error('connection refused') } }
     }
     const deps = makeDeps({ pool })
     expect(await checkCreatePost(deps, 1)).toBe(false)
@@ -129,7 +131,7 @@ describe('checkCreateUser', () => {
 
   it('returns false when DB query fails', async () => {
     const pool = {
-      query: async () => { throw new Error('connection refused') }
+      sql: { unsafe: async () => { throw new Error('connection refused') } }
     }
     expect(await checkCreateUser(makeDeps({ pool }), 0)).toBe(false)
   })

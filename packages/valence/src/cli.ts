@@ -353,9 +353,10 @@ async function runDev (): Promise<void> {
   }
 
   const port = Number(process.env.PORT ?? 3000)
+  const projectDir = process.cwd()
 
   log('Running migrations...')
-  await runMigrationsForProject(process.cwd(), config)
+  await runMigrationsForProject(projectDir, config)
 
   log('Loading config...')
   const userConfig = await loadUserConfig()
@@ -370,7 +371,7 @@ async function runDev (): Promise<void> {
   const cmsResult = buildCms({
     db: pool,
     secret: process.env.CMS_SECRET ?? 'dev-secret',
-    uploadDir: join(process.cwd(), 'uploads'),
+    uploadDir: join(projectDir, 'uploads'),
     collections: userConfig
   })
 
@@ -381,13 +382,72 @@ async function runDev (): Promise<void> {
 
   const cms = cmsResult.value
 
+  // Learn mode setup
+  const learnProgress = await readLearnProgress(projectDir)
+  const learnActive = learnProgress !== null && learnProgress.enabled
+
+  let learnSignals: import('./learn/types.js').LearnSignals | null = null
+  let currentConfigSlugs: ReadonlyArray<string> = userConfig.map(c => c.slug)
+  let currentLearnProgress = learnProgress
+  let configWatcher: import('node:fs').FSWatcher | null = null
+
+  if (learnActive) {
+    const { createLearnSignals, startConfigWatcher } = await import('./learn/index.js')
+    learnSignals = createLearnSignals()
+
+    const configPath = join(projectDir, 'valence.config.ts')
+    if (existsSync(configPath)) {
+      const { markConfigChanged } = await import('./learn/index.js')
+      configWatcher = startConfigWatcher({
+        configPath,
+        onConfigChange: () => {
+          markConfigChanged(learnSignals!)
+          // Reload config to get updated slug list
+          loadUserConfig().then(cfg => {
+            if (cfg) currentConfigSlugs = cfg.map(c => c.slug)
+          }).catch(() => {})
+        }
+      })
+    }
+
+    log('Learn mode active.')
+  }
+
+  // eslint-disable-next-line complexity
   const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
     const url = new URL(req.url ?? '/', `http://${req.headers.host}`)
     const method = (req.method ?? 'GET') as 'GET' | 'POST' | 'PATCH' | 'DELETE'
 
+    // Learn mode routes (before everything else)
+    if (learnActive && learnSignals && currentLearnProgress) {
+      if (url.pathname === '/_learn' && method === 'GET') {
+        const { checkAllSteps, renderLearnPage } = await import('./learn/index.js')
+        const deps = { pool, signals: learnSignals, configSlugs: currentConfigSlugs, projectDir }
+        currentLearnProgress = await checkAllSteps(currentLearnProgress, deps)
+        await writeLearnProgress(projectDir, currentLearnProgress)
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
+        res.end(renderLearnPage(currentLearnProgress, port))
+        return
+      }
+
+      if (url.pathname === '/_learn/api/progress' && method === 'GET') {
+        const { checkAllSteps } = await import('./learn/index.js')
+        const deps = { pool, signals: learnSignals, configSlugs: currentConfigSlugs, projectDir }
+        currentLearnProgress = await checkAllSteps(currentLearnProgress, deps)
+        await writeLearnProgress(projectDir, currentLearnProgress)
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify(currentLearnProgress))
+        return
+      }
+    }
+
     // Try admin routes first
     const adminMatch = matchRoute(url.pathname, cms.adminRoutes)
     if (adminMatch) {
+      if (learnActive && learnSignals) {
+        const { incrementAdminViews } = await import('./learn/index.js')
+        incrementAdminViews(learnSignals)
+      }
       const handler = adminMatch.entry[method]
       if (handler) {
         await handler(req, res, adminMatch.params)
@@ -398,6 +458,10 @@ async function runDev (): Promise<void> {
     // Try REST API routes
     const restMatch = matchRoute(url.pathname, cms.restRoutes)
     if (restMatch) {
+      if (learnActive && learnSignals && method === 'GET' && !req.headers['x-valence-learn']) {
+        const { incrementApiGets } = await import('./learn/index.js')
+        incrementApiGets(learnSignals)
+      }
       const handler = restMatch.entry[method]
       if (handler) {
         await handler(req, res, restMatch.params)
@@ -408,10 +472,17 @@ async function runDev (): Promise<void> {
       return
     }
 
-    // Landing page
-    if (url.pathname === '/') {
+    // Splash page (available at /_splash always, or / when learn mode is off)
+    if (url.pathname === '/_splash' || (url.pathname === '/' && !learnActive)) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
       res.end(landingPage(port))
+      return
+    }
+
+    // Redirect / to /_learn when learn mode active
+    if (url.pathname === '/' && learnActive) {
+      res.writeHead(302, { Location: '/_learn' })
+      res.end()
       return
     }
 
@@ -419,12 +490,14 @@ async function runDev (): Promise<void> {
     res.end('<h1>404</h1><p>Not found</p>')
   })
 
+  const learnLine = learnActive ? `\n  Tutorial: http://localhost:${port}/_learn` : ''
+
   server.listen(port, () => {
     console.log(`
   Valence dev server running.
 
   Site:  http://localhost:${port}
-  Admin: http://localhost:${port}/admin
+  Admin: http://localhost:${port}/admin${learnLine}
 
   Press Ctrl+C to stop.
 `)
@@ -432,6 +505,7 @@ async function runDev (): Promise<void> {
 
   process.on('SIGINT', async () => {
     log('Shutting down...')
+    if (configWatcher) configWatcher.close()
     server.close()
     await closePool(pool)
     process.exit(0)

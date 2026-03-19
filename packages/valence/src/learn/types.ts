@@ -29,7 +29,9 @@ export interface LearnSignals {
 
 export interface LearnCheckDeps {
   readonly pool: {
-    readonly query: (text: string, values?: ReadonlyArray<string | boolean | null>) => Promise<{ readonly rows: ReadonlyArray<Record<string, string | number>> }>
+    readonly sql: {
+      readonly unsafe: (query: string) => Promise<ReadonlyArray<Record<string, string | number>>>
+    }
   }
   readonly signals: LearnSignals
   readonly configSlugs: ReadonlyArray<string>

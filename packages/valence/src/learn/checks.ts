@@ -10,8 +10,8 @@ export async function checkVisitAdmin (deps: LearnCheckDeps): Promise<boolean> {
 
 export async function checkCreatePost (deps: LearnCheckDeps, initialCount: number): Promise<boolean> {
   try {
-    const result = await deps.pool.query('SELECT count(*)::int AS count FROM "posts" WHERE "deleted_at" IS NULL')
-    const count = Number(result.rows[0]?.count ?? 0)
+    const rows = await deps.pool.sql.unsafe('SELECT count(*)::int AS count FROM "posts" WHERE "deleted_at" IS NULL')
+    const count = Number(rows[0]?.count ?? 0)
     return count > initialCount
   } catch {
     return false
@@ -29,8 +29,8 @@ export async function checkAddCollection (deps: LearnCheckDeps): Promise<boolean
 
 export async function checkCreateUser (deps: LearnCheckDeps, initialCount: number): Promise<boolean> {
   try {
-    const result = await deps.pool.query('SELECT count(*)::int AS count FROM "users" WHERE "deleted_at" IS NULL')
-    const count = Number(result.rows[0]?.count ?? 0)
+    const rows = await deps.pool.sql.unsafe('SELECT count(*)::int AS count FROM "users" WHERE "deleted_at" IS NULL')
+    const count = Number(rows[0]?.count ?? 0)
     return count > initialCount
   } catch {
     return false
