@@ -81,12 +81,12 @@ telemetry db, ui
 
 ## Documentation
 
-- [Getting Started](docs/GETTING-STARTED.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [Developer Guide](docs/DEVELOPER-GUIDE.md)
-- [CMS Reference](packages/cms/README.md)
-- [CMS Guide](packages/cms/docs/guide.md)
-- [Troubleshooting](docs/TROUBLESHOOTING.md)
+- [Getting Started](https://github.com/valencets/valence/wiki/Getting-Started)
+- [Architecture](https://github.com/valencets/valence/wiki/Architecture)
+- [Developer Guide](https://github.com/valencets/valence/wiki/Developer-Guide)
+- [CMS Guide](https://github.com/valencets/valence/wiki/CMS-Guide)
+- [Troubleshooting](https://github.com/valencets/valence/wiki/Troubleshooting)
+- [Contributing](CONTRIBUTING.md)
 
 ## Contributing
 
