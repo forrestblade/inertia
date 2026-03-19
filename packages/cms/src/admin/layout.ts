@@ -10,6 +10,7 @@ interface LayoutArgs {
   readonly collections: readonly CollectionConfig[]
   readonly toast?: FlashMessage | undefined
   readonly nonce?: string | undefined
+  readonly headTags?: readonly string[] | undefined
 }
 
 export function renderLayout (args: LayoutArgs): string {
@@ -27,6 +28,7 @@ export function renderLayout (args: LayoutArgs): string {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${escapeHtml(args.title)} — Valence CMS</title>
+  ${(args.headTags ?? []).join('\n  ')}
   <style>
     /* --- Primitive tokens (inlined from @valencets/ui) --- */
     :root {
