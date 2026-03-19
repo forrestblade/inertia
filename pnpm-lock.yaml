@@ -56,6 +56,9 @@ importers:
       '@valencets/db':
         specifier: workspace:*
         version: link:../db
+      '@valencets/telemetry':
+        specifier: workspace:*
+        version: link:../telemetry
       '@valencets/ui':
         specifier: workspace:*
         version: link:../ui

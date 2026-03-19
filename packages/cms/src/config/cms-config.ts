@@ -25,6 +25,7 @@ export interface CmsConfig {
   readonly globals?: readonly GlobalConfig[] | undefined
   readonly plugins?: readonly Plugin[] | undefined
   readonly uploadDir?: string | undefined
+  readonly telemetryPool?: DbPool | undefined
 }
 
 export interface CmsInstance {
@@ -58,7 +59,7 @@ export function buildCms (inputConfig: CmsConfig): Result<CmsInstance, CmsError>
 
   const api = createLocalApi(config.db, collections, globals)
   const restRoutes = createRestRoutes(config.db, collections, globals)
-  const adminRoutes = createAdminRoutes(config.db, collections)
+  const adminRoutes = createAdminRoutes(config.db, collections, { telemetryPool: config.telemetryPool })
 
   const hasAuthCollection = config.collections.some(c => isAuthEnabled(c))
   if (hasAuthCollection) {

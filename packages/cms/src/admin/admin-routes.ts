@@ -19,6 +19,7 @@ import { createSession, validateSession, destroySession, buildSessionCookie, bui
 import { verifyPassword } from '../auth/password.js'
 import { parseCookie } from '../auth/cookie.js'
 import { renderLoginPage } from './login-view.js'
+import { renderAnalyticsView } from './analytics-view.js'
 import { safeQuery } from '../db/safe-query.js'
 import { generateCsrfToken, validateCsrfToken } from '../auth/csrf.js'
 import { readStringBody } from '../api/read-body.js'
@@ -31,6 +32,7 @@ type AdminRouteHandler = (req: IncomingMessage, res: ServerResponse, ctx: Record
 
 interface AdminOptions {
   readonly requireAuth?: boolean | undefined
+  readonly telemetryPool?: DbPool | undefined
 }
 
 function wrapWithAuth (pool: DbPool, handler: AdminRouteHandler): AdminRouteHandler {
@@ -248,6 +250,48 @@ export function createAdminRoutes (
       res.writeHead(302, { Location: '/admin/login' })
       res.end()
     }
+  })
+
+  routes.set('/admin/analytics', {
+    GET: wrap(async (_req, res) => {
+      if (!options.telemetryPool) {
+        const content = renderAnalyticsView(null)
+        const html = renderLayout({ title: 'Analytics', content, collections: allCollections })
+        sendHtml(res, html)
+        return
+      }
+      const telPool = options.telemetryPool
+      try {
+        const { getDailyBreakdowns, getDailyTrend } = await import('@valencets/telemetry')
+        const now = new Date()
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+        const trendResult = await getDailyTrend(telPool, 'default', thirtyDaysAgo, now)
+        const breakdownResult = await getDailyBreakdowns(telPool, 'default', thirtyDaysAgo, now)
+        const trend = trendResult.match(rows => rows, () => [])
+        const breakdowns = breakdownResult.match(b => b, () => ({ top_pages: [], top_referrers: [], intent_counts: {} }))
+        let sessionCount = 0
+        let pageviewCount = 0
+        let conversionCount = 0
+        for (const row of trend) {
+          sessionCount += row.session_count ?? 0
+          pageviewCount += row.pageview_count ?? 0
+          conversionCount += row.conversion_count ?? 0
+        }
+        const content = renderAnalyticsView({
+          sessionCount,
+          pageviewCount,
+          conversionCount,
+          topPages: breakdowns.top_pages,
+          topReferrers: breakdowns.top_referrers
+        })
+        const html = renderLayout({ title: 'Analytics', content, collections: allCollections })
+        sendHtml(res, html)
+      } catch {
+        const content = renderAnalyticsView(null)
+        const html = renderLayout({ title: 'Analytics', content, collections: allCollections })
+        sendHtml(res, html)
+      }
+    })
   })
 
   routes.set('/admin', {

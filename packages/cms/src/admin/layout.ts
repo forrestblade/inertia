@@ -11,10 +11,11 @@ interface LayoutArgs {
 }
 
 export function renderLayout (args: LayoutArgs): string {
-  const navItems = args.collections.map(c => {
+  const collectionNav = args.collections.map(c => {
     const label = escapeHtml(c.labels?.plural ?? c.slug)
     return `<li><a href="/admin/${escapeHtml(c.slug)}">${label}</a></li>`
   }).join('\n')
+  const navItems = collectionNav + '\n<li style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--val-color-border);"><a href="/admin/analytics">Analytics</a></li>'
 
   const toastHtml = args.toast ? renderToast(args.toast) : ''
 
