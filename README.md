@@ -43,15 +43,15 @@ pnpm test         # 1,028 tests
 | **@valencets/ui** | 18 Web Components. ARIA, i18n, telemetry hooks, hydration directives. OKLCH tokens, Tailwind preset, theme contract. | zero |
 | **@valencets/core** | Router + server. `pushState` nav, fragment swaps, hover-intent prefetch, ring buffer event capture. | zero |
 | **@valencets/db** | PostgreSQL query layer. Tagged template SQL, parameterized by default, `Result<T,E>` returns, migration runner. | zero |
-| **@valencets/cms** | Schema engine. `collection()` + `field.*` produces tables, Zod validators, REST API, admin UI, auth, media. | db |
-| **@valencets/telemetry** | Beacon, ingestion, event storage, daily summaries. Your data in your database. | db |
+| **@valencets/cms** | Schema engine. `collection()` + `field.*` produces tables, Zod validators, REST API, admin UI, auth, media. | core, db, ui |
+| **@valencets/telemetry** | Beacon, ingestion, event storage, daily summaries. Your data in your database. | db, ui |
 
 ```
 ui        standalone
 core      standalone
 db        standalone
-cms       db
-telemetry db
+cms       core, db, ui
+telemetry db, ui
 ```
 
 ---
