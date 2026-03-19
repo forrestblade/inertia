@@ -16,6 +16,8 @@
   <img src="https://img.shields.io/badge/TypeScript-strict-blue" alt="TypeScript">
   <img src="https://img.shields.io/badge/PostgreSQL-16+-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL">
   <a href="https://github.com/neostandard/neostandard"><img src="https://img.shields.io/badge/code_style-neostandard-brightgreen?style=flat" alt="neostandard"></a>
+  <a href="https://www.npmjs.com/package/@valencets/valence"><img src="https://img.shields.io/npm/v/@valencets/valence" alt="npm"></a>
+  <a href="https://socket.dev/npm/package/@valencets/valence"><img src="https://socket.dev/api/badge/npm/package/@valencets/valence" alt="Socket"></a>
 </p>
 
 ---
@@ -26,15 +28,27 @@ Most frameworks hand you a skeleton and a plugin catalog. The CMS is a third-par
 
 Valence puts the bonding layer first. Define collections and fields in TypeScript. The database tables, admin UI, REST API, validators, and migrations all derive from that single schema. 18 native Web Components work in any HTML page. Telemetry writes to your Postgres, not someone else's SaaS dashboard. Nothing phones home.
 
-## Quick Start
+## Getting Started
+
+```bash
+npx @valencets/valence init my-app
+cd my-app
+pnpm dev
+```
+
+This scaffolds a project with collections, admin UI, migrations, and seed data. Open `http://localhost:3000/admin` to see the admin panel.
+
+## Contributing Setup
 
 ```bash
 git clone https://github.com/valencets/valence.git
 cd valence
 pnpm install
 pnpm build
-pnpm test         # 1,028 tests
+pnpm test
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for standards and the TDD workflow.
 
 ## Packages
 
