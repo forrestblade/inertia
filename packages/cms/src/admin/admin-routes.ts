@@ -188,7 +188,7 @@ export function createAdminRoutes (
           sendHtml(res, html, 400)
           return
         }
-        const result = await api.create({ collection: col.slug, data })
+        const result = await api.create({ collection: col.slug, data: validation.data as DocumentData })
         result.match(
           () => {
             setFlashCookie(res, { type: 'success', text: `${col.labels?.singular ?? col.slug} created successfully` })
@@ -252,7 +252,7 @@ export function createAdminRoutes (
           sendHtml(res, html, 400)
           return
         }
-        const result = await api.update({ collection: col.slug, id, data })
+        const result = await api.update({ collection: col.slug, id, data: validation.data as DocumentData })
         result.match(
           () => {
             setFlashCookie(res, { type: 'success', text: `${col.labels?.singular ?? col.slug} updated successfully` })
