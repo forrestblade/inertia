@@ -3,10 +3,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import type { DbConfig } from '@valencets/db'
 import type { CollectionConfig } from '@valencets/cms'
-
-function log (msg: string): void {
-  console.log(`  ${msg}`)
-}
+import { log } from './cli-utils.js'
 
 export interface UserConfig {
   readonly collections: ReadonlyArray<CollectionConfig>
