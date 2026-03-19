@@ -6,39 +6,109 @@
   </picture>
 </p>
 
-<p align="center"><strong>Define the schema. Ship the site. Keep the data.</strong></p>
+<p align="center"><strong>Schema-driven web framework for Node.js and PostgreSQL.</strong></p>
 
 <p align="center">
-  <a href="https://github.com/valencets/valence/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/valencets/valence/ci.yml?branch=master&label=CI" alt="CI"></a>
-  <a href="https://github.com/valencets/valence/blob/master/LICENSE"><img src="https://img.shields.io/github/license/valencets/valence" alt="License"></a>
-  <img src="https://img.shields.io/badge/node-%3E%3D22-brightgreen" alt="Node >= 22">
-  <img src="https://img.shields.io/badge/pnpm-10.x-F69220" alt="pnpm">
-  <img src="https://img.shields.io/badge/TypeScript-strict-blue" alt="TypeScript">
-  <img src="https://img.shields.io/badge/PostgreSQL-16+-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL">
-  <a href="https://github.com/neostandard/neostandard"><img src="https://img.shields.io/badge/code_style-neostandard-brightgreen?style=flat" alt="neostandard"></a>
   <a href="https://www.npmjs.com/package/@valencets/valence"><img src="https://img.shields.io/npm/v/@valencets/valence" alt="npm"></a>
   <a href="https://socket.dev/npm/package/@valencets/valence"><img src="https://socket.dev/api/badge/npm/package/@valencets/valence" alt="Socket"></a>
+  <a href="https://github.com/valencets/valence/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/valencets/valence/ci.yml?branch=master&label=CI" alt="CI"></a>
+  <a href="https://github.com/valencets/valence/blob/master/LICENSE"><img src="https://img.shields.io/github/license/valencets/valence" alt="License"></a>
+  <img src="https://img.shields.io/badge/TypeScript-strict-blue" alt="TypeScript">
+  <img src="https://img.shields.io/badge/PostgreSQL-16+-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL">
 </p>
 
 ---
 
-> **valence** /ˈveɪləns/ *n.* — in chemistry, the outermost electrons of an atom. The part that actually bonds with the world. Everything else is buried inside.
+Define collections and fields in one TypeScript config. Valence derives the database tables, admin UI, REST API, validators, and migrations from that single schema. No plugins. No vendor scripts. No third-party browser JS.
 
-Most frameworks hand you a skeleton and a plugin catalog. The CMS is a third-party install. The analytics is a vendor script. The component library needs its own build pipeline. You spend your time wiring seams together and debugging the gaps between things that were never designed to talk to each other.
+```ts
+// valence.config.ts
+import { defineConfig, collection, field } from '@valencets/valence'
 
-Valence puts the bonding layer first. Define collections and fields in TypeScript. The database tables, admin UI, REST API, validators, and migrations all derive from that single schema. 18 native Web Components work in any HTML page. Telemetry writes to your Postgres, not someone else's SaaS dashboard. Nothing phones home.
+export default defineConfig({
+  db: { host: 'localhost', port: 5432, database: 'mysite', username: 'postgres', password: '' },
+  server: { port: 3000 },
+  collections: [
+    collection({
+      slug: 'posts',
+      labels: { singular: 'Post', plural: 'Posts' },
+      fields: [
+        field.text({ name: 'title', required: true }),
+        field.slug({ name: 'slug', slugFrom: 'title' }),
+        field.richtext({ name: 'body' }),
+        field.relation({ name: 'category', relationTo: 'categories' }),
+        field.boolean({ name: 'published' }),
+        field.date({ name: 'publishedAt' })
+      ]
+    })
+  ],
+  admin: { pathPrefix: '/admin', requireAuth: true }
+})
+```
 
-## Getting Started
+That config gives you a `posts` table in Postgres, a server-rendered admin panel with form validation, a REST API at `/api/posts`, Zod validators, and a migration file. Change the schema, everything follows.
+
+## Quick Start
 
 ```bash
-npx @valencets/valence init my-app
-cd my-app
+npx @valencets/valence init my-site
+cd my-site
 pnpm dev
 ```
 
-This scaffolds a project with collections, admin UI, migrations, and seed data. Open `http://localhost:3000/admin` to see the admin panel.
+The init wizard walks you through:
 
-## Contributing Setup
+- **Database** -- name, user, password (creates the DB and runs migrations)
+- **Admin user** -- email + password for the admin panel (role set to `admin`)
+- **Seed data** -- optional sample content (category, post, page) to start with
+- **Framework** -- plain HTML templates, Astro, or bring your own
+- **Git** -- initializes a repo with the first commit
+
+Pass `--yes` to skip prompts and accept defaults (useful for CI).
+
+Open `http://localhost:3000/admin` to sign in. Open `http://localhost:3000` for the landing page.
+
+## What You Get
+
+- **Database tables** derived from your field definitions. UUID primary keys, timestamps, soft deletes.
+- **Admin panel** at `/admin`. Server-rendered HTML forms, CSRF protection, session auth with Argon2id. Login page with proper error handling.
+- **Analytics dashboard** at `/admin/analytics`. Session counts, pageviews, top pages, top referrers. Your data in your Postgres, not a vendor dashboard.
+- **REST API** at `/api/:collection`. CRUD with Zod validation, parameterized queries, `Result<T, E>` error handling.
+- **Migrations** generated from schema diffs. Deterministic SQL, idempotent, version-tracked.
+- **Web Components**. 18 custom elements with ARIA, i18n, telemetry hooks, and hydration directives. Work in any framework or plain HTML.
+- **Telemetry**. Beacon ingestion, ring buffer capture, daily summaries. Zero third-party scripts.
+
+## Packages
+
+| Package | What it does | Deps |
+|---------|-------------|------|
+| **@valencets/ui** | 18 Web Components. ARIA, i18n, telemetry hooks, hydration directives. OKLCH design tokens. | zero |
+| **@valencets/core** | Router + server. `pushState` nav, fragment swaps, prefetch, view transitions, server islands. | zero |
+| **@valencets/db** | PostgreSQL query layer. Tagged template SQL, parameterized queries, `Result<T,E>`, migration runner. | zero |
+| **@valencets/cms** | Schema engine. `collection()` + `field.*` produces tables, validators, REST API, admin UI, auth, media. | core, db, ui |
+| **@valencets/telemetry** | Beacon ingestion, event storage, daily summaries, fleet aggregation. | db |
+| **@valencets/valence** | CLI. `valence init`, `valence dev`, `valence migrate`, `valence build`. | cms, db |
+
+## Non-Negotiable
+
+| Rule | Why |
+|------|-----|
+| Complexity < 20 | Every function fits on one screen. No exceptions. |
+| `Result<T, E>` everywhere | If it can fail, the type signature says so. Both branches handled or it doesn't compile. |
+| 14kB critical shell | First paint in the first TCP data flight. No CDN. No web fonts. |
+| Pre-allocated ring buffer | Zero allocation in the telemetry hot path. |
+| Zero third-party browser JS | Your site. Your code. Your data. Nothing phones home. |
+| 1,337 tests | Strict TypeScript, neostandard, CI on every push. |
+
+## Documentation
+
+- [Getting Started](https://github.com/valencets/valence/wiki/Getting-Started)
+- [Architecture](https://github.com/valencets/valence/wiki/Architecture)
+- [CMS Guide](https://github.com/valencets/valence/wiki/CMS-Guide)
+- [Developer Guide](https://github.com/valencets/valence/wiki/Developer-Guide)
+- [Troubleshooting](https://github.com/valencets/valence/wiki/Troubleshooting)
+
+## Contributing
 
 ```bash
 git clone https://github.com/valencets/valence.git
@@ -49,62 +119,6 @@ pnpm test
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for standards and the TDD workflow.
-
-## Packages
-
-| Package | What it does | Deps |
-|---------|-------------|------|
-| **@valencets/ui** | 18 Web Components. ARIA, i18n, telemetry hooks, hydration directives. OKLCH tokens, Tailwind preset, theme contract. | zero |
-| **@valencets/core** | Router + server. `pushState` nav, fragment swaps, hover-intent prefetch, ring buffer event capture. | zero |
-| **@valencets/db** | PostgreSQL query layer. Tagged template SQL, parameterized by default, `Result<T,E>` returns, migration runner. | zero |
-| **@valencets/cms** | Schema engine. `collection()` + `field.*` produces tables, Zod validators, REST API, admin UI, auth, media. | core, db, ui |
-| **@valencets/telemetry** | Beacon, ingestion, event storage, daily summaries. Your data in your database. | db, ui |
-
-```
-ui        standalone
-core      standalone
-db        standalone
-cms       core, db, ui
-telemetry db, ui
-```
-
----
-
-**One schema.** Collections and fields in TypeScript. Tables, endpoints, admin views, validators, migrations. All derived. Change the schema, everything follows.
-
-**Your code in their browser.** 14kB critical shell. First paint in the first TCP round trip. No CDN dependencies. No web fonts from Google. No third-party scripts. Ever.
-
-**Errors are values.** `Result<T, E>` on every fallible operation. Both branches handled or it doesn't compile. No try/catch. No "works on my machine."
-
-**Real components.** Custom Elements with `ElementInternals`. Work in React, Vue, Svelte, Astro, plain HTML. No virtual DOM. No framework lock-in.
-
-**Your data.** Telemetry captures interaction events into your Postgres. Not Mixpanel's. Not Google's. Yours.
-
----
-
-## Non-Negotiable
-
-| Rule | |
-|------|---|
-| Complexity < 20 | Every function fits on one screen. No exceptions. |
-| `Result<T, E>` everywhere | If it can fail, the type signature says so. |
-| 14kB critical shell | First paint in the first TCP data flight. |
-| Pre-allocated ring buffer | Zero allocation in the telemetry hot path. |
-| Zero `any`, strict mode | If it compiles, the types are right. |
-| Zero third-party browser JS | Your site. Your code. Your data. |
-
-## Documentation
-
-- [Getting Started](https://github.com/valencets/valence/wiki/Getting-Started)
-- [Architecture](https://github.com/valencets/valence/wiki/Architecture)
-- [Developer Guide](https://github.com/valencets/valence/wiki/Developer-Guide)
-- [CMS Guide](https://github.com/valencets/valence/wiki/CMS-Guide)
-- [Troubleshooting](https://github.com/valencets/valence/wiki/Troubleshooting)
-- [Contributing](CONTRIBUTING.md)
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, standards, and the TDD workflow.
 
 ## License
 
