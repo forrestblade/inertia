@@ -30,7 +30,7 @@ describe('page scaffold from collections', () => {
 
   it('generates list page for posts collection', async () => {
     await run(['init', 'test-app', '-y'])
-    const files = getWrittenFiles('pages/posts/ui/list.html')
+    const files = getWrittenFiles('pages/posts/ui/index.html')
     expect(files).toHaveLength(1)
     const html = files[0]!.content
     expect(html).toContain('<!DOCTYPE html>')
@@ -49,7 +49,7 @@ describe('page scaffold from collections', () => {
 
   it('list page uses Valence design tokens', async () => {
     await run(['init', 'test-app', '-y'])
-    const files = getWrittenFiles('pages/posts/ui/list.html')
+    const files = getWrittenFiles('pages/posts/ui/index.html')
     const html = files[0]!.content
     expect(html).toContain('var(--val-color-')
     expect(html).toContain('var(--val-font-')
@@ -63,7 +63,7 @@ describe('page scaffold from collections', () => {
 
   it('list page links to detail pages', async () => {
     await run(['init', 'test-app', '-y'])
-    const files = getWrittenFiles('pages/posts/ui/list.html')
+    const files = getWrittenFiles('pages/posts/ui/index.html')
     const html = files[0]!.content
     expect(html).toContain('/posts/')
   })

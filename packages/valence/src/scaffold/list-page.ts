@@ -1,15 +1,5 @@
 import type { CollectionConfig } from '@valencets/cms'
-
-function pascalCase (slug: string): string {
-  return slug.split(/[-_]/).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('')
-}
-
-function singularize (slug: string): string {
-  if (slug.endsWith('ies')) return slug.slice(0, -3) + 'y'
-  if (slug.endsWith('ses')) return slug.slice(0, -2)
-  if (slug.endsWith('s')) return slug.slice(0, -1)
-  return slug
-}
+import { pascalCase, singularize } from '../codegen/naming.js'
 
 export function generateListPage (collection: CollectionConfig): string {
   const label = collection.labels?.plural ?? pascalCase(collection.slug)
@@ -77,8 +67,14 @@ export function generateListPage (collection: CollectionConfig): string {
         const a = document.createElement('a')
         a.className = 'list-item'
         a.href = '/${collection.slug}/' + item.id
-        a.innerHTML = '<h2>' + (item.${titleField} ?? '${singular}') + '</h2>'
-          + (item.createdAt ? '<time>' + new Date(item.createdAt).toLocaleDateString() + '</time>' : '')
+        const h2 = document.createElement('h2')
+        h2.textContent = item.${titleField} ?? '${singular}'
+        a.appendChild(h2)
+        if (item.createdAt) {
+          const time = document.createElement('time')
+          time.textContent = new Date(item.createdAt).toLocaleDateString()
+          a.appendChild(time)
+        }
         list.appendChild(a)
       }
     }

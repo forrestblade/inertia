@@ -43,6 +43,11 @@ describe('resolvePageRoute', () => {
     expect(result!.param).toBe('my-slug')
   })
 
+  it('rejects malformed percent-encoding', () => {
+    const result = resolvePageRoute('/%C0', '/tmp/project/src')
+    expect(result).toBeNull()
+  })
+
   it('returns null param for single-segment paths', () => {
     const result = resolvePageRouteWithParam('/about', '/tmp/project/src')
     expect(result).not.toBeNull()

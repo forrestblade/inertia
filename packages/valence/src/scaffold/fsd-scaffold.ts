@@ -42,7 +42,7 @@ export async function scaffoldFsd (options: ScaffoldOptions): Promise<void> {
     // Generate page templates
     await mkdir(join(srcDir, 'pages', col.slug, 'ui'), { recursive: true })
     const listContent = generateListPage(col)
-    await writeFile(join(srcDir, 'pages', col.slug, 'ui', 'list.html'), listContent)
+    await writeFile(join(srcDir, 'pages', col.slug, 'ui', 'index.html'), listContent)
     const detailContent = generateDetailPage(col)
     await writeFile(join(srcDir, 'pages', col.slug, 'ui', 'detail.html'), detailContent)
   }

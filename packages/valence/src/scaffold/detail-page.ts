@@ -1,15 +1,5 @@
 import type { CollectionConfig } from '@valencets/cms'
-
-function pascalCase (slug: string): string {
-  return slug.split(/[-_]/).map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('')
-}
-
-function singularize (slug: string): string {
-  if (slug.endsWith('ies')) return slug.slice(0, -3) + 'y'
-  if (slug.endsWith('ses')) return slug.slice(0, -2)
-  if (slug.endsWith('s')) return slug.slice(0, -1)
-  return slug
-}
+import { pascalCase, singularize } from '../codegen/naming.js'
 
 export function generateDetailPage (collection: CollectionConfig): string {
   const singular = collection.labels?.singular ?? pascalCase(singularize(collection.slug))
@@ -66,9 +56,19 @@ export function generateDetailPage (collection: CollectionConfig): string {
     const notFound = document.getElementById('not-found')
     if (res.ok) {
       const item = await res.json()
-      content.innerHTML = '<h1>' + (item.${titleField} ?? '${singular}') + '</h1>'
-        + '<div class="meta">' + (item.createdAt ? new Date(item.createdAt).toLocaleDateString() : '') + '</div>'
-        + '${bodyField ? `<div class="body">' + (item.${bodyField} ?? '') + '</div>` : ''}'
+      const h1 = document.createElement('h1')
+      h1.textContent = item.${titleField} ?? '${singular}'
+      content.appendChild(h1)
+      const meta = document.createElement('div')
+      meta.className = 'meta'
+      meta.textContent = item.createdAt ? new Date(item.createdAt).toLocaleDateString() : ''
+      content.appendChild(meta)
+      ${bodyField
+? `const body = document.createElement('div')
+      body.className = 'body'
+      body.innerHTML = item.${bodyField} ?? ''
+      content.appendChild(body)`
+: ''}
     } else {
       notFound.hidden = false
     }

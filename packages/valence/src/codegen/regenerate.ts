@@ -20,12 +20,9 @@ interface ScaffoldError {
 const GENERATED_MARKER = '// @generated'
 
 async function isGenerated (filePath: string): Promise<boolean> {
-  try {
-    const content = await readFile(filePath, 'utf-8')
-    return typeof content === 'string' && content.startsWith(GENERATED_MARKER)
-  } catch {
-    return false
-  }
+  if (!existsSync(filePath)) return false
+  const fileContent = await readFile(filePath, 'utf-8')
+  return typeof fileContent === 'string' && fileContent.startsWith(GENERATED_MARKER)
 }
 
 async function writeIfGenerated (

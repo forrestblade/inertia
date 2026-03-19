@@ -111,7 +111,12 @@ export function generateHomePage (): string {
       for (const post of posts) {
         const li = document.createElement('li')
         li.className = 'post-card'
-        li.innerHTML = \`<h3>\${post.title}</h3><time>\${post.publishedAt ?? ''}</time>\`
+        const h3 = document.createElement('h3')
+        h3.textContent = post.title ?? ''
+        const time = document.createElement('time')
+        time.textContent = post.publishedAt ?? ''
+        li.appendChild(h3)
+        li.appendChild(time)
         list.appendChild(li)
       }
     }

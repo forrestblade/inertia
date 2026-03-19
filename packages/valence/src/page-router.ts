@@ -19,11 +19,18 @@ export function resolvePageRouteWithParam (pathname: string, srcDir: string): Pa
     if (code >= 1 && code <= 0x1f) return null
   }
 
-  // Check raw path for traversal before normalization
-  if (pathname.includes('..')) return null
+  // Decode URI — reject malformed percent-encoding
+  let decoded: string
+  try {
+    decoded = decodeURIComponent(pathname)
+  } catch {
+    return null
+  }
+
+  // Check for traversal
+  if (decoded.includes('..')) return null
 
   // Normalize
-  const decoded = decodeURIComponent(pathname)
   const normalized = normalize(decoded)
 
   // Split into segments, filter empty

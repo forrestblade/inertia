@@ -468,7 +468,7 @@ async function runDev (): Promise<void> {
           // Reload config to get updated slug list
           loadUserConfig().then(cfg => {
             if (cfg) currentConfigSlugs = cfg.collections.map(c => c.slug)
-          }).catch(() => {})
+          }).catch((e) => { log('Config reload failed: ' + (e instanceof Error ? e.message : 'unknown')) })
         }
       })
     }
@@ -492,7 +492,7 @@ async function runDev (): Promise<void> {
             },
             (e) => { log(`Regeneration error: ${e.message}`) }
           )
-        }).catch(() => {})
+        }).catch((e) => { log('Config reload failed: ' + (e instanceof Error ? e.message : 'unknown')) })
       }
     })
   }
