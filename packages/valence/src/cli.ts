@@ -2,16 +2,18 @@ import { writeFile, mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { createInterface } from 'node:readline/promises'
 import { stdin, stdout } from 'node:process'
-import { execSync, execFileSync } from 'node:child_process'
+import { execSync } from 'node:child_process'
 import { createServer } from 'node:http'
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import { createPool, closePool, loadMigrations, runMigrations } from '@valencets/db'
 import type { DbConfig, DbPool } from '@valencets/db'
 import { buildCms } from '@valencets/cms'
 import type { RestRouteEntry } from '@valencets/cms'
 import { readLearnProgress, writeLearnProgress, createInitialProgress } from './learn/index.js'
-import { PAGE_TOKEN_CSS } from './page-tokens.js'
+import { generateConfigTemplate, generateSecret } from './config-template.js'
+import { landingPage } from './landing-page.js'
+import { loadEnvConfig, loadUserConfig } from './config-loader.js'
 
 const COMMANDS = {
   init: 'Create a new Valence project',
@@ -685,185 +687,6 @@ function detectPackageManager (): string {
   return 'npm'
 }
 
-interface ConfigTemplateOptions {
-  readonly dbName: string
-  readonly dbUser: string
-  readonly dbPassword: string
-  readonly serverPort: string
-  readonly learnMode: boolean
-}
-
-function generateConfigTemplate (opts: ConfigTemplateOptions): string {
-  const { dbName, dbUser, dbPassword, serverPort, learnMode } = opts
-
-  const learnComment = (text: string) => learnMode ? `// ${text}\n    ` : ''
-
-  const tagsCollection = learnMode
-    ? `,
-
-    // ── LEARN MODE: Step 4 ──────────────────────────────────
-    // Uncomment the collection below and save this file.
-    // Valence will detect the change automatically!
-    //
-    // collection({
-    //   slug: 'tags',
-    //   labels: { singular: 'Tag', plural: 'Tags' },
-    //   fields: [
-    //     field.text({ name: 'name', required: true }),
-    //     field.slug({ name: 'slug', required: true, unique: true, slugFrom: 'name' })
-    //   ]
-    // })`
-    : ''
-
-  return `import { defineConfig, collection, field } from '@valencets/valence'
-${learnMode ? '\n// This config defines your collections (data models), database connection,\n// and server settings. Each collection becomes a database table, an admin UI,\n// and a REST API endpoint automatically.\n' : ''}
-export default defineConfig({
-  db: {
-    host: process.env.DB_HOST ?? 'localhost',
-    port: Number(process.env.DB_PORT ?? 5432),
-    database: process.env.DB_NAME ?? '${dbName}',
-    username: process.env.DB_USER ?? '${dbUser}',
-    password: process.env.DB_PASSWORD ?? '${dbPassword}'
-  },
-  server: {
-    port: Number(process.env.PORT ?? ${serverPort})
-  },
-  collections: [
-    ${learnComment('Categories: a simple collection with text, slug, textarea, and select fields.')}collection({
-      slug: 'categories',
-      labels: { singular: 'Category', plural: 'Categories' },
-      fields: [
-        field.text({ name: 'name', required: true }),
-        field.slug({ name: 'slug', required: true, unique: true, slugFrom: 'name' }),
-        field.textarea({ name: 'description' }),
-        field.select({
-          name: 'color',
-          options: [
-            { label: 'Blue', value: 'blue' },
-            { label: 'Green', value: 'green' },
-            { label: 'Red', value: 'red' },
-            { label: 'Purple', value: 'purple' },
-            { label: 'Amber', value: 'amber' }
-          ]
-        })
-      ]
-    }),
-
-    ${learnComment('Posts: uses richtext for the body, a relation to categories, and a boolean toggle.')}collection({
-      slug: 'posts',
-      labels: { singular: 'Post', plural: 'Posts' },
-      fields: [
-        field.text({ name: 'title', required: true }),
-        field.slug({ name: 'slug', required: true, unique: true, slugFrom: 'title' }),
-        field.richtext({ name: 'body' }),
-        field.relation({ name: 'category', relationTo: 'categories' }),
-        field.boolean({ name: 'published' }),
-        field.date({ name: 'publishedAt' })
-      ]
-    }),
-
-    ${learnComment('Pages: includes a status select, a date field, and a group for SEO metadata.')}collection({
-      slug: 'pages',
-      labels: { singular: 'Page', plural: 'Pages' },
-      fields: [
-        field.text({ name: 'title', required: true }),
-        field.slug({ name: 'slug', required: true, unique: true, slugFrom: 'title' }),
-        field.richtext({ name: 'content' }),
-        field.select({
-          name: 'status',
-          required: true,
-          defaultValue: 'draft',
-          options: [
-            { label: 'Draft', value: 'draft' },
-            { label: 'Published', value: 'published' },
-            { label: 'Archived', value: 'archived' }
-          ]
-        }),
-        field.date({ name: 'publishedAt' }),
-        field.group({
-          name: 'seo',
-          label: 'SEO',
-          fields: [
-            field.text({ name: 'metaTitle', label: 'Meta Title' }),
-            field.textarea({ name: 'metaDescription', label: 'Meta Description' })
-          ]
-        })
-      ]
-    }),
-
-    ${learnComment('Users: auth: true enables password hashing and session management.')}collection({
-      slug: 'users',
-      auth: true,
-      fields: [
-        field.text({ name: 'name', required: true }),
-        field.select({
-          name: 'role',
-          defaultValue: 'editor',
-          options: [
-            { label: 'Admin', value: 'admin' },
-            { label: 'Editor', value: 'editor' }
-          ]
-        })
-      ]
-    })${tagsCollection}
-  ],
-  admin: {
-    pathPrefix: '/admin',
-    requireAuth: true
-  },
-  telemetry: {
-    enabled: true,
-    endpoint: '/api/telemetry',
-    siteId: process.env.SITE_ID ?? '${dbName}'
-  }
-})
-`
-}
-
-function generateSecret (): string {
-  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
-  let result = ''
-  for (let i = 0; i < 32; i++) {
-    result += chars[Math.floor(Math.random() * chars.length)]
-  }
-  return result
-}
-
-function loadEnvConfig (): DbConfig | null {
-  const envPath = join(process.cwd(), '.env')
-  if (existsSync(envPath)) {
-    const content = readFileSync(envPath, 'utf-8')
-    for (const line of content.split('\n')) {
-      const trimmed = line.trim()
-      if (trimmed === '' || trimmed.startsWith('#')) continue
-      const eqIdx = trimmed.indexOf('=')
-      if (eqIdx === -1) continue
-      const key = trimmed.slice(0, eqIdx)
-      const value = trimmed.slice(eqIdx + 1)
-      if (!(key in process.env)) {
-        process.env[key] = value
-      }
-    }
-  }
-
-  const host = process.env.DB_HOST
-  const database = process.env.DB_NAME
-  const username = process.env.DB_USER
-
-  if (!host || !database || !username) return null
-
-  return {
-    host,
-    port: Number(process.env.DB_PORT ?? 5432),
-    database,
-    username,
-    password: process.env.DB_PASSWORD ?? '',
-    max: 5,
-    idle_timeout: 10,
-    connect_timeout: 10
-  }
-}
-
 async function runMigrationsForProject (projectDir: string, config: DbConfig): Promise<boolean> {
   const migrationsDir = join(projectDir, 'migrations')
   if (!existsSync(migrationsDir)) {
@@ -918,119 +741,6 @@ export async function seedDatabase (pool: DbPool): Promise<void> {
     'INSERT INTO "pages" ("title", "slug", "content", "status") VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING',
     ['About', 'about', '<p>This is the about page.</p>', 'published']
   )
-}
-
-function landingPage (port: number): string {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Valence</title>
-  <style>
-    ${PAGE_TOKEN_CSS}
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: var(--val-font-sans); background: var(--val-color-bg); color: var(--val-color-text); display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-    .container { text-align: center; max-width: 480px; }
-    h1 { font-size: var(--val-text-5xl); font-weight: 300; letter-spacing: 0.1em; margin-bottom: var(--val-space-4); }
-    h1 span { font-weight: 600; color: var(--val-color-primary); }
-    p { color: var(--val-color-text-muted); line-height: 1.6; margin-bottom: var(--val-space-8); }
-    .links { display: flex; gap: var(--val-space-4); justify-content: center; }
-    a { color: var(--val-color-primary); text-decoration: none; padding: var(--val-space-2) var(--val-space-4); border: 1px solid var(--val-color-primary); border-radius: var(--val-radius-md); transition: all var(--val-duration-fast); }
-    a:hover { background: var(--val-color-primary); color: var(--val-color-bg); }
-    code { background: var(--val-color-bg-elevated); padding: var(--val-space-1) var(--val-space-2); border-radius: var(--val-radius-sm); font-size: var(--val-text-sm); }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <svg viewBox="0 0 360 80" fill="none" xmlns="http://www.w3.org/2000/svg" width="280" style="margin-bottom: 1rem;">
-      <defs>
-        <linearGradient id="orbital" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stop-color="#60a5fa" stop-opacity="0"/>
-          <stop offset="40%" stop-color="#60a5fa" stop-opacity="0.25"/>
-          <stop offset="100%" stop-color="#60a5fa" stop-opacity="0.7"/>
-        </linearGradient>
-      </defs>
-      <ellipse cx="180" cy="40" rx="172" ry="32" stroke="url(#orbital)" stroke-width="1.5" fill="none" transform="rotate(-5, 180, 40)"/>
-      <circle cx="350" cy="28" r="4" fill="#60a5fa">
-        <animateMotion dur="4s" repeatCount="indefinite" path="M0,0 A172,32 -5 1 1 -340,24 A172,32 -5 1 1 0,0" />
-      </circle>
-      <text x="180" y="44" text-anchor="middle" font-family="system-ui, sans-serif" font-size="46" letter-spacing="0.1em" fill="#e2e8f0">
-        <tspan font-weight="600" fill="#60a5fa">v</tspan><tspan font-weight="300">alence</tspan>
-      </text>
-    </svg>
-    <p>Your site is running on port ${port}. Edit <code>valence.config.ts</code> to add collections, then visit the admin panel to create content.</p>
-    <div class="links">
-      <a href="/admin">Admin Panel</a>
-      <a href="https://github.com/valencets/valence/wiki">Documentation</a>
-    </div>
-  </div>
-</body>
-</html>`
-}
-
-interface UserConfig {
-  readonly collections: ReadonlyArray<import('@valencets/cms').CollectionConfig>
-  readonly telemetry?: {
-    readonly enabled: boolean
-    readonly endpoint: string
-    readonly siteId: string
-    readonly bufferSize?: number | undefined
-    readonly flushIntervalMs?: number | undefined
-  } | undefined
-}
-
-async function loadUserConfig (): Promise<UserConfig | null> {
-  const configPath = join(process.cwd(), 'valence.config.ts')
-  if (!existsSync(configPath)) {
-    log('No valence.config.ts found.')
-    return null
-  }
-
-  // If running under tsx (TS imports work), load directly
-  try {
-    const mod = await import(configPath)
-    const result = mod.default
-    if (result && typeof result.isOk === 'function' && result.isOk()) {
-      return { collections: result.value.collections ?? [], telemetry: result.value.telemetry }
-    }
-    return null
-  } catch {
-    // Direct import failed (no tsx loader). Try spawning with tsx.
-    try {
-      const script = [
-        `import('${configPath.replace(/\\/g, '/')}')`,
-        '.then(m => {',
-        '  const r = m.default;',
-        '  if (r && r.isOk && r.isOk()) {',
-        '    process.stdout.write(JSON.stringify({',
-        '      collections: r.value.collections.map(c => ({',
-        '        slug: c.slug, labels: c.labels, auth: c.auth, upload: c.upload,',
-        '        timestamps: c.timestamps, fields: c.fields',
-        '      })),',
-        '      telemetry: r.value.telemetry',
-        '    }));',
-        '  }',
-        '})',
-        '.catch(e => { process.stderr.write(e.message); process.exit(1); })'
-      ].join('')
-      const tsxBin = join(process.cwd(), 'node_modules', '.bin', 'tsx')
-      const tsxArgs = ['-e', script]
-      const output = existsSync(tsxBin)
-        ? execFileSync(tsxBin, tsxArgs, { cwd: process.cwd(), stdio: ['pipe', 'pipe', 'pipe'], timeout: 15000 }).toString().trim()
-        : execFileSync('npx', ['tsx', ...tsxArgs], { cwd: process.cwd(), stdio: ['pipe', 'pipe', 'pipe'], timeout: 15000 }).toString().trim()
-      if (output) {
-        const parsed = JSON.parse(output)
-        // Re-hydrate through collection() to get proper CollectionConfig objects
-        const { collection: col } = await import('@valencets/cms')
-        const collections = parsed.collections.map((c: Parameters<typeof col>[0]) => col(c))
-        return { collections, telemetry: parsed.telemetry }
-      }
-    } catch (e2) {
-      log(`Config load via tsx failed: ${e2 instanceof Error ? e2.message : 'unknown'}`)
-    }
-    return null
-  }
 }
 
 // -- learn --
