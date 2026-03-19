@@ -166,14 +166,64 @@ export default defineConfig({
   },
   collections: [
     collection({
+      slug: 'categories',
+      labels: { singular: 'Category', plural: 'Categories' },
+      fields: [
+        field.text({ name: 'name', required: true }),
+        field.slug({ name: 'slug', required: true, unique: true, slugFrom: 'name' }),
+        field.textarea({ name: 'description' }),
+        field.select({
+          name: 'color',
+          options: [
+            { label: 'Blue', value: 'blue' },
+            { label: 'Green', value: 'green' },
+            { label: 'Red', value: 'red' },
+            { label: 'Purple', value: 'purple' },
+            { label: 'Amber', value: 'amber' }
+          ]
+        })
+      ]
+    }),
+
+    collection({
       slug: 'posts',
       labels: { singular: 'Post', plural: 'Posts' },
       fields: [
         field.text({ name: 'title', required: true }),
         field.slug({ name: 'slug', required: true, unique: true, slugFrom: 'title' }),
-        field.textarea({ name: 'body' }),
+        field.richtext({ name: 'body' }),
+        field.relation({ name: 'category', relationTo: 'categories' }),
         field.boolean({ name: 'published' }),
         field.date({ name: 'publishedAt' })
+      ]
+    }),
+
+    collection({
+      slug: 'pages',
+      labels: { singular: 'Page', plural: 'Pages' },
+      fields: [
+        field.text({ name: 'title', required: true }),
+        field.slug({ name: 'slug', required: true, unique: true, slugFrom: 'title' }),
+        field.richtext({ name: 'content' }),
+        field.select({
+          name: 'status',
+          required: true,
+          defaultValue: 'draft',
+          options: [
+            { label: 'Draft', value: 'draft' },
+            { label: 'Published', value: 'published' },
+            { label: 'Archived', value: 'archived' }
+          ]
+        }),
+        field.date({ name: 'publishedAt' }),
+        field.group({
+          name: 'seo',
+          label: 'SEO',
+          fields: [
+            field.text({ name: 'metaTitle', label: 'Meta Title' }),
+            field.textarea({ name: 'metaDescription', label: 'Meta Description' })
+          ]
+        })
       ]
     }),
 
@@ -245,13 +295,38 @@ Admin: http://localhost:${serverPort}/admin
 
   await writeFile(join(dir, 'migrations', '001-init.sql'), `CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
+CREATE TABLE IF NOT EXISTS "categories" (
+  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "name" TEXT NOT NULL,
+  "slug" TEXT NOT NULL UNIQUE,
+  "description" TEXT,
+  "color" TEXT,
+  "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updated_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "deleted_at" TIMESTAMPTZ
+);
+
 CREATE TABLE IF NOT EXISTS "posts" (
   "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   "title" TEXT NOT NULL,
   "slug" TEXT NOT NULL UNIQUE,
   "body" TEXT,
+  "category" UUID REFERENCES "categories"("id"),
   "published" BOOLEAN DEFAULT false,
   "publishedAt" TIMESTAMPTZ,
+  "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "updated_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  "deleted_at" TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS "pages" (
+  "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  "title" TEXT NOT NULL,
+  "slug" TEXT NOT NULL UNIQUE,
+  "content" TEXT,
+  "status" TEXT NOT NULL DEFAULT 'draft',
+  "publishedAt" TIMESTAMPTZ,
+  "seo" JSONB,
   "created_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   "updated_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   "deleted_at" TIMESTAMPTZ
