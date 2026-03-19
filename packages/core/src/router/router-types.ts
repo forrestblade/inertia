@@ -31,6 +31,7 @@ export interface RouterConfig {
   readonly persistPageCache?: boolean
   readonly enableViewTransitions?: boolean
   readonly navigationTimeoutMs?: number
+  readonly maxConcurrentPrefetches?: number
 }
 
 export interface ResolvedRouterConfig {
@@ -46,6 +47,7 @@ export interface ResolvedRouterConfig {
   readonly persistPageCache: boolean
   readonly enableViewTransitions: boolean
   readonly navigationTimeoutMs: number
+  readonly maxConcurrentPrefetches: number
 }
 
 export interface CachedResponse {
@@ -86,7 +88,8 @@ const DEFAULT_CONFIG: ResolvedRouterConfig = {
   noCachePaths: ['/admin'],
   persistPageCache: true,
   enableViewTransitions: false,
-  navigationTimeoutMs: 8000
+  navigationTimeoutMs: 8000,
+  maxConcurrentPrefetches: 3
 }
 
 export function resolveConfig (partial?: RouterConfig): ResolvedRouterConfig {
@@ -103,6 +106,7 @@ export function resolveConfig (partial?: RouterConfig): ResolvedRouterConfig {
     noCachePaths: partial.noCachePaths ?? DEFAULT_CONFIG.noCachePaths,
     persistPageCache: partial.persistPageCache ?? DEFAULT_CONFIG.persistPageCache,
     enableViewTransitions: partial.enableViewTransitions ?? DEFAULT_CONFIG.enableViewTransitions,
-    navigationTimeoutMs: partial.navigationTimeoutMs ?? DEFAULT_CONFIG.navigationTimeoutMs
+    navigationTimeoutMs: partial.navigationTimeoutMs ?? DEFAULT_CONFIG.navigationTimeoutMs,
+    maxConcurrentPrefetches: partial.maxConcurrentPrefetches ?? DEFAULT_CONFIG.maxConcurrentPrefetches
   }
 }
