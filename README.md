@@ -144,7 +144,7 @@ Valence includes a complete, privacy-respecting analytics pipeline that runs ent
 | 14kB critical shell | First paint in the first TCP data flight. CDN-ready with cache profiles and server islands. |
 | Pre-allocated ring buffer | Zero allocation in the telemetry hot path. |
 | Zero third-party browser JS | Your site. Your code. Your data. Nothing phones home. |
-| 1,337 tests | Strict TypeScript, neostandard, CI on every push. |
+| 1,306 tests | Strict TypeScript, neostandard, CI on every push. |
 
 ## Documentation
 

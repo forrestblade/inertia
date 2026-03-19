@@ -7,21 +7,31 @@ git clone https://github.com/valencets/valence.git
 cd valence
 pnpm install
 pnpm build   # Build all packages (required before first test run)
-pnpm test    # 1,028 tests across all packages
+pnpm test    # 1,306 tests across all packages
 pnpm lint    # Neostandard lint
 ```
 
 Requires Node.js >= 22 and pnpm 10.x. The `packageManager` field in `package.json` enforces the exact pnpm version.
 
+New to the codebase? Create a test project with the interactive tutorial:
+
+```bash
+npx @valencets/valence init my-test --learn
+cd my-test
+pnpm dev
+# Open http://localhost:3000/_learn
+```
+
 ## Project Structure
 
 ```
 packages/
-  core/        # Router, server, telemetry engine (256 tests)
-  db/          # PostgreSQL connection, migrations (38 tests)
-  ui/          # Web Components + protocol base class (368 tests)
-  cms/         # Schema engine, admin, auth, API (270 tests)
-  telemetry/   # Beacon validation, ingestion pipeline, event queries, aggregation (96 tests)
+  core/        # Router, server, telemetry client (284 tests)
+  db/          # PostgreSQL connection, migrations (75 tests)
+  ui/          # Web Components + protocol base class (374 tests)
+  cms/         # Schema engine, admin, auth, REST API, analytics dashboard (364 tests)
+  telemetry/   # Beacon ingestion, daily summaries, event queries, aggregation (108 tests)
+  valence/     # CLI: init, dev, migrate, build, user:create, learn (101 tests)
 ```
 
 Each package has:
@@ -47,7 +57,7 @@ These will fail code review. No exceptions.
 | `.parse()` on Zod | Throws on failure | `.safeParse()` only |
 | `localStorage`/`sessionStorage` | Fragile state | Server-delivered HTML |
 | `process.env` outside config | Scattered config | Centralized `loadConfig()` |
-| `export default` | Named exports only | `export function/class/const` |
+| `export default` (in library code) | Named exports only | `export function/class/const` |
 | `as never` | Unsafe cast | `safeQuery()` for DB, proper types |
 | `as unknown as` | Unsafe cast | Proper type narrowing |
 | `as any` | Defeats TypeScript | Never acceptable |
@@ -150,7 +160,8 @@ Merge feature/fix branches into `development` with `--no-ff`. Merge `development
 | `@valencets/db` | `neverthrow`, `postgres`, `zod` |
 | `@valencets/ui` | Nothing (zero deps) |
 | `@valencets/cms` | `@valencets/core`, `@valencets/db`, `@valencets/ui`, `zod`, `neverthrow`, `argon2` |
-| `@valencets/telemetry` | `@valencets/db`, `@valencets/ui` |
+| `@valencets/telemetry` | `@valencets/db`, `@valencets/core` |
+| `@valencets/valence` | `@valencets/cms`, `@valencets/core`, `@valencets/db`, `@valencets/telemetry`, `tsx`, `zod`, `neverthrow` |
 
 ## Working with the CMS Package
 
