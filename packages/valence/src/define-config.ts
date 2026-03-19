@@ -1,0 +1,168 @@
+import { ok, err } from 'neverthrow'
+import type { Result } from 'neverthrow'
+import { z } from 'zod'
+
+export interface ValenceConfig {
+  readonly db: {
+    readonly host: string
+    readonly port: number
+    readonly database: string
+    readonly username: string
+    readonly password: string
+    readonly max?: number | undefined
+    readonly idle_timeout?: number | undefined
+    readonly connect_timeout?: number | undefined
+    readonly query_timeout?: number | undefined
+  }
+  readonly server: {
+    readonly port: number
+    readonly host?: string | undefined
+  }
+  readonly collections: ReadonlyArray<unknown>
+  readonly telemetry?: {
+    readonly enabled: boolean
+    readonly endpoint: string
+    readonly siteId: string
+    readonly bufferSize?: number | undefined
+    readonly flushIntervalMs?: number | undefined
+  } | undefined
+  readonly admin?: {
+    readonly pathPrefix?: string | undefined
+    readonly requireAuth?: boolean | undefined
+  } | undefined
+  readonly media?: {
+    readonly uploadDir: string
+    readonly maxUploadBytes?: number | undefined
+  } | undefined
+}
+
+export interface ResolvedValenceConfig {
+  readonly db: {
+    readonly host: string
+    readonly port: number
+    readonly database: string
+    readonly username: string
+    readonly password: string
+    readonly max: number
+    readonly idle_timeout: number
+    readonly connect_timeout: number
+    readonly query_timeout?: number | undefined
+  }
+  readonly server: {
+    readonly port: number
+    readonly host: string
+  }
+  readonly collections: ReadonlyArray<unknown>
+  readonly telemetry?: {
+    readonly enabled: boolean
+    readonly endpoint: string
+    readonly siteId: string
+    readonly bufferSize: number
+    readonly flushIntervalMs: number
+  } | undefined
+  readonly admin?: {
+    readonly pathPrefix: string
+    readonly requireAuth: boolean
+  } | undefined
+  readonly media?: {
+    readonly uploadDir: string
+    readonly maxUploadBytes: number
+  } | undefined
+}
+
+export interface ConfigError {
+  readonly code: 'INVALID_CONFIG'
+  readonly message: string
+}
+
+const configSchema = z.object({
+  db: z.object({
+    host: z.string().min(1),
+    port: z.number().int().min(1).max(65535),
+    database: z.string().min(1),
+    username: z.string().min(1),
+    password: z.string().min(1),
+    max: z.number().int().min(1).max(100).optional(),
+    idle_timeout: z.number().min(0).optional(),
+    connect_timeout: z.number().min(0).optional(),
+    query_timeout: z.number().min(0).optional()
+  }),
+  server: z.object({
+    port: z.number().int().min(1).max(65535),
+    host: z.string().min(1).optional()
+  }),
+  collections: z.array(z.unknown()),
+  telemetry: z.object({
+    enabled: z.boolean(),
+    endpoint: z.string().min(1),
+    siteId: z.string().min(1),
+    bufferSize: z.number().int().min(1).optional(),
+    flushIntervalMs: z.number().min(1).optional()
+  }).optional(),
+  admin: z.object({
+    pathPrefix: z.string().optional(),
+    requireAuth: z.boolean().optional()
+  }).optional(),
+  media: z.object({
+    uploadDir: z.string().min(1),
+    maxUploadBytes: z.number().int().min(1).optional()
+  }).optional()
+})
+
+export function defineConfig (config: ValenceConfig): Result<ResolvedValenceConfig, ConfigError> {
+  const parsed = configSchema.safeParse(config)
+
+  if (!parsed.success) {
+    const issues = parsed.error.issues.map((issue) =>
+      `${issue.path.join('.')}: ${issue.message}`
+    )
+    return err({
+      code: 'INVALID_CONFIG',
+      message: `Invalid Valence config: ${issues.join('; ')}`
+    })
+  }
+
+  const data = parsed.data
+
+  const resolved: ResolvedValenceConfig = {
+    db: {
+      host: data.db.host,
+      port: data.db.port,
+      database: data.db.database,
+      username: data.db.username,
+      password: data.db.password,
+      max: data.db.max ?? 10,
+      idle_timeout: data.db.idle_timeout ?? 30,
+      connect_timeout: data.db.connect_timeout ?? 10,
+      query_timeout: data.db.query_timeout
+    },
+    server: {
+      port: data.server.port,
+      host: data.server.host ?? '0.0.0.0'
+    },
+    collections: data.collections,
+    telemetry: data.telemetry
+      ? {
+          enabled: data.telemetry.enabled,
+          endpoint: data.telemetry.endpoint,
+          siteId: data.telemetry.siteId,
+          bufferSize: data.telemetry.bufferSize ?? 256,
+          flushIntervalMs: data.telemetry.flushIntervalMs ?? 10_000
+        }
+      : undefined,
+    admin: data.admin
+      ? {
+          pathPrefix: data.admin.pathPrefix ?? '/admin',
+          requireAuth: data.admin.requireAuth ?? false
+        }
+      : undefined,
+    media: data.media
+      ? {
+          uploadDir: data.media.uploadDir,
+          maxUploadBytes: data.media.maxUploadBytes ?? 10_000_000
+        }
+      : undefined
+  }
+
+  return ok(resolved)
+}

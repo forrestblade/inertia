@@ -1,0 +1,43 @@
+{
+  "name": "valence",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "valence": "./bin/valence.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@valencets/cms": "workspace:*",
+    "@valencets/core": "workspace:*",
+    "@valencets/db": "workspace:*",
+    "@valencets/telemetry": "workspace:*",
+    "neverthrow": "^8.2.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.4.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/valencets/valence.git",
+    "directory": "packages/valence"
+  }
+}
