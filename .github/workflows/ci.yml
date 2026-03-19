@@ -47,3 +47,37 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: pnpm test:ci
+
+  publish:
+    needs: [lint, typecheck, test]
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: Publish packages
+        run: |
+          for pkg in packages/ui packages/core packages/db packages/telemetry packages/cms packages/valence; do
+            cd "$GITHUB_WORKSPACE/$pkg"
+            VERSION=$(node -p "require('./package.json').version")
+            NAME=$(node -p "require('./package.json').name")
+            PUBLISHED=$(npm view "$NAME@$VERSION" version 2>/dev/null || echo "")
+            if [ "$PUBLISHED" != "$VERSION" ]; then
+              npm publish --access public --provenance
+              echo "Published $NAME@$VERSION"
+            else
+              echo "Skipped $NAME@$VERSION (already published)"
+            fi
+          done
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
