@@ -106,6 +106,7 @@ async function runInit (args: ReadonlyArray<string>): Promise<void> {
   const installDeps = useDefaults ? true : await confirm(rl!, 'Install dependencies?')
   const createDb = useDefaults ? true : await confirm(rl!, `Create database "${dbName}"?`)
   const doMigrate = useDefaults ? true : await confirm(rl!, 'Run initial migrations?')
+  const doSeed = useDefaults ? true : await confirm(rl!, 'Insert sample seed data?')
   const initGit = useDefaults ? true : await confirm(rl!, 'Initialize git repository?')
 
   if (rl) rl.close()
@@ -378,23 +379,25 @@ CREATE TABLE IF NOT EXISTS "users" (
     })
     if (migrated) {
       log('Migrations applied.')
-      log('Seeding initial data...')
-      try {
-        const seedPool = createPool({
-          host: 'localhost',
-          port: 5432,
-          database: dbName,
-          username: dbUser,
-          password: dbPassword,
-          max: 5,
-          idle_timeout: 10,
-          connect_timeout: 10
-        })
-        await seedDatabase(seedPool as never)
-        await closePool(seedPool)
-        log('Seed data inserted.')
-      } catch {
-        log('Warning: seed data insertion failed. The database may already have data.')
+      if (doSeed) {
+        log('Seeding initial data...')
+        try {
+          const seedPool = createPool({
+            host: 'localhost',
+            port: 5432,
+            database: dbName,
+            username: dbUser,
+            password: dbPassword,
+            max: 5,
+            idle_timeout: 10,
+            connect_timeout: 10
+          })
+          await seedDatabase(seedPool as never)
+          await closePool(seedPool)
+          log('Seed data inserted.')
+        } catch {
+          log('Warning: seed data insertion failed. The database may already have data.')
+        }
       }
     } else {
       log('Warning: migrations failed. Run "valence migrate" after fixing your database connection.')
