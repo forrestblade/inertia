@@ -86,6 +86,9 @@ importers:
 
   packages/telemetry:
     dependencies:
+      '@valencets/core':
+        specifier: workspace:*
+        version: link:../core
       '@valencets/db':
         specifier: workspace:*
         version: link:../db

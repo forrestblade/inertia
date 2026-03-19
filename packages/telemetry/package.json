@@ -25,6 +25,7 @@
     "directory": "packages/telemetry"
   },
   "dependencies": {
+    "@valencets/core": "workspace:*",
     "@valencets/db": "workspace:*",
     "neverthrow": "^8.2.0",
     "postgres": "^3.4.8"
