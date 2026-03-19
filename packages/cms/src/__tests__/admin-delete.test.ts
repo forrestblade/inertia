@@ -81,7 +81,7 @@ describe('admin delete route', () => {
     const req = makeMockReq('_csrf=invalid-token')
     const res = makeMockRes()
     await routes.get('/admin/posts/:id/delete')!.POST!(req as never, res as never, { id: 'abc' })
-    expect(res.writeHead).toHaveBeenCalledWith(403)
+    expect(res.writeHead).toHaveBeenCalledWith(403, expect.objectContaining({ Location: '/admin/posts/abc/edit' }))
   })
 
   it('POST delete with bad body returns 400', async () => {

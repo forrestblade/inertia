@@ -275,6 +275,11 @@ export function renderLayout (args: LayoutArgs): string {
       color: var(--val-color-primary-text);
     }
     .btn-primary:hover { background: var(--val-color-primary-hover); color: var(--val-color-primary-text); }
+    .btn-danger {
+      background: var(--val-color-error);
+      color: oklch(1 0 0);
+    }
+    .btn-danger:hover { background: oklch(0.55 0.22 25); }
 
     .empty-state {
       color: var(--val-color-text-muted);

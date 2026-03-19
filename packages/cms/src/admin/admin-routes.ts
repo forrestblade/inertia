@@ -207,6 +207,40 @@ export function createAdminRoutes (
       })
     })
 
+    routes.set(`/admin/${col.slug}/:id/delete`, {
+      POST: wrap(async (req, res, ctx) => {
+        const id = ctx.id ?? ''
+        const bodyResult = await safeReadFormBody(req)
+        if (bodyResult.isErr()) {
+          setFlashCookie(res, { type: 'error', text: 'Bad request' })
+          res.writeHead(400, { Location: `/admin/${col.slug}/${id}/edit` })
+          res.end()
+          return
+        }
+        const formData = bodyResult.value
+        const submittedToken = String(formData._csrf ?? '')
+        if (!submittedToken || !validateCsrf(submittedToken)) {
+          setFlashCookie(res, { type: 'error', text: 'Forbidden: invalid CSRF token' })
+          res.writeHead(403, { Location: `/admin/${col.slug}/${id}/edit` })
+          res.end()
+          return
+        }
+        const result = await api.delete({ collection: col.slug, id })
+        result.match(
+          () => {
+            setFlashCookie(res, { type: 'success', text: `${col.labels?.singular ?? col.slug} deleted` })
+            res.writeHead(302, { Location: `/admin/${col.slug}` })
+            res.end()
+          },
+          (err) => {
+            setFlashCookie(res, { type: 'error', text: err.message })
+            res.writeHead(302, { Location: `/admin/${col.slug}/${id}/edit` })
+            res.end()
+          }
+        )
+      })
+    })
+
     routes.set(`/admin/${col.slug}/:id/edit`, {
       GET: wrap(async (req, res, ctx) => {
         const id = ctx.id ?? ''
