@@ -41,10 +41,10 @@ describe('html tagged template', () => {
     expect(result).toBe('<p></p>')
   })
 
-  it('preserves raw HTML when explicitly marked', () => {
-    const trusted = html`<strong>bold</strong>`
-    const result = html`<div>${trusted}</div>`
-    expect(result).toBe('<div><strong>bold</strong></div>')
+  it('double-escapes nested html calls (safe by default)', () => {
+    const inner = html`<strong>bold</strong>`
+    const result = html`<div>${inner}</div>`
+    expect(result).toContain('&lt;strong&gt;')
   })
 })
 
