@@ -34,7 +34,7 @@ function renderNumberInput (f: FieldConfig, value: string): string {
 
 function renderCheckbox (f: FieldConfig, value: string): string {
   const checked = value === 'true' ? ' checked' : ''
-  return `<label class="form-checkbox"><input type="checkbox" name="${escapeHtml(f.name)}" value="true"${checked}> ${escapeHtml(f.label ?? f.name)}</label>`
+  return `<label class="form-checkbox"><input type="hidden" name="${escapeHtml(f.name)}" value="false"><input type="checkbox" name="${escapeHtml(f.name)}" value="true"${checked}> ${escapeHtml(f.label ?? f.name)}</label>`
 }
 
 function renderSelect (f: FieldConfig, value: string): string {

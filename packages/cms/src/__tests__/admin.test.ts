@@ -147,6 +147,14 @@ describe('renderFieldInput()', () => {
     expect(html).toContain('checked')
   })
 
+  it('renders hidden input before checkbox so unchecked submits false', () => {
+    const html = renderFieldInput(field.boolean({ name: 'published' }), 'false')
+    expect(html).toContain('<input type="hidden" name="published" value="false">')
+    const hiddenIdx = html.indexOf('type="hidden"')
+    const checkboxIdx = html.indexOf('type="checkbox"')
+    expect(hiddenIdx).toBeLessThan(checkboxIdx)
+  })
+
   it('renders select dropdown', () => {
     const html = renderFieldInput(
       field.select({ name: 'status', options: [{ label: 'Draft', value: 'draft' }, { label: 'Live', value: 'live' }] }),
