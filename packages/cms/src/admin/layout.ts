@@ -426,6 +426,22 @@ export function renderLayout (args: LayoutArgs): string {
       color: var(--val-color-text);
     }
 
+    /* --- Media upload --- */
+    .media-upload {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .media-preview {
+      font-size: var(--val-text-sm);
+      color: var(--val-color-text-muted);
+    }
+    .media-preview img {
+      max-width: 200px;
+      max-height: 150px;
+      border-radius: var(--val-radius-md);
+      border: 1px solid var(--val-color-border);
+    }
     /* --- Edit page container --- */
     .edit-container {
       max-width: 640px;

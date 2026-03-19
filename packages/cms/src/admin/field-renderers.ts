@@ -19,7 +19,7 @@ const RENDERER_MAP: Record<string, (f: FieldConfig, value: string) => string> = 
   boolean: renderCheckbox,
   select: renderSelect,
   date: renderDateInput,
-  media: renderTextInput,
+  media: renderMediaUpload,
   relation: renderRelation,
   group: renderGroup,
   email: renderEmailInput,
@@ -93,6 +93,14 @@ function renderGroup (f: FieldConfig, _value: string): string {
     ? f.fields.map(child => renderFieldInput(child, '')).join('\n')
     : ''
   return `<fieldset><legend>${escapeHtml(f.label ?? f.name)}</legend>${inner}</fieldset>`
+}
+
+function renderMediaUpload (f: FieldConfig, value: string): string {
+  const req = f.required ? ' required' : ''
+  const preview = value
+    ? `<div class="media-preview"><span>${escapeHtml(value)}</span></div>`
+    : '<div class="media-preview"></div>'
+  return `<label class="form-field"><span>${escapeHtml(f.label ?? f.name)}</span><div class="media-upload" data-upload-endpoint="/media/upload" data-field="${escapeHtml(f.name)}"><input type="hidden" name="${escapeHtml(f.name)}" value="${escapeHtml(value)}"><input type="file" class="form-input" accept="image/*,video/*,audio/*,application/pdf"${req}>${preview}</div></label>`
 }
 
 function renderEmailInput (f: FieldConfig, value: string): string {
