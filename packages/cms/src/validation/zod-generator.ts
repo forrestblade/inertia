@@ -38,7 +38,10 @@ function buildNumberSchema (field: FieldConfig): ZodTypeAny {
 }
 
 function buildBooleanSchema (_field: FieldConfig): ZodTypeAny {
-  return z.boolean()
+  return z.preprocess(
+    (val) => val === 'true' ? true : val === 'false' ? false : val,
+    z.boolean()
+  )
 }
 
 function buildSelectSchema (field: FieldConfig): ZodTypeAny {
