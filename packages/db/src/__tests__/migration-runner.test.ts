@@ -189,3 +189,32 @@ describe('runMigrations edge cases', () => {
     expect(result._unsafeUnwrap()).toBe(0)
   })
 })
+
+describe('runMigrations advisory lock', () => {
+  it('acquires and releases advisory lock around migration execution', async () => {
+    const calls: string[] = []
+    const unsafe = (query: string): Promise<ReadonlyArray<Record<string, number>>> => {
+      calls.push(query)
+      return Promise.resolve([])
+    }
+    const sql = Object.assign(
+      (): Promise<ReadonlyArray<Record<string, number>>> => Promise.resolve([]),
+      {
+        unsafe,
+        begin: async (fn: (tx: { unsafe: typeof unsafe }) => Promise<void>): Promise<void> => {
+          await fn({ unsafe })
+        }
+      }
+    ) as unknown as import('../connection.js').DbPool['sql']
+    const pool = { sql }
+
+    await runMigrations(pool, [
+      { version: 1, name: 'init', sql: 'CREATE TABLE test (id INT);' }
+    ])
+
+    const lockCall = calls.find((c) => c.includes('pg_advisory_lock'))
+    const unlockCall = calls.find((c) => c.includes('pg_advisory_unlock'))
+    expect(lockCall).toBeDefined()
+    expect(unlockCall).toBeDefined()
+  })
+})
