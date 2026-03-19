@@ -251,6 +251,33 @@ export function initRouter (
   const abortableFetch = createAbortableFetch(fetchFn)
   const scrollRestore = initScrollRestore()
 
+  // Click debouncing + loading state
+  let activeNavigationUrl: string | null = null
+  let activeAnchor: HTMLAnchorElement | null = null
+  let loadingTimeoutId: ReturnType<typeof setTimeout> | null = null
+
+  function setLoadingState (anchor: HTMLAnchorElement, url: string): void {
+    clearLoadingState()
+    activeNavigationUrl = url
+    activeAnchor = anchor
+    anchor.setAttribute('aria-busy', 'true')
+    anchor.setAttribute('data-val-loading', '')
+    loadingTimeoutId = setTimeout(clearLoadingState, resolved.navigationTimeoutMs)
+  }
+
+  function clearLoadingState (): void {
+    if (activeAnchor !== null) {
+      activeAnchor.removeAttribute('aria-busy')
+      activeAnchor.removeAttribute('data-val-loading')
+    }
+    activeAnchor = null
+    activeNavigationUrl = null
+    if (loadingTimeoutId !== null) {
+      clearTimeout(loadingTimeoutId)
+      loadingTimeoutId = null
+    }
+  }
+
   // Seed version from DOM if available
   const versionAttr = document.documentElement.getAttribute('data-valence-version')
   if (versionAttr !== null) {
@@ -270,7 +297,6 @@ export function initRouter (
 
     scrollRestore.saveCurrentPosition()
     abortableFetch.abort()
-
     return performNavigation(url, resolved, abortableFetch.fetch, fetchFn, prefetchHandle, pageCacheHandle)
       .map((navResult) => {
         const durationMs = Math.round(performance.now() - startTime)
@@ -301,7 +327,12 @@ export function initRouter (
           bubbles: true,
           detail: perfDetail
         }))
+        clearLoadingState()
         return undefined
+      })
+      .mapErr((error) => {
+        clearLoadingState()
+        return error
       })
   }
 
@@ -351,6 +382,11 @@ export function initRouter (
     // /about#contact and /about resolve to the same server resource
     const url = anchor.pathname + anchor.search
     const hash = anchor.hash || undefined
+
+    // Ignore duplicate click on same URL while navigation is in-flight
+    if (activeNavigationUrl === url) return
+
+    setLoadingState(anchor, url)
     navigate(url, hash)
   }
 
@@ -364,6 +400,7 @@ export function initRouter (
       prefetchHandle.destroy()
       abortableFetch.abort()
       scrollRestore.destroy()
+      clearLoadingState()
       pageCacheHandle.invalidateAll()
     },
     navigate,
