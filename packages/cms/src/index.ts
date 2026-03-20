@@ -63,7 +63,8 @@ export {
   getColumnConstraints,
   generateCreateTable,
   generateCreateTableSql,
-  generateAlterTableSql
+  generateAlterTableSql,
+  safeQuery
 } from './db/index.js'
 
 export type {
