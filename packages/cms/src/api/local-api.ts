@@ -1,7 +1,6 @@
 import { ResultAsync, errAsync } from 'neverthrow'
 import type { DbPool } from '@valencets/db'
-import type { CollectionRegistry } from '../schema/registry.js'
-import type { GlobalRegistry } from '../schema/registry.js'
+import type { CollectionRegistry, GlobalRegistry } from '../schema/registry.js'
 import type { CmsError } from '../schema/types.js'
 import type { DocumentRow, DocumentData } from '../db/query-builder.js'
 import type { PaginatedResult, SqlValue } from '../db/query-types.js'
