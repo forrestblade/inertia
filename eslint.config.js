@@ -3,7 +3,7 @@ import neostandard, { plugins } from 'neostandard'
 const tsPlugin = plugins['typescript-eslint'].plugin
 
 export default [
-  { ignores: ['**/dist/', '**/public/js/'] },
+  { ignores: ['**/dist/', '**/public/js/', '**/storybook-static/'] },
   ...neostandard({ ts: true }),
   {
     plugins: { '@typescript-eslint': tsPlugin },
@@ -44,6 +44,8 @@ export default [
       '**/vite.config.ts',
       '**/playwright.config.ts',
       'stryker.config.mjs',
+      '**/*.stories.ts',
+      '**/.storybook/**',
       'vitest.workspace.ts',
       'eslint.config.js',
       'lint-staged.config.js'

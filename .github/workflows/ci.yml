@@ -420,6 +420,24 @@ jobs:
           path: k6-summary.json
           retention-days: 30
 
+
+  storybook:
+    needs: [unit]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: Build Storybook
+        run: cd packages/ui && pnpm storybook:build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: storybook-static
+          path: packages/ui/storybook-static/
+          retention-days: 30
   security:
     needs: [lint]
     runs-on: ubuntu-24.04

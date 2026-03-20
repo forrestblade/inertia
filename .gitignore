@@ -20,3 +20,6 @@ reports/
 
 # API Extractor temp files
 packages/*/temp/
+# Storybook build output
+packages/ui/storybook-static/
+.storybook-tmp/
