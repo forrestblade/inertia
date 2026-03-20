@@ -15,6 +15,7 @@ import { generateConfigTemplate, generateSecret } from './config-template.js'
 import { landingPage } from './landing-page.js'
 import { loadEnvConfig, loadUserConfig } from './config-loader.js'
 import type { RouteHandler } from './define-config.js'
+import { resolveCustomRoute } from './route-matcher.js'
 import { resolveStaticPath, resolveMimeType, sendHtml, serveStaticFile } from '@valencets/core/server'
 import { resolvePageRoute } from './page-router.js'
 import { regenerateFromConfig } from './codegen/regenerate.js'
@@ -587,6 +588,13 @@ async function runDev (): Promise<void> {
         res.end(JSON.stringify(currentLearnProgress))
         return
       }
+    }
+
+    // Try custom registered routes (from onServer registerRoute calls)
+    const customMatch = resolveCustomRoute(customRoutes, method, url.pathname)
+    if (customMatch) {
+      await customMatch.handler(req, res, customMatch.params)
+      return
     }
 
     // Try admin routes first
