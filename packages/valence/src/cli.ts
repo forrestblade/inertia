@@ -739,11 +739,27 @@ export async function runStart (): Promise<void> {
     process.exit(1)
   }
 
-  const port = Number(process.env.PORT ?? 3000)
+  const rawPort = process.env.PORT ?? '3000'
+  const port = Number(rawPort)
+  if (!Number.isFinite(port) || port < 1 || port > 65535) {
+    console.error(`  Error: invalid PORT "${rawPort}". Must be a number between 1 and 65535.`)
+    process.exit(1)
+  }
+
+  const cmsSecret = process.env.CMS_SECRET
+  if (!cmsSecret) {
+    console.error('  Error: CMS_SECRET must be set in .env for production.')
+    process.exit(1)
+  }
+
   const projectDir = process.cwd()
 
   log('Running migrations...')
-  await runMigrationsForProject(projectDir, config)
+  const migrated = await runMigrationsForProject(projectDir, config)
+  if (!migrated) {
+    console.error('  Error: migrations failed. Fix your database before starting.')
+    process.exit(1)
+  }
 
   log('Loading config...')
   const loadedConfig = await loadUserConfig()
@@ -760,7 +776,7 @@ export async function runStart (): Promise<void> {
 
   const cmsResult = buildCms({
     db: pool,
-    secret: process.env.CMS_SECRET ?? 'dev-secret',
+    secret: cmsSecret,
     uploadDir: join(projectDir, 'uploads'),
     collections: userConfig,
     telemetryPool: telemetryEnabled ? pool : undefined,
@@ -870,12 +886,16 @@ export async function runStart (): Promise<void> {
 `)
   })
 
-  process.on('SIGINT', async () => {
+  const shutdown = async () => {
     log('Shutting down...')
-    server.close()
-    await closePool(pool)
-    process.exit(0)
-  })
+    server.close(async () => {
+      await closePool(pool)
+      process.exit(0)
+    })
+  }
+
+  process.on('SIGINT', shutdown)
+  process.on('SIGTERM', shutdown)
 }
 
 // -- migrate --
