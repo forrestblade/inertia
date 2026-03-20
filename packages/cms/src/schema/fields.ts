@@ -17,7 +17,10 @@ import type {
   JsonFieldConfig,
   ColorFieldConfig,
   MultiselectFieldConfig,
-  ArrayFieldConfig
+  ArrayFieldConfig,
+  TabsFieldConfig,
+  RowFieldConfig,
+  CollapsibleFieldConfig
 } from './field-types.js'
 
 export const field = {
@@ -95,5 +98,17 @@ export const field = {
 
   blocks (opts: Omit<BlocksFieldConfig, 'type'>): BlocksFieldConfig {
     return { type: 'blocks', ...opts }
+  },
+
+  tabs (opts: Omit<TabsFieldConfig, 'type'>): TabsFieldConfig {
+    return { type: 'tabs', ...opts }
+  },
+
+  row (opts: Omit<RowFieldConfig, 'type'>): RowFieldConfig {
+    return { type: 'row', ...opts }
+  },
+
+  collapsible (opts: Omit<CollapsibleFieldConfig, 'type'>): CollapsibleFieldConfig {
+    return { type: 'collapsible', ...opts }
   }
 }

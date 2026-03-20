@@ -25,8 +25,14 @@ export type {
   MultiselectFieldConfig,
   ArrayFieldConfig,
   BlockDefinition,
-  BlocksFieldConfig
+  BlocksFieldConfig,
+  TabDefinition,
+  TabsFieldConfig,
+  RowFieldConfig,
+  CollapsibleFieldConfig
 } from './field-types.js'
+
+export { flattenFields, isLayoutField } from './field-utils.js'
 
 export { field } from './fields.js'
 
