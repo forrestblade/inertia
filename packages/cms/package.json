@@ -33,15 +33,17 @@
     "@lexical/utils": "^0.41.0",
     "@valencets/core": "workspace:*",
     "@valencets/db": "workspace:*",
+    "@valencets/telemetry": "workspace:*",
     "@valencets/ui": "workspace:*",
     "argon2": "^0.44.0",
     "lexical": "^0.41.0",
     "neverthrow": "^8.2.0",
-    "zod": "^4.3.6",
-    "@valencets/telemetry": "workspace:*"
+    "sharp": "^0.34.5",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/node": "^25.4.0",
+    "@types/sharp": "^0.32.0",
     "esbuild": "^0.27.4",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
