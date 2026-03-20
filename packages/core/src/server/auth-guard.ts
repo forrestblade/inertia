@@ -1,6 +1,7 @@
 import type { IncomingMessage } from 'node:http'
 import type { Middleware } from './middleware-types.js'
-import { sendJson } from './http-helpers.js'
+import { sendJson, isFragmentRequest } from './http-helpers.js'
+import { safeRedirect } from './safe-redirect.js'
 
 export interface AuthUser {
   readonly id: string
@@ -35,6 +36,26 @@ export function createAuthGuard (options: AuthGuardOptions): Middleware {
     const result = await options.validate(req)
 
     if (!result.authenticated) {
+      if (options.redirectTo !== undefined) {
+        const returnTo = safeRedirect(ctx.url.pathname)
+        const location = `${options.redirectTo}?returnTo=${returnTo}`
+
+        if (isFragmentRequest(req)) {
+          const body = JSON.stringify({ error: 'Unauthorized' })
+          res.writeHead(401, {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Content-Length': Buffer.byteLength(body),
+            'X-Valence-Redirect': location
+          })
+          res.end(body)
+          return
+        }
+
+        res.writeHead(302, { Location: location })
+        res.end()
+        return
+      }
+
       sendJson(res, { error: 'Unauthorized' }, 401)
       return
     }
