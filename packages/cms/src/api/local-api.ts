@@ -6,7 +6,7 @@ import type { CmsError } from '../schema/types.js'
 import type { DocumentRow, DocumentData } from '../db/query-builder.js'
 import type { PaginatedResult } from '../db/query-types.js'
 import { createQueryBuilder } from '../db/query-builder.js'
-import { CmsErrorCode } from '../schema/types.js'
+import { CmsErrorCode, StatusCode } from '../schema/types.js'
 import { isValidIdentifier } from '../db/sql-sanitize.js'
 import { safeQuery } from '../db/safe-query.js'
 
@@ -121,9 +121,9 @@ export function createLocalApi (
       const isVersioned = col.value.versions?.drafts === true
 
       const data = isVersioned && args.draft
-        ? { ...args.data, _status: 'draft' as const }
+        ? { ...args.data, _status: StatusCode.DRAFT }
         : isVersioned
-          ? { ...args.data, _status: 'published' as const }
+          ? { ...args.data, _status: StatusCode.PUBLISHED }
           : args.data
 
       return qb.query(args.collection).insert(data)
@@ -136,9 +136,9 @@ export function createLocalApi (
 
       let data = args.data
       if (isVersioned && args.publish) {
-        data = { ...data, _status: 'published' as const }
+        data = { ...data, _status: StatusCode.PUBLISHED }
       } else if (isVersioned && args.draft) {
-        data = { ...data, _status: 'draft' as const }
+        data = { ...data, _status: StatusCode.DRAFT }
       }
 
       return qb.query(args.collection)
@@ -198,7 +198,7 @@ export function createLocalApi (
       return qb.query(args.collection)
         .where('id', args.id)
         .includeDrafts()
-        .update({ _status: 'draft' as const })
+        .update({ _status: StatusCode.DRAFT })
     }
   }
 }
