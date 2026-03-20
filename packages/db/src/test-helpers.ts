@@ -7,7 +7,7 @@ export function makeMockPool (rows: ReadonlyArray<MockRow> = []): DbPool {
   const unsafe = (): Promise<ReadonlyArray<MockRow>> => Promise.resolve(rows)
   const sql = Object.assign(
     (): Promise<ReadonlyArray<MockRow>> => Promise.resolve(rows),
-    { unsafe, begin: (): Promise<void> => Promise.resolve() }
+    { unsafe, begin: (): Promise<void> => Promise.resolve(), array: (v: readonly string[]) => v }
   ) as unknown as DbPool['sql']
   return { sql }
 }
