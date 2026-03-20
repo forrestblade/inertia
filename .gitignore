@@ -17,3 +17,7 @@ tests/e2e/.auth/
 coverage/
 .stryker-tmp/
 reports/
+
+# Storybook build output
+packages/ui/storybook-static/
+.storybook-tmp/
