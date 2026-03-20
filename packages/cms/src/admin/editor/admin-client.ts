@@ -1,44 +1,16 @@
 import { initBlocksFields } from './blocks-client.js'
-import { initAllEditors } from './lexical-entry.js'
-import { initBulkActions } from './bulk-client.js'
-import { initLivePreview } from './preview-client.js'
-import { initAutosave } from './autosave-client.js'
 
-// Script is defer'd so DOM is ready — no need for DOMContentLoaded
-initAllEditors()
+// Lazy-load Lexical only when richtext editors exist on the page
+async function loadAndInitEditors (): Promise<void> {
+  const { initAllEditors } = await import('./lexical-entry.js')
+  initAllEditors()
+}
+
+// Script is type="module" so DOM is ready — no need for DOMContentLoaded
+if (document.querySelector('.richtext-editor')) {
+  loadAndInitEditors()
+}
 initBlocksFields()
-initBulkActions()
-initLivePreview()
-
-// Wire up autosave for versioned collections
-const autosaveIndicator = document.querySelector<HTMLElement>('.autosave-indicator')
-const adminForm = document.querySelector<HTMLFormElement>('.admin-form')
-if (autosaveIndicator && adminForm) {
-  initAutosave(adminForm, autosaveIndicator)
-}
-
-// Wire up delete dialog triggers
-const trigger = document.querySelector<HTMLElement>('.delete-trigger')
-const dialog = document.getElementById('delete-dialog') as HTMLElement & { show?: () => void; close?: () => void } | null
-const cancel = document.getElementById('delete-cancel')
-const confirmBtn = document.getElementById('delete-confirm')
-const form = document.getElementById('delete-form') as HTMLFormElement | null
-
-if (trigger && dialog) {
-  trigger.addEventListener('click', () => {
-    if (typeof dialog.show === 'function') dialog.show()
-  })
-}
-if (cancel && dialog) {
-  cancel.addEventListener('click', () => {
-    if (typeof dialog.close === 'function') dialog.close()
-  })
-}
-if (confirmBtn && form) {
-  confirmBtn.addEventListener('click', () => {
-    form.submit()
-  })
-}
 
 // Wire up conditional field partial re-render (htmx-compatible data attributes)
 const conditionalForm = document.querySelector<HTMLFormElement>('form[hx-post][hx-trigger][hx-target]')
@@ -59,7 +31,13 @@ if (conditionalForm) {
         body: params.toString()
       }).then((res) => {
         if (res.ok && target) {
-          return res.text().then((html) => { target.innerHTML = html; initAllEditors() })
+          return res.text().then((html) => {
+            target.innerHTML = html
+            if (target.querySelector('.richtext-editor')) {
+              return loadAndInitEditors()
+            }
+            return Promise.resolve()
+          })
         }
         return Promise.resolve()
       }).catch(() => { /* ignore fetch errors */ })
@@ -93,9 +71,14 @@ for (const wrap of mediaUploads) {
         hiddenInput.value = value
         if (preview) {
           if (file.type.startsWith('image/')) {
-            preview.innerHTML = `<img src="/media/${value}" alt="">`
+            const img = document.createElement('img')
+            img.src = `/media/${encodeURIComponent(value)}`
+            img.alt = ''
+            preview.replaceChildren(img)
           } else {
-            preview.innerHTML = `<span>${file.name}</span>`
+            const span = document.createElement('span')
+            span.textContent = file.name
+            preview.replaceChildren(span)
           }
         }
       })

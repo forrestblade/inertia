@@ -232,11 +232,10 @@ function renderBulkActionBar (): string {
   const options = Object.entries(BulkActionOptions).map(([value, label]) =>
     `<option value="${value}">${label}</option>`
   ).join('')
-  return `<div class="bulk-action-bar" style="display:none">
-  <span class="bulk-count">0 selected</span>
+  return `<val-bulk-bar checkbox-selector=".bulk-row-check">
   <select name="action" class="form-select">${options}</select>
   <button type="submit" class="btn btn-primary">Apply</button>
-</div>`
+</val-bulk-bar>`
 }
 
 function renderBulkForm (args: ListViewArgs, tableHtml: string): string {

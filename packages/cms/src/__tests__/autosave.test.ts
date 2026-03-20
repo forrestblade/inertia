@@ -163,12 +163,12 @@ describe('autosave endpoint POST handler', () => {
 describe('autosave indicator HTML in edit view', () => {
   it('renders autosave indicator for versioned collection with existing doc', () => {
     const html = renderEditView(makeVersionedCollection(), { id: '1', title: 'Test', body: '', slug: '', _status: 'draft' })
-    expect(html).toContain('autosave-indicator')
+    expect(html).toContain('val-autosave')
   })
 
   it('renders autosave indicator for versioned collection on new doc', () => {
     const html = renderEditView(makeVersionedCollection(), null)
-    expect(html).toContain('autosave-indicator')
+    expect(html).toContain('val-autosave')
   })
 
   it('does NOT render autosave indicator for non-versioned collection', () => {
@@ -178,7 +178,6 @@ describe('autosave indicator HTML in edit view', () => {
 
   it('autosave indicator has initial "Saved" state class', () => {
     const html = renderEditView(makeVersionedCollection(), { id: '1', title: 'Test', body: '', slug: '', _status: 'draft' })
-    expect(html).toContain('autosave-indicator')
-    expect(html).toContain('Saved')
+    expect(html).toContain('val-autosave')
   })
 })

@@ -11,5 +11,9 @@ export function stripTrailingSlash (url: string): string | null {
   if (pathname === '/' || !pathname.endsWith('/')) return null
 
   const cleaned = pathname.slice(0, -1)
+
+  // Prevent open redirect via protocol-relative URLs (e.g. //evil.com/)
+  if (cleaned.startsWith('//')) return null
+
   return cleaned + qs
 }

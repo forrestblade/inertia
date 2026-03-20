@@ -14,8 +14,9 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc && esbuild src/admin/editor/admin-client.ts --bundle --format=iife --outfile=dist/admin-client.js --minify",
-    "test": "vitest run"
+    "build": "tsc && rm -f dist/admin-client.js && esbuild src/admin/editor/admin-client.ts --bundle --format=esm --splitting --outdir=dist/client --minify --conditions=production",
+    "test": "vitest run",
+    "build:dev": "tsc && esbuild src/admin/editor/admin-client.ts --bundle --format=esm --splitting --outdir=dist/client"
   },
   "license": "MIT",
   "repository": {

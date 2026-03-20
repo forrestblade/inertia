@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { ResultAsync, fromThrowable } from 'neverthrow'
+import { ResultAsync, fromThrowable, ok } from 'neverthrow'
+import type { Result } from 'neverthrow'
 
 import type { CmsError } from '../schema/types.js'
 import type { DbPool } from '@valencets/db'
@@ -31,6 +32,7 @@ import { readStringBody } from '../api/read-body.js'
 import { generateConditionalSchema, generateConditionalPartialSchema } from '../validation/zod-generator.js'
 import { setFlashCookie, readFlash, clearFlashCookie } from './flash.js'
 import { readFileSync } from 'node:fs'
+import { basename, resolve } from 'node:path'
 import { generateNonce, setSecurityHeaders, CSP_NONCE_PLACEHOLDER } from '@valencets/core/server'
 import { fileURLToPath } from 'node:url'
 
@@ -179,26 +181,31 @@ export function createAdminRoutes (
     return context
   }
 
-  const safeReadAdminClient = fromThrowable(
-    () => {
-      const distDir = fileURLToPath(new URL('..', import.meta.url))
-      const jsPath = `${distDir}/admin-client.js`
-      return readFileSync(jsPath, 'utf-8')
-    },
-    () => null
-  )
+  const clientDistDir = resolve(fileURLToPath(new URL('..', import.meta.url)), 'client')
 
-  routes.set('/admin/_assets/admin-client.js', {
-    GET: (_req, res) => {
-      const result = safeReadAdminClient()
+  const safeReadAdminAsset = (filename: string): Result<string | null, null> => {
+    const safe = basename(filename)
+    if (!safe.endsWith('.js')) return ok(null)
+    return fromThrowable(
+      () => readFileSync(resolve(clientDistDir, safe), 'utf-8'),
+      () => null
+    )()
+  }
+
+  // Assets are served publicly — the admin JS must load before auth is checked
+  routes.set('/admin/_assets/:file', {
+    GET: (_req, res, ctx) => {
+      const file = ctx.file ?? ''
+      const result = safeReadAdminAsset(file)
       if (result.isErr() || result.value === null) {
         res.writeHead(404)
         res.end('Not found')
         return Promise.resolve()
       }
       const js = result.value
+      const isHashed = /-.{8}\.js$/.test(file)
       res.setHeader('Content-Type', 'application/javascript; charset=utf-8')
-      res.setHeader('Cache-Control', 'public, max-age=3600')
+      res.setHeader('Cache-Control', isHashed ? 'public, max-age=31536000, immutable' : 'public, no-cache')
       res.setHeader('Content-Length', Buffer.byteLength(js))
       res.writeHead(200)
       res.end(js)
