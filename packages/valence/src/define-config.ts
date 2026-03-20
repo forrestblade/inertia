@@ -8,6 +8,46 @@ import { validateCollections } from './validate-collections.js'
 
 export type RouteHandler = (req: IncomingMessage, res: ServerResponse, params: Record<string, string>) => void | Promise<void>
 
+// Loader context passed to route loader functions on GET requests
+export interface LoaderContext {
+  readonly params: Record<string, string>
+  readonly query: URLSearchParams
+  readonly req: IncomingMessage
+  readonly pool: DbPool
+  readonly cms: CmsInstance
+}
+
+// Result returned by a loader function
+export interface LoaderResult {
+  readonly data?: Record<string, JsonValue> | undefined
+  readonly status?: number | undefined
+  readonly redirect?: string | undefined
+  readonly headers?: Record<string, string> | undefined
+}
+
+// Action context passed to route action functions on POST/PUT/DELETE requests
+export interface ActionContext {
+  readonly params: Record<string, string>
+  readonly body: URLSearchParams
+  readonly req: IncomingMessage
+  readonly pool: DbPool
+  readonly cms: CmsInstance
+}
+
+// Result returned by an action function
+export interface ActionResult {
+  readonly data?: Record<string, JsonValue> | undefined
+  readonly errors?: Record<string, string[]> | undefined
+  readonly redirect?: string | undefined
+  readonly status?: number | undefined
+}
+
+// JSON-serializable value types for loader/action data
+export type JsonPrimitive = string | number | boolean | null
+export type JsonArray = ReadonlyArray<JsonValue>
+export type JsonObject = { readonly [key: string]: JsonValue }
+export type JsonValue = JsonPrimitive | JsonArray | JsonObject
+
 export interface RouteConfig {
   readonly path: string
   readonly method?: string | undefined
@@ -16,6 +56,8 @@ export interface RouteConfig {
   readonly type?: 'list' | 'detail' | undefined
   readonly outlet?: string | undefined
   readonly layout?: string | undefined
+  readonly loader?: ((ctx: LoaderContext) => Promise<LoaderResult>) | undefined
+  readonly action?: ((ctx: ActionContext) => Promise<ActionResult>) | undefined
 }
 
 // Passed to onServer so consumers can attach WebSocket upgrade handlers,
