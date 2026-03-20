@@ -51,6 +51,7 @@ export interface TestAppConfig {
   readonly collections: readonly CollectionConfig[]
   readonly secret?: string | undefined
   readonly uploadDir?: string | undefined
+  readonly requireAuth?: boolean | undefined
 }
 
 export function createTestApp (config: TestAppConfig): TestApp {
@@ -58,7 +59,8 @@ export function createTestApp (config: TestAppConfig): TestApp {
     db: config.pool,
     secret: config.secret ?? 'test-secret',
     collections: config.collections,
-    uploadDir: config.uploadDir
+    uploadDir: config.uploadDir,
+    requireAuth: config.requireAuth
   })
 
   if (cmsResult.isErr()) {
