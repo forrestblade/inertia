@@ -93,7 +93,12 @@ const FIELD_GRAPHQL_TYPE_MAP = {
   json: (): GraphQLOutputType => GraphQLString,
   color: (): GraphQLOutputType => GraphQLString,
   array: buildArrayType as FieldTypeBuilder<FieldConfig>,
-  blocks: buildBlocksType as FieldTypeBuilder<FieldConfig>
+  blocks: buildBlocksType as FieldTypeBuilder<FieldConfig>,
+  // Layout fields are visual containers — flattenFields() removes them before
+  // type resolution. These entries are safety fallbacks to satisfy the type map.
+  tabs: (): GraphQLOutputType => GraphQLString,
+  row: (): GraphQLOutputType => GraphQLString,
+  collapsible: (): GraphQLOutputType => GraphQLString
 } as const
 
 export function fieldToGraphQLType (field: FieldConfig): GraphQLOutputType {

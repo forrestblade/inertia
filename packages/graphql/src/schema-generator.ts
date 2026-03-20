@@ -30,6 +30,7 @@ import type {
   BlocksFieldConfig,
   LocalApi
 } from '@valencets/cms'
+import { flattenFields } from '@valencets/cms'
 import { buildCollectionResolvers } from './resolver-builder.js'
 
 export function singularize (slug: string): string {
@@ -146,7 +147,13 @@ const OUTPUT_TYPE_MAP: { [K in FieldConfig['type']]: OutputTypeResolver } = {
       )
     })
     return new GraphQLList(blockType)
-  }
+  },
+  // Layout fields are visual containers flattened before iteration.
+  // These entries are safety fallbacks — flattenFields() ensures they are
+  // never reached in practice.
+  tabs: () => GraphQLString,
+  row: () => GraphQLString,
+  collapsible: () => GraphQLString
 }
 
 function resolveOutputType (field: FieldConfig, registry: TypeRegistry): GraphQLOutputType {
@@ -209,7 +216,7 @@ function buildObjectFields (
     id: { type: GraphQLString }
   }
 
-  for (const field of config.fields) {
+  for (const field of flattenFields(config.fields)) {
     if (field.type === 'relation') {
       const relationField = field as RelationFieldConfig
       const related = typeMap.get(relationField.relationTo)
@@ -246,7 +253,7 @@ function buildCollectionTypes (
 
     const inputType = new GraphQLInputObjectType({
       name: `${typeName}Input`,
-      fields: () => buildInputFields(config.fields, registry)
+      fields: () => buildInputFields(flattenFields(config.fields), registry)
     })
 
     typeMap.set(config.slug, { objectType, inputType, config })
