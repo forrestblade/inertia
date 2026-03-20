@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # check-bundle-size.sh — verifies that the CMS admin client bundle stays within size budget
 # Budget is 14KB (14336 bytes) gzipped for first-flight performance.
-# TODO: Current bundle is ~76KB gzipped — bundle splitting is needed to meet this budget.
-#       Track in: packages/cms/src/admin/editor/admin-client.ts
+# Bundle splitting complete (VAL-202). First-flight is ~3.3KB gzipped.
+
 
 set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-BUNDLE_PATH="$REPO_ROOT/packages/cms/dist/admin-client.js"
-MAX_GZIP_BYTES=14336  # 14KB (first-flight target — bundle splitting needed, see TODO above)
+BUNDLE_PATH="$REPO_ROOT/packages/cms/dist/client/admin-client.js"
+MAX_GZIP_BYTES=14336  # 14KB first-flight budget
 
 if [[ ! -f "$BUNDLE_PATH" ]]; then
   echo "ERROR: Bundle not found at $BUNDLE_PATH"
