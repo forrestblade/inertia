@@ -11,16 +11,12 @@ on:
     branches: [master, development]
   workflow_dispatch:
   schedule:
-    # Weekly full suite — every Monday at 03:00 UTC
     - cron: '0 3 * * 1'
+    - cron: '0 2 * * 0'
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
-# ─── Phase 1: Quality gate (parallel) ────────────────────────────────────────
-    # Weekly flaky detection: every Sunday at 02:00 UTC
-    - cron: '0 2 * * 0'
 
 jobs:
   lint:
@@ -49,8 +45,6 @@ jobs:
       - uses: ./.github/actions/setup-project
       - run: pnpm audit --audit-level=high
 
-# ─── Phase 2: Build artifact ──────────────────────────────────────────────────
-
   build:
     name: Build
     needs: [lint, typecheck]
@@ -58,18 +52,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-project
-      - name: Build all packages
-        run: pnpm build
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+      - run: pnpm build
+      - uses: actions/upload-artifact@v4
         with:
           name: build-dist
-          path: |
-            packages/*/dist/
-            packages/*/admin-client.js
+          path: packages/*/dist/
           retention-days: 1
-
-# ─── Phase 3: Fan-out test suite ─────────────────────────────────────────────
 
   unit:
     name: Unit (${{ matrix.shard }})
@@ -82,35 +70,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-project
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: build-dist
-      - name: Run unit tests (shard ${{ matrix.shard }})
-        run: pnpm test:ci --shard=${{ matrix.shard }}
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: pnpm }
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      # Run unit tests excluding quarantined flaky tests
-      - name: Run unit tests (excluding quarantined)
-        run: pnpm test:ci
+      - run: pnpm test:ci --shard=${{ matrix.shard }}
 
-  # Separate job: run quarantined tests in isolation, failures allowed
   quarantine:
+    name: Quarantine
     needs: [unit]
     runs-on: ubuntu-24.04
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: pnpm }
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - name: Run quarantined flaky tests
-        run: pnpm test:quarantine
+      - uses: ./.github/actions/setup-project
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-dist
+      - run: pnpm test:quarantine
         continue-on-error: true
       - uses: actions/upload-artifact@v4
         if: always()
@@ -137,12 +113,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-project
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: build-dist
-      - name: Run integration tests
-        run: npx vitest run tests/integration/
+      - run: npx vitest run tests/integration/
         env:
           PGHOST: localhost
           PGPORT: 5432
@@ -173,28 +147,21 @@ jobs:
         with:
           install-playwright: 'true'
           playwright-browser: chromium
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: build-dist
-      - name: Run E2E tests (shard ${{ matrix.shard }}/2)
-        run: pnpm test:e2e --shard=${{ matrix.shard }}/2
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ hashFiles('pnpm-lock.yaml') }}
-      - run: pnpm test:e2e --ignore=tests/e2e/visual/
+      - run: pnpm test:e2e --shard=${{ matrix.shard }}/2
         env:
           PGHOST: localhost
           PGPORT: 5432
           PGUSER: postgres
-      - name: Upload blob report
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: blob-report-${{ matrix.shard }}
           path: blob-report/
           retention-days: 1
-      - name: Upload traces on failure
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: playwright-traces-shard-${{ matrix.shard }}
@@ -209,16 +176,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-project
-      - name: Download blob reports
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           pattern: blob-report-*
           merge-multiple: true
           path: blob-reports/
-      - name: Merge Playwright reports
-        run: npx playwright merge-reports --reporter html blob-reports/
-      - name: Upload merged HTML report
-        uses: actions/upload-artifact@v4
+      - run: npx playwright merge-reports --reporter html blob-reports/
+      - uses: actions/upload-artifact@v4
         with:
           name: playwright-report
           path: playwright-report/
@@ -227,237 +191,41 @@ jobs:
   contracts:
     name: Contract Tests
     needs: [build]
-
-  visual:
-    needs: [unit]
-    runs-on: ubuntu-24.04
-    continue-on-error: true
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_HOST_AUTH_METHOD: trust
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: pnpm }
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ hashFiles('pnpm-lock.yaml') }}
-      - name: Run visual regression tests
-        run: pnpm test:visual
-        env:
-          PGHOST: localhost
-          PGPORT: 5432
-          PGUSER: postgres
-      - uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: visual-diff-report
-          path: |
-            playwright-report/
-            tests/e2e/__snapshots__/
-          retention-days: 7
-
-  lighthouse:
-  api-review:
-    needs: [typecheck]
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: pnpm }
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - name: Check API surface
-        run: pnpm api:check
-      - name: Fail with guidance on API surface change
-        if: failure()
-        run: |
-          echo "API surface changed -- review the diff and run \`pnpm api:update\` to accept"
-          exit 1
-
-  coverage:
-    needs: [unit]
-    runs-on: ubuntu-24.04
-    continue-on-error: true
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_HOST_AUTH_METHOD: trust
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: pnpm }
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - name: Start test server
-        run: node tests/e2e/server-start.mjs &
-        env:
-          PGHOST: localhost
-          PGPORT: 5432
-          PGUSER: postgres
-          LHCI_PORT: '3111'
-      - name: Wait for server
-        run: npx wait-on http://localhost:3111/admin/login --timeout 30000
-      - name: Run Lighthouse CI
-        uses: treosh/lighthouse-ci-action@v12
-        with:
-          configPath: './lighthouserc.js'
-          budgetPath: './budget.json'
-          uploadArtifacts: true
-          temporaryPublicStorage: true
-        env:
-          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: lighthouse-report
-          path: .lighthouseci/
-          retention-days: 30
-
-  coverage:
-    needs: [unit]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-project
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: build-dist
-      - name: Run contract tests
-        run: npx vitest run tests/contracts/
+      - run: npx vitest run tests/contracts/
 
   coverage:
     name: Coverage (80% gate)
     needs: [build]
-  perf:
-    needs: [unit]
-    runs-on: ubuntu-24.04
-    continue-on-error: true
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_HOST_AUTH_METHOD: trust
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: pnpm }
-      - uses: grafana/setup-k6-action@v1
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - name: Start perf test server
-        run: node tests/perf/server.mjs &
-        env:
-          PGHOST: localhost
-          PGPORT: 5432
-          PGUSER: postgres
-          PORT: 3000
-      - name: Wait for server to be ready
-        run: |
-          for i in $(seq 1 20); do
-            if curl -sf http://localhost:3000/ > /dev/null 2>&1; then
-              echo "Server ready"; break
-            fi
-            echo "Waiting for server... attempt $i"
-            sleep 2
-          done
-      - name: Seed test data
-        run: k6 run --env BASE_URL=http://localhost:3000 tests/perf/seed.js
-        env:
-          SEED_COUNT: 200
-        continue-on-error: true
-      - name: Run smoke test (PR) or full load test (main)
-        run: |
-          if [ "${{ github.ref }}" = "refs/heads/master" ] || [ "${{ github.ref }}" = "refs/heads/development" ]; then
-            k6 run --env BASE_URL=http://localhost:3000 tests/perf/load.js
-          else
-            k6 run --env BASE_URL=http://localhost:3000 tests/perf/smoke.js
-          fi
-      - name: Generate k6 summary artifact
-        if: always()
-        run: |
-          if [ -f k6-summary.json ]; then
-            echo "k6 summary artifact found"
-          else
-            echo '{"note":"k6 summary not generated (no --summary-export flag used)"}' > k6-summary.json
-          fi
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: k6-summary
-          path: k6-summary.json
-          retention-days: 30
-
-
-  storybook:
-    needs: [unit]
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: pnpm }
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - name: Build Storybook
-        run: cd packages/ui && pnpm storybook:build
-      - uses: actions/upload-artifact@v4
-        with:
-          name: storybook-static
-          path: packages/ui/storybook-static/
-          retention-days: 30
-  security:
-    needs: [lint]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-project
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: build-dist
-      - name: Run coverage with threshold
-        run: cd packages/cms && npx vitest run --coverage --coverage.thresholds.statements=80
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v4
+      - run: cd packages/cms && npx vitest run --coverage --coverage.thresholds.statements=80
+      - uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: packages/cms/coverage/
           retention-days: 30
 
-# ─── Phase 4: Fan-in gate ────────────────────────────────────────────────────
+  api-review:
+    name: API Review
+    needs: [typecheck]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-project
+      - run: pnpm build
+      - run: pnpm api:check
 
   ci-gate:
     name: CI Gate
@@ -488,7 +256,153 @@ jobs:
           fi
           echo "CI gate: PASSED"
 
-# ─── Phase 5: Main-branch extras ─────────────────────────────────────────────
+  visual:
+    name: Visual Regression
+    needs: [unit]
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-project
+        with:
+          install-playwright: 'true'
+          playwright-browser: chromium
+      - run: pnpm build
+      - run: pnpm test:visual
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: visual-diff-report
+          path: |
+            playwright-report/
+            tests/e2e/__snapshots__/
+          retention-days: 7
+
+  lighthouse:
+    name: Lighthouse
+    needs: [unit]
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-project
+      - run: pnpm build
+      - name: Start test server
+        run: node tests/e2e/server-start.mjs &
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          LHCI_PORT: '3111'
+      - run: npx wait-on http://localhost:3111/admin/login --timeout 30000
+      - uses: treosh/lighthouse-ci-action@v12
+        with:
+          configPath: './lighthouserc.js'
+          budgetPath: './budget.json'
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-report
+          path: .lighthouseci/
+          retention-days: 30
+
+  perf:
+    name: Performance (k6)
+    needs: [unit]
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-project
+      - uses: grafana/setup-k6-action@v1
+      - run: pnpm build
+      - name: Start perf test server
+        run: node tests/perf/server.mjs &
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+          PORT: 3000
+      - name: Wait for server
+        run: |
+          for i in $(seq 1 20); do
+            if curl -sf http://localhost:3000/ > /dev/null 2>&1; then echo "Server ready"; break; fi
+            echo "Waiting... attempt $i"; sleep 2
+          done
+      - run: k6 run --env BASE_URL=http://localhost:3000 tests/perf/seed.js
+        env:
+          SEED_COUNT: 200
+        continue-on-error: true
+      - name: Run smoke or load test
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/master" ] || [ "${{ github.ref }}" = "refs/heads/development" ]; then
+            k6 run --env BASE_URL=http://localhost:3000 tests/perf/load.js
+          else
+            k6 run --env BASE_URL=http://localhost:3000 tests/perf/smoke.js
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: k6-summary
+          path: k6-summary.json
+          retention-days: 30
+
+  storybook:
+    name: Storybook
+    needs: [unit]
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-project
+      - run: pnpm build
+      - run: cd packages/ui && pnpm storybook:build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: storybook-static
+          path: packages/ui/storybook-static/
+          retention-days: 30
 
   e2e-full:
     name: E2E Full (${{ matrix.browser }}, ${{ matrix.shard }}/4)
@@ -517,18 +431,15 @@ jobs:
         with:
           install-playwright: 'true'
           playwright-browser: ${{ matrix.browser }}
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: build-dist
-      - name: Run E2E (${{ matrix.browser }}, shard ${{ matrix.shard }}/4)
-        run: pnpm test:e2e --shard=${{ matrix.shard }}/4
+      - run: pnpm test:e2e --shard=${{ matrix.shard }}/4
         env:
           PGHOST: localhost
           PGPORT: 5432
           PGUSER: postgres
-      - name: Upload traces on failure
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: playwright-traces-${{ matrix.browser }}-shard-${{ matrix.shard }}
@@ -545,119 +456,12 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup-project
-      - name: Restore Stryker incremental cache
-        uses: actions/cache@v4
+      - uses: actions/cache@v4
         with:
           path: .stryker-tmp/
           key: stryker-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            stryker-${{ runner.os }}-
-      - name: Run Stryker mutation tests (incremental)
-        run: pnpm test:mutate
-
-# ─── Phase 6: Publish & Release (unchanged) ──────────────────────────────────
-
-  # Weekly: detect flaky tests by running suite twice and comparing results
-  flaky-detection:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-24.04
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_HOST_AUTH_METHOD: trust
-        ports: ['5432:5432']
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: pnpm }
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm build
-      - name: Install jq
-        run: sudo apt-get install -y jq
-      - name: Run Vitest flaky detection (2 runs, compare results)
-        run: bash scripts/detect-flaky-vitest.sh --output=vitest-flaky-report.json
-        continue-on-error: true
-        env:
-          PGHOST: localhost
-          PGPORT: 5432
-          PGUSER: postgres
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ hashFiles('pnpm-lock.yaml') }}
-      - name: Run Playwright flaky detection (5x repeat-each)
-        run: npx playwright test --config=tests/e2e/flaky-detection.config.ts
-        continue-on-error: true
-        env:
-          PGHOST: localhost
-          PGPORT: 5432
-          PGUSER: postgres
-      - name: Upload flaky detection reports
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: flaky-detection-report-${{ github.run_id }}
-          path: |
-            vitest-flaky-report.json
-            flaky-detection-report.json
-            playwright-report-flaky/
-          retention-days: 90
-
-  # Weekly: check that no quarantined test has exceeded its 30-day SLA
-  flaky-deadline-check:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-      issues: write
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install jq
-        run: sudo apt-get install -y jq
-      - name: Check flaky test deadlines
-        id: deadline-check
-        run: bash scripts/check-flaky-deadlines.sh
-        continue-on-error: true
-      - name: Create GitHub issue for expired quarantined tests
-        if: steps.deadline-check.outcome == 'failure'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TODAY=$(date -u +%Y-%m-%d)
-          EXPIRED_LIST=$(jq -r \
-            '.quarantined[] | select(.deadline <= "'"$TODAY"'") | "- **\(.testName)**  \n  File: `\(.file)`  \n  Deadline: \(.deadline)  \n  Reason: \(.reason)"' \
-            flaky-tests.json)
-
-          gh issue create \
-            --title "ALERT: Quarantined flaky tests have exceeded 30-day SLA ($TODAY)" \
-            --label "flaky-test" \
-            --body "## Expired Flaky Test Quarantine
-
-          The following tests were quarantined more than 30 days ago and have exceeded their resolution SLA.
-
-          **Action required:** Each test must be either fixed or deleted within 48 hours.
-
-          ### Expired Tests
-
-          ${EXPIRED_LIST}
-
-          ### Resolution Process
-
-          1. Fix the root cause and remove the \`@flaky\` tag and \`flaky-tests.json\` entry
-          2. If the test is no longer valid, delete it entirely
-          3. If more time is needed, create a new issue and re-quarantine with a justification
-
-          See [FLAKY-TESTS.md](../blob/development/FLAKY-TESTS.md) for the full process."
+          restore-keys: stryker-${{ runner.os }}-
+      - run: pnpm test:mutate
 
   publish:
     needs: [ci-gate]
@@ -668,10 +472,7 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: pnpm, registry-url: 'https://registry.npmjs.org' }
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup-project
       - run: pnpm build
       - name: Publish packages
         run: |
@@ -701,10 +502,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: pnpm }
-      - name: Create GitHub releases for newly published packages
+      - uses: ./.github/actions/setup-project
+      - name: Create releases
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -713,44 +512,16 @@ jobs:
             NAME=$(node -p "require('./$pkg/package.json').name")
             SHORT=$(echo "$NAME" | sed 's/@valencets\///')
             TAG="${SHORT}@${VERSION}"
-
-            # Skip if tag already exists
-            if git rev-parse "refs/tags/$TAG" >/dev/null 2>&1; then
-              echo "Tag $TAG already exists, skipping"
-              continue
-            fi
-
-            # Check if this version was actually published (not skipped)
+            if git rev-parse "refs/tags/$TAG" >/dev/null 2>&1; then echo "Tag $TAG exists, skipping"; continue; fi
             PUBLISHED=$(npm view "$NAME@$VERSION" version 2>/dev/null || echo "")
-            if [ "$PUBLISHED" != "$VERSION" ]; then
-              echo "Version $NAME@$VERSION not on npm, skipping release"
-              continue
-            fi
-
-            # Find previous tag for this package to generate changelog
+            if [ "$PUBLISHED" != "$VERSION" ]; then echo "Not on npm, skipping"; continue; fi
             PREV_TAG=$(git tag -l "${SHORT}@*" --sort=-v:refname | head -1)
-            if [ -n "$PREV_TAG" ]; then
-              CHANGELOG=$(git log --pretty=format:"- %s (%h)" "$PREV_TAG"..HEAD -- "$pkg")
-            else
-              CHANGELOG=$(git log --pretty=format:"- %s (%h)" -20 -- "$pkg")
-            fi
-
-            if [ -z "$CHANGELOG" ]; then
-              CHANGELOG="- Release $TAG"
-            fi
-
-            # Create tag and release
-            git tag "$TAG"
-            git push origin "$TAG"
-
-            gh release create "$TAG" \
-              --title "$NAME v$VERSION" \
-              --notes "$(printf '## %s v%s\n\n### Changes\n\n%s\n\n### Install\n\n```bash\npnpm add %s@%s\n```' "$NAME" "$VERSION" "$CHANGELOG" "$NAME" "$VERSION")"
-
+            if [ -n "$PREV_TAG" ]; then CHANGELOG=$(git log --pretty=format:"- %s (%h)" "$PREV_TAG"..HEAD -- "$pkg"); else CHANGELOG=$(git log --pretty=format:"- %s (%h)" -20 -- "$pkg"); fi
+            if [ -z "$CHANGELOG" ]; then CHANGELOG="- Release $TAG"; fi
+            git tag "$TAG" && git push origin "$TAG"
+            gh release create "$TAG" --title "$NAME v$VERSION" --notes "$(printf '## %s v%s\n\n### Changes\n\n%s\n\n### Install\n\n```bash\npnpm add %s@%s\n```' "$NAME" "$VERSION" "$CHANGELOG" "$NAME" "$VERSION")"
             echo "Created release $TAG"
           done
-
-# ─── Weekly schedule: Full Stryker + load test placeholder ───────────────────
 
   stryker-full:
     name: Stryker (full, weekly)
@@ -759,21 +530,83 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-project
-      - name: Restore Stryker incremental cache
-        uses: actions/cache@v4
+      - uses: actions/cache@v4
         with:
           path: .stryker-tmp/
           key: stryker-full-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            stryker-full-${{ runner.os }}-
-      - name: Run full Stryker mutation suite
-        run: pnpm test:mutate
+          restore-keys: stryker-full-${{ runner.os }}-
+      - run: pnpm test:mutate
+
+  flaky-detection:
+    name: Flaky Detection
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-project
+        with:
+          install-playwright: 'true'
+          playwright-browser: chromium
+      - run: pnpm build
+      - run: bash scripts/detect-flaky-vitest.sh --output=vitest-flaky-report.json
+        continue-on-error: true
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+      - run: npx playwright test --config=tests/e2e/flaky-detection.config.ts
+        continue-on-error: true
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: postgres
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: flaky-detection-report-${{ github.run_id }}
+          path: |
+            vitest-flaky-report.json
+            flaky-detection-report.json
+            playwright-report-flaky/
+          retention-days: 90
+
+  flaky-deadline-check:
+    name: Flaky Deadline Check
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check deadlines
+        id: deadline-check
+        run: bash scripts/check-flaky-deadlines.sh
+        continue-on-error: true
+      - name: Create issue for expired tests
+        if: steps.deadline-check.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TODAY=$(date -u +%Y-%m-%d)
+          EXPIRED_LIST=$(jq -r '.quarantined[] | select(.deadline <= "'"$TODAY"'") | "- **\(.testName)** (`\(.file)`) deadline: \(.deadline)"' flaky-tests.json)
+          gh issue create --title "ALERT: Quarantined flaky tests exceeded 30-day SLA ($TODAY)" --label "flaky-test" --body "Tests past SLA:\n${EXPIRED_LIST}\n\nFix or delete within 48 hours."
 
   load-test:
-    name: Load Test (placeholder, weekly)
+    name: Load Test (placeholder)
     if: github.event_name == 'schedule'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Load test placeholder
-        run: echo "Load test placeholder — see VAL-176 for k6 implementation"
+      - run: echo "Load test placeholder — see VAL-176 for k6 implementation"
