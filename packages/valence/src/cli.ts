@@ -13,7 +13,7 @@ import { readLearnProgress, writeLearnProgress, createInitialProgress } from './
 import { log } from './cli-utils.js'
 import { generateConfigTemplate, generateSecret } from './config-template.js'
 import { landingPage } from './landing-page.js'
-import { loadEnvConfig, loadUserConfig } from './config-loader.js'
+import { loadEnvConfig, loadUserConfig, registerTsxLoader } from './config-loader.js'
 import type { RouteHandler } from './define-config.js'
 import { resolveCustomRoute } from './route-matcher.js'
 import { resolveStaticPath, resolveMimeType, sendHtml, serveStaticFile, stripTrailingSlash } from '@valencets/core/server'
@@ -466,6 +466,7 @@ CREATE TABLE IF NOT EXISTS "daily_summaries" (
 // -- dev --
 
 async function runDev (): Promise<void> {
+  await registerTsxLoader()
   const config = loadEnvConfig()
   if (!config) {
     console.error('  Error: missing .env or database configuration. Run from your project root.')
