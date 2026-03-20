@@ -148,3 +148,6 @@ export type { SchedulerHandle } from './scheduler.js'
 
 export { generateToken, hashToken, verifyToken, TokenErrorCode } from './auth/index.js'
 export type { TokenError } from './auth/index.js'
+
+export { createCustomSession, validateCustomSession, destroyCustomSession, SessionErrorCode } from './auth/index.js'
+export type { SessionError } from './auth/index.js'

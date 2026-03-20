@@ -18,3 +18,6 @@ export type { RateLimiter } from './rate-limit.js'
 
 export { generateToken, hashToken, verifyToken, TokenErrorCode } from './token-utils.js'
 export type { TokenError } from './token-utils.js'
+
+export { createCustomSession, validateCustomSession, destroyCustomSession, SessionErrorCode } from './custom-session.js'
+export type { SessionError } from './custom-session.js'
