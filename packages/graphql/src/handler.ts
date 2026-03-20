@@ -51,6 +51,7 @@ export function createGraphQLHandler (schema: GraphQLSchema): (req: IncomingMess
     }
 
     let parsed: object
+    // eslint-disable-next-line no-restricted-syntax -- safeJsonParse boundary: JSON.parse has no Result API
     try {
       const value: unknown = JSON.parse(rawBody)
       if (typeof value !== 'object' || value === null) {

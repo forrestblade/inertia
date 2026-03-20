@@ -107,6 +107,7 @@ function validateEvent (raw: RawBeaconInput, index: number): Result<BeaconEvent,
 
 export function validateBeaconPayload (raw: string): Result<ReadonlyArray<BeaconEvent>, BeaconValidationError> {
   let parsed: unknown
+  // eslint-disable-next-line no-restricted-syntax -- safeJsonParse boundary: JSON.parse has no Result API
   try {
     parsed = JSON.parse(raw)
   } catch {

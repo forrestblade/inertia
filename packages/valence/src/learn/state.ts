@@ -33,6 +33,7 @@ export function createInitialProgress (initialCounts: { readonly posts: number; 
 }
 
 export async function readLearnProgress (projectDir: string): Promise<LearnProgress | null> {
+  // eslint-disable-next-line no-restricted-syntax -- file may not exist on first run; null return is the expected fallback
   try {
     const raw = await readFile(join(projectDir, LEARN_DIR, LEARN_FILE), 'utf-8')
     return JSON.parse(raw) as LearnProgress

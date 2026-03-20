@@ -86,6 +86,7 @@ export interface EditViewLocaleConfig {
 
 /** JSON parse boundary — see CLAUDE.md safeJsonParse exception */
 function safeParseJson (str: string): Record<string, string> | null {
+  // eslint-disable-next-line no-restricted-syntax -- safeJsonParse boundary: JSON.parse has no Result API
   try { return JSON.parse(str) } catch { return null }
 }
 

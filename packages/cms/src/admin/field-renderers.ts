@@ -213,6 +213,7 @@ interface BlockValue {
 /** JSON.parse boundary for blocks field value — sync equivalent of safeJsonParse. */
 function parseBlocksJson (value: string): Array<BlockValue> {
   if (!value) return []
+  // eslint-disable-next-line no-restricted-syntax -- safeJsonParse boundary: JSON.parse has no Result API
   try { return JSON.parse(value) } catch { return [] }
 }
 

@@ -144,6 +144,7 @@ export class ValTabs extends ValElement {
     if (current < 0) return
 
     let next = current
+    // eslint-disable-next-line no-restricted-syntax -- keyboard event handler; switch on e.key is idiomatic and cannot be replaced with a simple dict map
     switch (e.key) {
       case 'ArrowRight':
         e.preventDefault()

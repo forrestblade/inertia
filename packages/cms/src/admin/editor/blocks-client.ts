@@ -79,6 +79,7 @@ export function initBlocksFields (): void {
     const configAttr = container.getAttribute('data-blocks-config')
     if (!configAttr) continue
     let blockDefs: BlockDef[] = []
+    // eslint-disable-next-line no-restricted-syntax -- safeJsonParse boundary in browser bundle; JSON.parse has no Result API
     try { blockDefs = JSON.parse(configAttr) } catch { continue }
 
     const addSection = container.querySelector('.blocks-add')

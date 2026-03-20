@@ -44,17 +44,21 @@ export function createAbortableFetch (fetchFn: typeof fetch): AbortableFetchHand
     const { signal } = controller
     inFlight = true
 
+    // eslint-disable-next-line no-restricted-syntax -- outer try/finally ensures inFlight=false on all exit paths; fetch/AbortController protocol has no Result API
     try {
       let lastError: unknown
       for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
         if (signal.aborted) {
+          // eslint-disable-next-line no-restricted-syntax -- AbortController protocol requires DOMException throw
           throw new DOMException('The operation was aborted.', 'AbortError')
         }
 
+        // eslint-disable-next-line no-restricted-syntax -- inner try catches fetch network errors to implement retry; browser API has no Result equivalent
         try {
           const response = await fetchFn(url, { ...init, signal })
 
           if (signal.aborted) {
+            // eslint-disable-next-line no-restricted-syntax -- AbortController protocol requires DOMException throw
             throw new DOMException('The operation was aborted.', 'AbortError')
           }
 
@@ -66,6 +70,7 @@ export function createAbortableFetch (fetchFn: typeof fetch): AbortableFetchHand
           }
           return response
         } catch (error: unknown) {
+          // eslint-disable-next-line no-restricted-syntax -- re-throwing AbortError to propagate cancellation signal
           if (isAbortError(error)) throw error
           lastError = error
           if (attempt >= MAX_ATTEMPTS) break
@@ -76,8 +81,10 @@ export function createAbortableFetch (fetchFn: typeof fetch): AbortableFetchHand
       }
 
       if (signal.aborted) {
+        // eslint-disable-next-line no-restricted-syntax -- AbortController protocol requires DOMException throw
         throw new DOMException('The operation was aborted.', 'AbortError')
       }
+      // eslint-disable-next-line no-restricted-syntax -- re-throwing last fetch error after all retries exhausted
       throw lastError
     } finally {
       inFlight = false

@@ -1,6 +1,7 @@
 import { join, normalize, resolve } from 'node:path'
 
 function safeDecodeURIComponent (str: string): string | null {
+  // eslint-disable-next-line no-restricted-syntax -- decodeURIComponent throws on malformed URI; this is the safeJson-equivalent boundary
   try {
     return decodeURIComponent(str)
   } catch {

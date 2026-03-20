@@ -9,6 +9,7 @@ export async function checkVisitAdmin (deps: LearnCheckDeps): Promise<boolean> {
 }
 
 export async function checkCreatePost (deps: LearnCheckDeps, initialCount: number): Promise<boolean> {
+  // eslint-disable-next-line no-restricted-syntax -- sql.unsafe may fail if table doesn't exist yet; false return is the expected fallback
   try {
     const rows = await deps.pool.sql.unsafe('SELECT count(*)::int AS count FROM "posts" WHERE "deleted_at" IS NULL')
     const count = Number(rows[0]?.count ?? 0)
@@ -28,6 +29,7 @@ export async function checkAddCollection (deps: LearnCheckDeps): Promise<boolean
 }
 
 export async function checkCreateUser (deps: LearnCheckDeps, initialCount: number): Promise<boolean> {
+  // eslint-disable-next-line no-restricted-syntax -- sql.unsafe may fail if table doesn't exist yet; false return is the expected fallback
   try {
     const rows = await deps.pool.sql.unsafe('SELECT count(*)::int AS count FROM "users" WHERE "deleted_at" IS NULL')
     const count = Number(rows[0]?.count ?? 0)
@@ -38,6 +40,7 @@ export async function checkCreateUser (deps: LearnCheckDeps, initialCount: numbe
 }
 
 export async function checkCreateFile (deps: LearnCheckDeps): Promise<boolean> {
+  // eslint-disable-next-line no-restricted-syntax -- readdirSync may fail if dir doesn't exist; false return is the expected fallback
   try {
     const entries = readdirSync(deps.projectDir, { withFileTypes: true })
     return entries.some(e =>

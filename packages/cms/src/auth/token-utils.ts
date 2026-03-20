@@ -22,6 +22,7 @@ const DEFAULT_BYTE_LENGTH = 32
  * @param length — number of random bytes (default 32, producing a 64-char hex string)
  */
 export function generateToken (length = DEFAULT_BYTE_LENGTH): Result<string, TokenError> {
+  // eslint-disable-next-line no-restricted-syntax -- Node crypto APIs throw synchronously; wrapping in Result here
   try {
     return ok(randomBytes(length).toString('hex'))
   } catch (e) {
@@ -37,6 +38,7 @@ export function generateToken (length = DEFAULT_BYTE_LENGTH): Result<string, Tok
  * Never store raw tokens — always hash before persisting.
  */
 export function hashToken (token: string): Result<string, TokenError> {
+  // eslint-disable-next-line no-restricted-syntax -- Node crypto APIs throw synchronously; wrapping in Result here
   try {
     return ok(createHash('sha256').update(token).digest('hex'))
   } catch (e) {

@@ -70,6 +70,7 @@ function buildListResolver (
     const result = await api.find(findArgs)
     return result.match(
       (data) => extractDocs(data),
+      // eslint-disable-next-line no-restricted-syntax -- GraphQL protocol requires throwing GraphQLError for error propagation
       (error) => { throw new GraphQLError(error.message) }
     )
   }
@@ -83,6 +84,7 @@ function buildSingleResolver (
     const result = await api.findByID({ collection: slug, id: args.id })
     return result.match(
       (doc) => doc,
+      // eslint-disable-next-line no-restricted-syntax -- GraphQL protocol requires throwing GraphQLError for error propagation
       (error) => { throw new GraphQLError(error.message) }
     )
   }
@@ -96,6 +98,7 @@ function buildCountResolver (
     const result = await api.count({ collection: slug })
     return result.match(
       (count) => count,
+      // eslint-disable-next-line no-restricted-syntax -- GraphQL protocol requires throwing GraphQLError for error propagation
       (error) => { throw new GraphQLError(error.message) }
     )
   }
@@ -109,6 +112,7 @@ function buildCreateResolver (
     const result = await api.create({ collection: slug, data: args.data })
     return result.match(
       (doc) => doc,
+      // eslint-disable-next-line no-restricted-syntax -- GraphQL protocol requires throwing GraphQLError for error propagation
       (error) => { throw new GraphQLError(error.message) }
     )
   }
@@ -122,6 +126,7 @@ function buildUpdateResolver (
     const result = await api.update({ collection: slug, id: args.id, data: args.data })
     return result.match(
       (doc) => doc,
+      // eslint-disable-next-line no-restricted-syntax -- GraphQL protocol requires throwing GraphQLError for error propagation
       (error) => { throw new GraphQLError(error.message) }
     )
   }
@@ -135,6 +140,7 @@ function buildDeleteResolver (
     const result = await api.delete({ collection: slug, id: args.id })
     return result.match(
       (doc) => doc,
+      // eslint-disable-next-line no-restricted-syntax -- GraphQL protocol requires throwing GraphQLError for error propagation
       (error) => { throw new GraphQLError(error.message) }
     )
   }

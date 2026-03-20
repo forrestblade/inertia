@@ -9,6 +9,7 @@ export function composeMiddleware (
 
     async function dispatch (i: number): Promise<void> {
       if (i <= index) {
+        // eslint-disable-next-line no-restricted-syntax -- middleware protocol sentinel; must throw to stop execution chain
         throw new Error('next() called multiple times')
       }
       index = i

@@ -181,6 +181,7 @@ export function createAdminRoutes (
 
   routes.set('/admin/_assets/admin-client.js', {
     GET: async (_req, res) => {
+      // eslint-disable-next-line no-restricted-syntax -- file read may fail if dist not built; graceful 404 fallback needed
       try {
         const distDir = fileURLToPath(new URL('..', import.meta.url))
         const jsPath = `${distDir}/admin-client.js`
@@ -289,7 +290,7 @@ export function createAdminRoutes (
         return
       }
       const telPool = options.telemetryPool
-      // TODO: refactor analytics route to eliminate try/catch (pre-existing violation)
+      // eslint-disable-next-line no-restricted-syntax -- analytics dynamic import wraps external telemetry calls that may not be installed
       try {
         const { getDailyBreakdowns, getDailyTrend } = await import('@valencets/telemetry/daily-summary-queries')
         const { getEventCategorySummaries, getPageviewsByPath, getDailyEventCounts } = await import('@valencets/telemetry')

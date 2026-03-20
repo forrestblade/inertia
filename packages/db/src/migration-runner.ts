@@ -93,6 +93,7 @@ export function runMigrations (pool: DbPool, migrations: ReadonlyArray<Migration
     (async () => {
       await pool.sql.unsafe('SELECT pg_advisory_lock($1)', [MIGRATION_LOCK_ID])
 
+      // eslint-disable-next-line no-restricted-syntax -- advisory lock requires try/finally to guarantee lock release
       try {
         await pool.sql`
           CREATE TABLE IF NOT EXISTS _migrations (

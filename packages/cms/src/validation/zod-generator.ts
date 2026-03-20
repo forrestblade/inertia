@@ -112,6 +112,7 @@ function buildPasswordSchema (field: FieldConfig): ZodTypeAny {
 
 function buildJsonSchema (_field: FieldConfig): ZodTypeAny {
   return z.string().refine((val) => {
+    // eslint-disable-next-line no-restricted-syntax -- Zod refine validator must use try/catch; JSON.parse has no Result API
     try {
       JSON.parse(val)
       return true

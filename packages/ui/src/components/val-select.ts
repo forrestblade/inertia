@@ -246,6 +246,7 @@ export class ValSelect extends ValFormElement {
       return
     }
 
+    // eslint-disable-next-line no-restricted-syntax -- keyboard event handler; switch on e.key is idiomatic and cannot be replaced with a simple dict map
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault()

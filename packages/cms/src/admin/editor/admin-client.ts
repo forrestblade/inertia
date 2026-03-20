@@ -43,6 +43,7 @@ if (conditionalForm) {
       for (const [key, val] of formData.entries()) {
         if (typeof val === 'string') params.append(key, val)
       }
+      // eslint-disable-next-line no-restricted-syntax -- browser fetch API errors must be caught; no Result API in this client bundle
       try {
         const res = await fetch(postUrl, {
           method: 'POST',
@@ -77,6 +78,7 @@ for (const wrap of mediaUploads) {
     if (!file) return
     const formData = new FormData()
     formData.append('file', file)
+    // eslint-disable-next-line no-restricted-syntax -- browser fetch API errors must be caught; no Result API in this client bundle
     try {
       const res = await fetch(endpoint, { method: 'POST', body: formData })
       const json = await res.json() as { filename?: string; id?: string }

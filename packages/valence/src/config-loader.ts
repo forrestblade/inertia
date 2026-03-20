@@ -84,6 +84,7 @@ export async function loadUserConfig (): Promise<UserConfig | null> {
   }
 
   // If running under tsx (TS imports work), load directly
+  // eslint-disable-next-line no-restricted-syntax -- dynamic import may fail if tsx loader is absent; fallback to subprocess spawn
   try {
     const mod = await import(configPath)
     const result = mod.default
@@ -100,6 +101,7 @@ export async function loadUserConfig (): Promise<UserConfig | null> {
     return null
   } catch {
     // Direct import failed (no tsx loader). Try spawning with tsx.
+    // eslint-disable-next-line no-restricted-syntax -- subprocess spawn may fail; returning null triggers config-not-found error path
     try {
       const script = [
         `import('${configPath.replace(/\\/g, '/')}')`,

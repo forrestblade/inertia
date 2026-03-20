@@ -85,6 +85,7 @@ async function confirm (rl: ReturnType<typeof createInterface>, question: string
 }
 
 function exec (cmd: string, cwd: string): boolean {
+  // eslint-disable-next-line no-restricted-syntax -- execSync throws on non-zero exit; boolean return is the Result boundary
   try {
     execSync(cmd, { cwd, stdio: 'pipe' })
     return true
@@ -426,6 +427,7 @@ CREATE TABLE IF NOT EXISTS "daily_summaries" (
       log('Migrations applied.')
       if (doSeed) {
         log('Seeding initial data...')
+        // eslint-disable-next-line no-restricted-syntax -- pool.seedDatabase is void and may fail; warning-only path
         try {
           const seedPool = createPool({
             host: 'localhost',
@@ -962,6 +964,7 @@ async function runUserCreate (): Promise<void> {
 
   const pool = createPool(config)
 
+  // eslint-disable-next-line no-restricted-syntax -- try/finally required to ensure pool.close() runs after user creation
   try {
     const { hashPassword } = await import('@valencets/cms')
     const hashResult = await hashPassword(password)
@@ -1050,6 +1053,7 @@ async function runTelemetryAggregate (_args: ReadonlyArray<string>): Promise<voi
   log('Connecting to database...')
   const pool = createPool(dbConfig)
 
+  // eslint-disable-next-line no-restricted-syntax -- try/finally required to ensure pool.close() runs after telemetry aggregation
   try {
     const { aggregateSessionSummary, aggregateEventSummary, aggregateConversionSummary } = await import('@valencets/telemetry')
     const { generateDailySummary } = await import('@valencets/telemetry')
@@ -1136,6 +1140,7 @@ async function runMigrationsForProject (projectDir: string, config: DbConfig): P
   }
 
   // Validate column naming conventions on all tables
+  // eslint-disable-next-line no-restricted-syntax -- sql.unsafe is void-return; diagnostic warnings only, not a hard error path
   try {
     const tables = await pool.sql.unsafe(
       "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE'"

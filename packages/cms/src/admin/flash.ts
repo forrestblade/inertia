@@ -12,6 +12,7 @@ function serializeFlash (msg: FlashMessage): string {
 }
 
 function parseFlash (encoded: string): FlashMessage | null {
+  // eslint-disable-next-line no-restricted-syntax -- base64 decode + JSON.parse may throw; this is the safeJsonParse boundary
   try {
     const json = Buffer.from(encoded, 'base64url').toString('utf-8')
     const parsed = JSON.parse(json) as { type: string, text: string }

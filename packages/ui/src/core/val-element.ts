@@ -68,6 +68,7 @@ export abstract class ValElement extends HTMLElement implements LocaleSubscriber
   }
 
   private _scheduleHydration (directive: HydrationDirective): void {
+    // eslint-disable-next-line no-restricted-syntax -- hydration directive dispatch; switch on string union with block-scoped vars cannot be expressed as dict map
     switch (directive.type) {
       case 'idle': {
         const id = requestIdleCallback(() => {
