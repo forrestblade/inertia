@@ -87,3 +87,65 @@ export function createTokenBucket (config: RateLimitConfig): TokenBucket {
 
   return { consume, reset, destroy }
 }
+
+import type { IncomingMessage } from 'node:http'
+import type { Middleware } from './middleware-types.js'
+
+export interface RateLimitMiddlewareConfig {
+  readonly maxRequests: number
+  readonly windowMs: number
+  readonly trustProxy?: boolean
+}
+
+interface RateLimitMiddlewareHandle {
+  readonly middleware: Middleware
+  readonly destroy: () => void
+}
+
+function resolveClientIp (req: IncomingMessage, trustProxy: boolean): string {
+  if (trustProxy) {
+    const forwarded = req.headers['x-forwarded-for']
+    if (typeof forwarded === 'string') {
+      const first = forwarded.split(',')[0]
+      if (first !== undefined) {
+        return first.trim()
+      }
+    }
+  }
+  return req.socket.remoteAddress ?? '0.0.0.0'
+}
+
+export function createRateLimitMiddleware (config: RateLimitMiddlewareConfig): RateLimitMiddlewareHandle {
+  const { maxRequests, windowMs, trustProxy } = config
+  const bucket = createTokenBucket({ maxRequests, windowMs })
+  const proxy = trustProxy === true
+
+  const middleware: Middleware = async (req, res, _ctx, next) => {
+    const key = resolveClientIp(req, proxy)
+    const result = bucket.consume(key)
+
+    res.setHeader('X-RateLimit-Limit', String(result.limit))
+    res.setHeader('X-RateLimit-Remaining', String(result.remaining))
+    res.setHeader('X-RateLimit-Reset', String(Math.ceil((Date.now() + result.resetMs) / 1000)))
+
+    if (!result.allowed) {
+      const retryAfterSeconds = Math.ceil(result.resetMs / 1000)
+      res.setHeader('Retry-After', String(retryAfterSeconds))
+      const body = JSON.stringify({ error: 'Too many requests' })
+      res.writeHead(429, {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Content-Length': Buffer.byteLength(body)
+      })
+      res.end(body)
+      return
+    }
+
+    await next()
+  }
+
+  function destroy (): void {
+    bucket.destroy()
+  }
+
+  return { middleware, destroy }
+}
