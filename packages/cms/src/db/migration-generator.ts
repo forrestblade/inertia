@@ -20,10 +20,14 @@ function checkIdentifier (name: string): CmsError | null {
   return null
 }
 
+function resolveColumnType (f: FieldConfig, hasLocalization: boolean): string {
+  return hasLocalization && f.localized ? 'JSONB' : getColumnType(f)
+}
+
 function buildColumnDef (f: FieldConfig, hasLocalization: boolean): Result<string, CmsError> {
   const idErr = checkIdentifier(f.name)
   if (idErr) return err(idErr)
-  const colType = hasLocalization && f.localized ? 'JSONB' : getColumnType(f)
+  const colType = resolveColumnType(f, hasLocalization)
   const constraints = getColumnConstraints(f)
   const parts = [`"${f.name}" ${colType}`]
   if (constraints) parts.push(constraints)
@@ -126,7 +130,7 @@ export function generateAlterTableSql (slug: string, changes: SchemaChanges, has
   for (const f of changes.changed) {
     const nameErr = checkIdentifier(f.name)
     if (nameErr) return `-- ERROR: ${nameErr.message}`
-    const colType = hasLocalization && f.localized ? 'JSONB' : getColumnType(f)
+    const colType = resolveColumnType(f, hasLocalization ?? false)
     statements.push(`ALTER COLUMN "${f.name}" TYPE ${colType}`)
   }
 
