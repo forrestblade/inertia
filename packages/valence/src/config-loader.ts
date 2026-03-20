@@ -1,4 +1,5 @@
 import { join } from 'node:path'
+import { ResultAsync, fromThrowable } from 'neverthrow'
 import { existsSync, readFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import type { DbConfig } from '@valencets/db'
@@ -84,9 +85,13 @@ export async function loadUserConfig (): Promise<UserConfig | null> {
   }
 
   // If running under tsx (TS imports work), load directly
-  // eslint-disable-next-line no-restricted-syntax -- dynamic import may fail if tsx loader is absent; fallback to subprocess spawn
-  try {
-    const mod = await import(configPath)
+  const directImportResult = await ResultAsync.fromPromise(
+    import(configPath),
+    () => null
+  )
+
+  if (directImportResult.isOk()) {
+    const mod = directImportResult.value
     const result = mod.default
     if (result && typeof result.isOk === 'function' && result.isOk()) {
       return {
@@ -99,42 +104,58 @@ export async function loadUserConfig (): Promise<UserConfig | null> {
       }
     }
     return null
-  } catch {
-    // Direct import failed (no tsx loader). Try spawning with tsx.
-    // eslint-disable-next-line no-restricted-syntax -- subprocess spawn may fail; returning null triggers config-not-found error path
-    try {
-      const script = [
-        `import('${configPath.replace(/\\/g, '/')}')`,
-        '.then(m => {',
-        '  const r = m.default;',
-        '  if (r && r.isOk && r.isOk()) {',
-        '    process.stdout.write(JSON.stringify({',
-        '      collections: r.value.collections.map(c => ({',
-        '        slug: c.slug, labels: c.labels, auth: c.auth, upload: c.upload,',
-        '        timestamps: c.timestamps, fields: c.fields',
-        '      })),',
-        '      telemetry: r.value.telemetry',
-        '    }));',
-        '  }',
-        '})',
-        '.catch(e => { process.stderr.write(e.message); process.exit(1); })'
-      ].join('')
-      const tsxBin = join(process.cwd(), 'node_modules', '.bin', 'tsx')
-      const tsxArgs = ['-e', script]
-      const output = existsSync(tsxBin)
-        ? execFileSync(tsxBin, tsxArgs, { cwd: process.cwd(), stdio: ['pipe', 'pipe', 'pipe'], timeout: 15000 }).toString().trim()
-        : execFileSync('npx', ['tsx', ...tsxArgs], { cwd: process.cwd(), stdio: ['pipe', 'pipe', 'pipe'], timeout: 15000 }).toString().trim()
-      if (output) {
-        const parsed = JSON.parse(output)
-        // Re-hydrate through collection() to get proper CollectionConfig objects.
-        // onServer and routes cannot be recovered from the subprocess — functions are not serialisable.
-        const { collection: col } = await import('@valencets/cms')
-        const collections = parsed.collections.map((c: Parameters<typeof col>[0]) => col(c))
-        return { collections, telemetry: parsed.telemetry }
-      }
-    } catch (e2) {
-      log(`Config load via tsx failed: ${e2 instanceof Error ? e2.message : 'unknown'}`)
-    }
+  }
+
+  // Direct import failed (no tsx loader). Try spawning with tsx.
+  return loadViaSubprocess(configPath)
+}
+
+const safeJsonParseConfig = fromThrowable(JSON.parse, () => null)
+
+async function loadViaSubprocess (configPath: string): Promise<UserConfig | null> {
+  const script = [
+    `import('${configPath.replace(/\\/g, '/')}')`,
+    '.then(m => {',
+    '  const r = m.default;',
+    '  if (r && r.isOk && r.isOk()) {',
+    '    process.stdout.write(JSON.stringify({',
+    '      collections: r.value.collections.map(c => ({',
+    '        slug: c.slug, labels: c.labels, auth: c.auth, upload: c.upload,',
+    '        timestamps: c.timestamps, fields: c.fields',
+    '      })),',
+    '      telemetry: r.value.telemetry',
+    '    }));',
+    '  }',
+    '})',
+    '.catch(e => { process.stderr.write(e.message); process.exit(1); })'
+  ].join('')
+  const tsxBin = join(process.cwd(), 'node_modules', '.bin', 'tsx')
+  const tsxArgs = ['-e', script]
+
+  const safeExecFileSync = fromThrowable(
+    () => existsSync(tsxBin)
+      ? execFileSync(tsxBin, tsxArgs, { cwd: process.cwd(), stdio: ['pipe', 'pipe', 'pipe'], timeout: 15000 }).toString().trim()
+      : execFileSync('npx', ['tsx', ...tsxArgs], { cwd: process.cwd(), stdio: ['pipe', 'pipe', 'pipe'], timeout: 15000 }).toString().trim(),
+    (e) => e
+  )
+
+  const execResult = safeExecFileSync()
+  if (execResult.isErr()) {
+    const e = execResult.error
+    log(`Config load via tsx failed: ${e instanceof Error ? e.message : 'unknown'}`)
     return null
   }
+
+  const output = execResult.value
+  if (!output) return null
+
+  const parseResult = safeJsonParseConfig(output)
+  if (parseResult.isErr() || parseResult.value === null) return null
+  const parsed = parseResult.value as { collections: import('@valencets/cms').CollectionConfig[]; telemetry?: UserConfig['telemetry'] }
+
+  // Re-hydrate through collection() to get proper CollectionConfig objects.
+  // onServer and routes cannot be recovered from the subprocess — functions are not serialisable.
+  const { collection: col } = await import('@valencets/cms')
+  const collections = parsed.collections.map((c) => col(c))
+  return { collections, telemetry: parsed.telemetry }
 }

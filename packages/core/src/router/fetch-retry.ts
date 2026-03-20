@@ -7,7 +7,7 @@ export interface AbortableFetchHandle {
 const MAX_ATTEMPTS = 3
 const RETRY_DELAY_MS = 1000
 
-function isAbortError (error: unknown): boolean {
+function isAbortError (error: DOMException | Error): boolean {
   return error instanceof DOMException && error.name === 'AbortError'
 }
 
@@ -23,6 +23,37 @@ function delay (ms: number, signal: AbortSignal): Promise<void> {
       resolve()
     }
     signal.addEventListener('abort', onAbort, { once: true })
+  })
+}
+
+type FetchAttemptResult =
+  | { done: true; response: Response }
+  | { done: false; error: DOMException | Error | null }
+
+async function attemptFetch (
+  fetchFn: typeof fetch,
+  url: string | RequestInfo | URL,
+  init: RequestInit | undefined,
+  signal: AbortSignal,
+  attempt: number
+): Promise<FetchAttemptResult> {
+  if (signal.aborted) {
+    return { done: false, error: new DOMException('The operation was aborted.', 'AbortError') }
+  }
+
+  return fetchFn(url, { ...init, signal }).then(async (response) => {
+    if (signal.aborted) {
+      return { done: false, error: new DOMException('The operation was aborted.', 'AbortError') } as FetchAttemptResult
+    }
+    if (isRetryableResponse(response) && attempt < MAX_ATTEMPTS) {
+      if (attempt >= 2) {
+        await delay(RETRY_DELAY_MS, signal)
+      }
+      return { done: false, error: null } as FetchAttemptResult
+    }
+    return { done: true, response } as FetchAttemptResult
+  }).catch((error: DOMException | Error) => {
+    return { done: false, error } as FetchAttemptResult
   })
 }
 
@@ -44,51 +75,43 @@ export function createAbortableFetch (fetchFn: typeof fetch): AbortableFetchHand
     const { signal } = controller
     inFlight = true
 
-    // eslint-disable-next-line no-restricted-syntax -- outer try/finally ensures inFlight=false on all exit paths; fetch/AbortController protocol has no Result API
-    try {
-      let lastError: unknown
-      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-        if (signal.aborted) {
-          // eslint-disable-next-line no-restricted-syntax -- AbortController protocol requires DOMException throw
-          throw new DOMException('The operation was aborted.', 'AbortError')
-        }
+    let lastError: DOMException | Error | null = null
 
-        // eslint-disable-next-line no-restricted-syntax -- inner try catches fetch network errors to implement retry; browser API has no Result equivalent
-        try {
-          const response = await fetchFn(url, { ...init, signal })
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      const result = await attemptFetch(fetchFn, url, init, signal, attempt)
 
-          if (signal.aborted) {
-            // eslint-disable-next-line no-restricted-syntax -- AbortController protocol requires DOMException throw
-            throw new DOMException('The operation was aborted.', 'AbortError')
-          }
+      if (result.done) {
+        inFlight = false
+        return result.response
+      }
 
-          if (isRetryableResponse(response) && attempt < MAX_ATTEMPTS) {
-            if (attempt >= 2) {
-              await delay(RETRY_DELAY_MS, signal)
-            }
-            continue
-          }
-          return response
-        } catch (error: unknown) {
-          // eslint-disable-next-line no-restricted-syntax -- re-throwing AbortError to propagate cancellation signal
-          if (isAbortError(error)) throw error
-          lastError = error
-          if (attempt >= MAX_ATTEMPTS) break
-          if (attempt >= 2) {
-            await delay(RETRY_DELAY_MS, signal)
-          }
-        }
+      if (result.error !== null && isAbortError(result.error)) {
+        inFlight = false
+        return Promise.reject(result.error)
+      }
+
+      lastError = result.error
+
+      if (attempt >= MAX_ATTEMPTS) break
+
+      // Wait between retries — allows abort signal to interrupt the delay
+      if (attempt >= 2) {
+        await delay(RETRY_DELAY_MS, signal)
       }
 
       if (signal.aborted) {
-        // eslint-disable-next-line no-restricted-syntax -- AbortController protocol requires DOMException throw
-        throw new DOMException('The operation was aborted.', 'AbortError')
+        inFlight = false
+        return Promise.reject(new DOMException('The operation was aborted.', 'AbortError'))
       }
-      // eslint-disable-next-line no-restricted-syntax -- re-throwing last fetch error after all retries exhausted
-      throw lastError
-    } finally {
-      inFlight = false
     }
+
+    inFlight = false
+
+    if (signal.aborted) {
+      return Promise.reject(new DOMException('The operation was aborted.', 'AbortError'))
+    }
+
+    return Promise.reject(lastError ?? new Error('Fetch failed after all retries'))
   }
 
   return {

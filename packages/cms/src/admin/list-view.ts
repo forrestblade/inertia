@@ -1,3 +1,4 @@
+import { fromThrowable } from 'neverthrow'
 import type { CollectionConfig } from '../schema/collection.js'
 import type { FieldConfig, SelectFieldConfig, BooleanFieldConfig } from '../schema/field-types.js'
 import { escapeHtml } from './escape.js'
@@ -160,10 +161,12 @@ function renderPagination (args: ListViewArgs): string {
 </nav>`
 }
 
-/** JSON parse boundary — see CLAUDE.md safeJsonParse exception */
+const safeJsonParseBase = fromThrowable(JSON.parse, () => null)
+
 function safeParseJson (str: string): Record<string, string> | null {
-  // eslint-disable-next-line no-restricted-syntax -- safeJsonParse boundary: JSON.parse has no Result API
-  try { return JSON.parse(str) } catch { return null }
+  const result = safeJsonParseBase(str)
+  if (result.isErr() || result.value === null) return null
+  return result.value as Record<string, string>
 }
 
 function renderLocaleSelector (args: ListViewArgs): string {

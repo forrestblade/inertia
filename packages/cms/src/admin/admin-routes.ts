@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { ResultAsync } from 'neverthrow'
+import { ResultAsync, fromThrowable } from 'neverthrow'
 
 import type { CmsError } from '../schema/types.js'
 import type { DbPool } from '@valencets/db'
@@ -179,22 +179,30 @@ export function createAdminRoutes (
     return context
   }
 
+  const safeReadAdminClient = fromThrowable(
+    () => {
+      const distDir = fileURLToPath(new URL('..', import.meta.url))
+      const jsPath = `${distDir}/admin-client.js`
+      return readFileSync(jsPath, 'utf-8')
+    },
+    () => null
+  )
+
   routes.set('/admin/_assets/admin-client.js', {
-    GET: async (_req, res) => {
-      // eslint-disable-next-line no-restricted-syntax -- file read may fail if dist not built; graceful 404 fallback needed
-      try {
-        const distDir = fileURLToPath(new URL('..', import.meta.url))
-        const jsPath = `${distDir}/admin-client.js`
-        const js = readFileSync(jsPath, 'utf-8')
-        res.setHeader('Content-Type', 'application/javascript; charset=utf-8')
-        res.setHeader('Cache-Control', 'public, max-age=3600')
-        res.setHeader('Content-Length', Buffer.byteLength(js))
-        res.writeHead(200)
-        res.end(js)
-      } catch {
+    GET: (_req, res) => {
+      const result = safeReadAdminClient()
+      if (result.isErr() || result.value === null) {
         res.writeHead(404)
         res.end('Not found')
+        return Promise.resolve()
       }
+      const js = result.value
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8')
+      res.setHeader('Cache-Control', 'public, max-age=3600')
+      res.setHeader('Content-Length', Buffer.byteLength(js))
+      res.writeHead(200)
+      res.end(js)
+      return Promise.resolve()
     }
   })
   // --- Auth routes (no auth wrap) ---
@@ -290,51 +298,42 @@ export function createAdminRoutes (
         return
       }
       const telPool = options.telemetryPool
-      // eslint-disable-next-line no-restricted-syntax -- analytics dynamic import wraps external telemetry calls that may not be installed
-      try {
-        const { getDailyBreakdowns, getDailyTrend } = await import('@valencets/telemetry/daily-summary-queries')
-        const { getEventCategorySummaries, getPageviewsByPath, getDailyEventCounts } = await import('@valencets/telemetry')
-        const now = new Date()
-        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-        const siteId = options.telemetrySiteId ?? 'default'
-        const trendResult = await getDailyTrend(telPool, siteId, thirtyDaysAgo, now)
-        const breakdownResult = await getDailyBreakdowns(telPool, siteId, thirtyDaysAgo, now)
-        const trend = trendResult.match(rows => rows, () => [])
-        const breakdowns = breakdownResult.match(b => b, () => ({ top_pages: [], top_referrers: [], intent_counts: {} }))
-        let sessionCount = 0
-        let pageviewCount = 0
-        let conversionCount = 0
-        for (const row of trend) {
-          sessionCount += row.session_count ?? 0
-          pageviewCount += row.pageview_count ?? 0
-          conversionCount += row.conversion_count ?? 0
-        }
-        const [eventCategoriesResult, pageviewsByPathResult, dailyEventsResult] = await Promise.all([
-          getEventCategorySummaries(telPool, thirtyDaysAgo, now),
-          getPageviewsByPath(telPool, sevenDaysAgo, now),
-          getDailyEventCounts(telPool, thirtyDaysAgo, now)
-        ])
-        const eventCategories = eventCategoriesResult.match(rows => rows, () => [])
-        const pageviewsByPath = pageviewsByPathResult.match(rows => rows, () => [])
-        const dailyEvents = dailyEventsResult.match(rows => rows, () => [])
-        const content = renderAnalyticsView({
-          sessionCount,
-          pageviewCount,
-          conversionCount,
-          topPages: breakdowns.top_pages,
-          topReferrers: breakdowns.top_referrers,
-          eventCategories,
-          pageviewsByPath,
-          dailyEvents
-        })
-        const html = renderLayout({ title: 'Analytics', content, collections: allCollections, headTags })
-        sendHtml(res, html)
-      } catch {
-        const content = renderAnalyticsView(null)
-        const html = renderLayout({ title: 'Analytics', content, collections: allCollections, headTags })
-        sendHtml(res, html)
-      }
+      const analyticsResult = await ResultAsync.fromPromise(
+        (async () => {
+          const { getDailyBreakdowns, getDailyTrend } = await import('@valencets/telemetry/daily-summary-queries')
+          const { getEventCategorySummaries, getPageviewsByPath, getDailyEventCounts } = await import('@valencets/telemetry')
+          const now = new Date()
+          const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+          const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+          const siteId = options.telemetrySiteId ?? 'default'
+          const trendResult = await getDailyTrend(telPool, siteId, thirtyDaysAgo, now)
+          const breakdownResult = await getDailyBreakdowns(telPool, siteId, thirtyDaysAgo, now)
+          const trend = trendResult.match(rows => rows, () => [])
+          const breakdowns = breakdownResult.match(b => b, () => ({ top_pages: [], top_referrers: [], intent_counts: {} }))
+          let sessionCount = 0
+          let pageviewCount = 0
+          let conversionCount = 0
+          for (const row of trend) {
+            sessionCount += row.session_count ?? 0
+            pageviewCount += row.pageview_count ?? 0
+            conversionCount += row.conversion_count ?? 0
+          }
+          const [eventCategoriesResult, pageviewsByPathResult, dailyEventsResult] = await Promise.all([
+            getEventCategorySummaries(telPool, thirtyDaysAgo, now),
+            getPageviewsByPath(telPool, sevenDaysAgo, now),
+            getDailyEventCounts(telPool, thirtyDaysAgo, now)
+          ])
+          const eventCategories = eventCategoriesResult.match(rows => rows, () => [])
+          const pageviewsByPath = pageviewsByPathResult.match(rows => rows, () => [])
+          const dailyEvents = dailyEventsResult.match(rows => rows, () => [])
+          return { sessionCount, pageviewCount, conversionCount, topPages: breakdowns.top_pages, topReferrers: breakdowns.top_referrers, eventCategories, pageviewsByPath, dailyEvents }
+        })(),
+        () => null
+      )
+      const analyticsData = analyticsResult.isOk() ? analyticsResult.value : null
+      const analyticsContent = analyticsData === null ? renderAnalyticsView(null) : renderAnalyticsView(analyticsData)
+      const analyticsHtml = renderLayout({ title: 'Analytics', content: analyticsContent, collections: allCollections, headTags })
+      sendHtml(res, analyticsHtml)
     })
   })
 
@@ -720,6 +719,46 @@ export function createAdminRoutes (
         sendHtml(res, html)
       })
     })
+
+    if (col.versions?.drafts === true) {
+      routes.set(`/admin/${col.slug}/:id/autosave`, {
+        POST: wrap(async (req, res, ctx) => {
+          const id = ctx.id ?? ''
+          res.setHeader('Content-Type', 'application/json; charset=utf-8')
+          const bodyResult = await safeReadFormBody(req)
+          if (bodyResult.isErr()) {
+            res.writeHead(400)
+            res.end(JSON.stringify({ success: false, error: 'Bad request' }))
+            return
+          }
+          const formData = bodyResult.value
+          const submittedToken = String(formData._csrf ?? '')
+          if (!submittedToken || !validateCsrf(submittedToken)) {
+            res.writeHead(403)
+            res.end(JSON.stringify({ success: false, error: 'Invalid CSRF token' }))
+            return
+          }
+          const { _csrf, ...data } = formData
+          const zodSchema = generateConditionalPartialSchema(col.fields, toStringRecord(data))
+          const validation = zodSchema.safeParse(data)
+          const saveData = validation.success
+            ? stripUndefined(validation.data as DocumentData)
+            : stripUndefined(data as DocumentData)
+          const result = await api.update({ collection: col.slug, id, data: saveData })
+          result.match(
+            () => {
+              const savedAt = new Date().toISOString()
+              res.writeHead(200)
+              res.end(JSON.stringify({ success: true, savedAt }))
+            },
+            (err) => {
+              res.writeHead(500)
+              res.end(JSON.stringify({ success: false, error: err.message }))
+            }
+          )
+        })
+      })
+    }
   }
 
   return routes

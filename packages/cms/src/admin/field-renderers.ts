@@ -1,3 +1,4 @@
+import { fromThrowable } from 'neverthrow'
 import type { FieldConfig } from '../schema/field-types.js'
 import { escapeHtml } from './escape.js'
 
@@ -210,11 +211,14 @@ interface BlockValue {
   [key: string]: string | undefined
 }
 
-/** JSON.parse boundary for blocks field value — sync equivalent of safeJsonParse. */
+const safeJsonParseBlocks = fromThrowable(JSON.parse, () => null)
+
+/** JSON.parse boundary for blocks field value — uses fromThrowable per project pattern. */
 function parseBlocksJson (value: string): Array<BlockValue> {
   if (!value) return []
-  // eslint-disable-next-line no-restricted-syntax -- safeJsonParse boundary: JSON.parse has no Result API
-  try { return JSON.parse(value) } catch { return [] }
+  const result = safeJsonParseBlocks(value)
+  if (result.isErr() || result.value === null) return []
+  return result.value as Array<BlockValue>
 }
 
 function renderBlocksField (f: FieldConfig, value: string): string {

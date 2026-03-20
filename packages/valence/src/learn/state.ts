@@ -1,5 +1,6 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
+import { ResultAsync, fromThrowable } from 'neverthrow'
 import type { LearnProgress, LearnStepId } from './types.js'
 
 const LEARN_DIR = '.valence'
@@ -32,14 +33,19 @@ export function createInitialProgress (initialCounts: { readonly posts: number; 
   }
 }
 
+const safeJsonParseProgress = fromThrowable(
+  (raw: string) => JSON.parse(raw) as LearnProgress,
+  () => null
+)
+
 export async function readLearnProgress (projectDir: string): Promise<LearnProgress | null> {
-  // eslint-disable-next-line no-restricted-syntax -- file may not exist on first run; null return is the expected fallback
-  try {
-    const raw = await readFile(join(projectDir, LEARN_DIR, LEARN_FILE), 'utf-8')
-    return JSON.parse(raw) as LearnProgress
-  } catch {
-    return null
-  }
+  const result = await ResultAsync.fromPromise(
+    readFile(join(projectDir, LEARN_DIR, LEARN_FILE), 'utf-8'),
+    () => null
+  )
+  if (result.isErr()) return null
+  const parseResult = safeJsonParseProgress(result.value)
+  return parseResult.isOk() ? parseResult.value : null
 }
 
 export async function writeLearnProgress (projectDir: string, progress: LearnProgress): Promise<void> {

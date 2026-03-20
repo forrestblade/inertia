@@ -1,13 +1,10 @@
 import { join, normalize, resolve } from 'node:path'
+import { fromThrowable } from 'neverthrow'
 
-function safeDecodeURIComponent (str: string): string | null {
-  // eslint-disable-next-line no-restricted-syntax -- decodeURIComponent throws on malformed URI; this is the safeJson-equivalent boundary
-  try {
-    return decodeURIComponent(str)
-  } catch {
-    return null
-  }
-}
+const safeDecodeURIComponent = fromThrowable(
+  decodeURIComponent,
+  () => null
+)
 
 interface PageRouteResult {
   readonly path: string
@@ -29,7 +26,8 @@ export function resolvePageRouteWithParam (pathname: string, srcDir: string): Pa
   }
 
   // Decode URI — reject malformed percent-encoding
-  const decoded = safeDecodeURIComponent(pathname)
+  const decodeResult = safeDecodeURIComponent(pathname)
+  const decoded = decodeResult.isOk() ? decodeResult.value : null
   if (decoded === null) return null
 
   // Check for traversal
