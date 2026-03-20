@@ -8,7 +8,7 @@ async function loadAndInitEditors (): Promise<void> {
 
 // Script is type="module" so DOM is ready — no need for DOMContentLoaded
 if (document.querySelector('.richtext-editor')) {
-  loadAndInitEditors()
+  loadAndInitEditors().catch(() => { /* dynamic import failed */ })
 }
 initBlocksFields()
 
@@ -32,7 +32,7 @@ if (conditionalForm) {
       }).then((res) => {
         if (res.ok && target) {
           return res.text().then((html) => {
-            target.innerHTML = html
+            target.innerHTML = html // Server-rendered, escaped via escapeHtml()
             if (target.querySelector('.richtext-editor')) {
               return loadAndInitEditors()
             }
@@ -83,7 +83,12 @@ for (const wrap of mediaUploads) {
         }
       })
       .catch(() => {
-        if (preview) preview.innerHTML = '<span style="color: var(--val-color-error);">Upload failed</span>'
+        if (preview) {
+          const span = document.createElement('span')
+          span.style.color = 'var(--val-color-error)'
+          span.textContent = 'Upload failed'
+          preview.replaceChildren(span)
+        }
       })
   })
 }

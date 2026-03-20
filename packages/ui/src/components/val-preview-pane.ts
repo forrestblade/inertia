@@ -167,7 +167,7 @@ export class ValPreviewPane extends ValElement {
       const cw = this.iframeEl.contentWindow
       if (cw === null) return
       const data = serializeForm(this.form)
-      cw.postMessage({ type: 'valence:preview-update', data }, '*')
+      cw.postMessage({ type: 'valence:preview-update', data }, window.location.origin)
       this.emitInteraction('preview-update')
     }, DEBOUNCE_MS)
   }

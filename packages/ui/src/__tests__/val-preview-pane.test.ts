@@ -167,7 +167,7 @@ describe('ValPreviewPane', () => {
 
       expect(postMessageSpy).toHaveBeenCalledWith(
         expect.objectContaining({ type: 'valence:preview-update' }),
-        '*'
+        window.location.origin
       )
 
       vi.useRealTimers()

@@ -112,14 +112,16 @@ export class ValAutosave extends ValElement {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body
     }).then((res) => {
-      if (!res.ok) return Promise.reject(new Error(`HTTP ${res.status}`))
+      if (!res.ok) return { success: false } as { success: boolean; savedAt?: string }
       return res.json() as Promise<{ success: boolean; savedAt?: string }>
     }).then((json) => {
-      if (!json.success) return Promise.reject(new Error('Autosave failed'))
+      if (!json.success) {
+        this.setState('error')
+        return
+      }
       const savedAt = json.savedAt ?? new Date().toISOString()
       this.setState('saved', formatTime(savedAt))
-      return undefined
-    }).catch(() => {
+    }, () => {
       this.setState('error')
     })
   }
