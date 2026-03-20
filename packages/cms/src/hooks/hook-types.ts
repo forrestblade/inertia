@@ -18,6 +18,10 @@ export interface CollectionHooks {
   readonly afterRead?: readonly HookFunction[] | undefined
   readonly beforeDelete?: readonly HookFunction[] | undefined
   readonly afterDelete?: readonly HookFunction[] | undefined
+  readonly beforePublish?: readonly HookFunction[] | undefined
+  readonly afterPublish?: readonly HookFunction[] | undefined
+  readonly beforeUnpublish?: readonly HookFunction[] | undefined
+  readonly afterUnpublish?: readonly HookFunction[] | undefined
 }
 
 export interface FieldHooks {

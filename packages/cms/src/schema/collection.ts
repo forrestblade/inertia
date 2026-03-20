@@ -1,5 +1,6 @@
 import type { FieldConfig } from './field-types.js'
 import type { SearchConfig } from '../db/query-types.js'
+import type { CollectionHooks } from '../hooks/hook-types.js'
 
 export interface CollectionLabels {
   readonly singular: string
@@ -20,6 +21,7 @@ export interface CollectionConfig {
   readonly upload?: boolean | undefined
   readonly search?: SearchConfig | undefined
   readonly versions?: VersionsConfig | undefined
+  readonly hooks?: CollectionHooks | undefined
 }
 
 type CollectionInput = Omit<CollectionConfig, 'timestamps'> & {

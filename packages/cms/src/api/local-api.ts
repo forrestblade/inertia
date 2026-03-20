@@ -1,14 +1,16 @@
-import { ResultAsync, errAsync } from 'neverthrow'
+import { ResultAsync, errAsync, okAsync } from 'neverthrow'
 import type { DbPool } from '@valencets/db'
 import type { CollectionRegistry } from '../schema/registry.js'
 import type { GlobalRegistry } from '../schema/registry.js'
 import type { CmsError } from '../schema/types.js'
 import type { DocumentRow, DocumentData } from '../db/query-builder.js'
 import type { PaginatedResult } from '../db/query-types.js'
+import type { HookFunction, HookData } from '../hooks/hook-types.js'
 import { createQueryBuilder } from '../db/query-builder.js'
 import { CmsErrorCode, StatusCode } from '../schema/types.js'
 import { isValidIdentifier } from '../db/sql-sanitize.js'
 import { safeQuery } from '../db/safe-query.js'
+import { runHooks } from '../hooks/hook-runner.js'
 
 export interface FindArgs {
   readonly collection: string
@@ -77,6 +79,37 @@ export interface LocalApi {
   unpublish (args: UnpublishArgs): ResultAsync<DocumentRow, CmsError>
 }
 
+function executeWithHooks (
+  beforeHooks: readonly HookFunction[] | undefined,
+  afterHooks: readonly HookFunction[] | undefined,
+  data: DocumentData,
+  id: string,
+  collectionSlug: string,
+  execute: (finalData: DocumentData) => ResultAsync<DocumentRow, CmsError>
+): ResultAsync<DocumentRow, CmsError> {
+  const hookArgs = { data: data as HookData, id, collection: collectionSlug }
+
+  if (beforeHooks && beforeHooks.length > 0) {
+    return runHooks(beforeHooks, hookArgs)
+      .andThen((hookData) => execute(hookData as DocumentData))
+      .andThen((result) => {
+        if (afterHooks && afterHooks.length > 0) {
+          return runHooks(afterHooks, { data: result as unknown as HookData, id, collection: collectionSlug })
+            .map(() => result)
+        }
+        return okAsync(result)
+      })
+  }
+
+  return execute(data).andThen((result) => {
+    if (afterHooks && afterHooks.length > 0) {
+      return runHooks(afterHooks, { data: result as unknown as HookData, id, collection: collectionSlug })
+        .map(() => result)
+    }
+    return okAsync(result)
+  })
+}
+
 export function createLocalApi (
   pool: DbPool,
   collections: CollectionRegistry,
@@ -141,6 +174,17 @@ export function createLocalApi (
         data = { ...data, _status: StatusCode.DRAFT }
       }
 
+      if (isVersioned && args.publish && col.value.hooks) {
+        return executeWithHooks(
+          col.value.hooks.beforePublish,
+          col.value.hooks.afterPublish,
+          data,
+          args.id,
+          args.collection,
+          (finalData) => qb.query(args.collection).where('id', args.id).update(finalData)
+        )
+      }
+
       return qb.query(args.collection)
         .where('id', args.id)
         .update(data)
@@ -195,10 +239,26 @@ export function createLocalApi (
     },
 
     unpublish (args) {
+      const col = collections.get(args.collection)
+      if (col.isErr()) return errAsync(col.error)
+
+      const unpublishData: DocumentData = { _status: StatusCode.DRAFT }
+
+      if (col.value.hooks) {
+        return executeWithHooks(
+          col.value.hooks.beforeUnpublish,
+          col.value.hooks.afterUnpublish,
+          unpublishData,
+          args.id,
+          args.collection,
+          (finalData) => qb.query(args.collection).where('id', args.id).includeDrafts().update(finalData)
+        )
+      }
+
       return qb.query(args.collection)
         .where('id', args.id)
         .includeDrafts()
-        .update({ _status: StatusCode.DRAFT })
+        .update(unpublishData)
     }
   }
 }
