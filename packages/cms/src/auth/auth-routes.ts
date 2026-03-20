@@ -90,7 +90,8 @@ export function createAuthRoutes (
       const sessionResult = await createSession(user.id, pool)
       if (sessionResult.isErr()) { sendErrorJson(res, 'Login failed', 500); return }
 
-      const cookie = buildSessionCookie(sessionResult.value)
+      const secure = !!(req.socket as { encrypted?: boolean }).encrypted
+      const cookie = buildSessionCookie(sessionResult.value, 7200, secure)
       res.writeHead(200, {
         'Content-Type': 'application/json; charset=utf-8',
         'Set-Cookie': cookie
@@ -106,9 +107,10 @@ export function createAuthRoutes (
       if (sessionId) {
         await destroySession(sessionId, pool)
       }
+      const secure = !!(req.socket as { encrypted?: boolean }).encrypted
       res.writeHead(200, {
         'Content-Type': 'application/json; charset=utf-8',
-        'Set-Cookie': buildExpiredSessionCookie()
+        'Set-Cookie': buildExpiredSessionCookie(secure)
       })
       res.end(JSON.stringify({ message: 'Logged out' }))
     }
