@@ -26,11 +26,20 @@ function mockReq (body: Buffer, headers: Record<string, string> = {}): IncomingM
   }) as IncomingMessage
 }
 
-function mockRes (): ServerResponse & { _status: number; _body: string } {
-  const res = {
+interface MockResponse {
+  _status: number
+  _body: string
+  _headers: Record<string, string | number>
+  writeHead: (status: number, headers?: Record<string, string | number>) => void
+  end: (body?: string) => void
+  setHeader: () => void
+}
+
+function mockRes (): MockResponse {
+  const res: MockResponse = {
     _status: 0,
     _body: '',
-    _headers: {} as Record<string, string>,
+    _headers: {},
     writeHead (status: number, headers?: Record<string, string | number>) {
       res._status = status
       if (headers) Object.assign(res._headers, headers)
@@ -38,7 +47,7 @@ function mockRes (): ServerResponse & { _status: number; _body: string } {
     end (body?: string) { res._body = body ?? '' },
     setHeader () {}
   }
-  return res as unknown as ServerResponse & { _status: number; _body: string }
+  return res
 }
 
 describe('upload handler with image processing', () => {
@@ -65,7 +74,7 @@ describe('upload handler with image processing', () => {
     const req = mockReq(imageBuffer)
     const res = mockRes()
 
-    await handler(req, res)
+    await handler(req, res as ServerResponse)
 
     expect(res._status).toBe(201)
     const result = JSON.parse(res._body)
@@ -83,7 +92,7 @@ describe('upload handler with image processing', () => {
     const req = mockReq(imageBuffer, { 'x-focal-x': '0.75', 'x-focal-y': '0.25' })
     const res = mockRes()
 
-    await handler(req, res)
+    await handler(req, res as ServerResponse)
 
     expect(res._status).toBe(201)
     const result = JSON.parse(res._body)
@@ -103,7 +112,7 @@ describe('upload handler with image processing', () => {
     const req = mockReq(imageBuffer)
     const res = mockRes()
 
-    await handler(req, res)
+    await handler(req, res as ServerResponse)
 
     // Should have original + 1 variant = at least 2 files
     const files = readdirSync(testDir)
@@ -116,7 +125,7 @@ describe('upload handler with image processing', () => {
     const req = mockReq(imageBuffer)
     const res = mockRes()
 
-    await handler(req, res)
+    await handler(req, res as ServerResponse)
 
     expect(res._status).toBe(201)
     const result = JSON.parse(res._body)
@@ -134,7 +143,7 @@ describe('upload handler with image processing', () => {
     const req = mockReq(textBuffer, { 'x-filename': 'readme.txt' })
     const res = mockRes()
 
-    await handler(req, res)
+    await handler(req, res as ServerResponse)
 
     expect(res._status).toBe(201)
     const result = JSON.parse(res._body)

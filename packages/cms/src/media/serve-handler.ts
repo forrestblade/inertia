@@ -81,7 +81,7 @@ export function buildMediaUrl (filename: string, sizeName?: string): string {
 
   const dotIndex = base.lastIndexOf('.')
   if (dotIndex === -1) {
-    return `/media/${encodeURIComponent(`${base}-${sizeName}.`)}`
+    return `/media/${encodeURIComponent(`${base}-${sizeName}`)}`
   }
   const nameWithoutExt = base.slice(0, dotIndex)
   const ext = base.slice(dotIndex + 1)

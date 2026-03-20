@@ -1,4 +1,4 @@
-import { ResultAsync } from 'neverthrow'
+import { ResultAsync, okAsync } from 'neverthrow'
 import { CmsErrorCode } from '../schema/types.js'
 import type { CmsError } from '../schema/types.js'
 import type { IncomingMessage, ServerResponse } from 'node:http'
@@ -66,6 +66,7 @@ function parseFocalPoint (req: IncomingMessage): { x: number; y: number } | unde
   const x = Number(xStr)
   const y = Number(yStr)
   if (Number.isNaN(x) || Number.isNaN(y)) return undefined
+  if (x < 0 || x > 1 || y < 0 || y > 1) return undefined
   return { x, y }
 }
 
@@ -92,17 +93,18 @@ function variantFilename (storedName: string, sizeName: string, ext: string): st
   return `${base}-${sizeName}.${ext}`
 }
 
-async function writeVariants (
+function writeVariants (
   storage: StorageAdapter,
   storedName: string,
   processed: readonly ProcessedImage[]
-): Promise<void> {
+): ResultAsync<void, CmsError> {
+  let chain: ResultAsync<void, CmsError> = okAsync(undefined)
   for (const img of processed) {
     const ext = img.mimeType.split('/').pop() ?? 'bin'
     const name = variantFilename(storedName, img.name, ext)
-    const result = await storage.write(name, img.buffer)
-    if (result.isErr()) return
+    chain = chain.andThen(() => storage.write(name, img.buffer).map(() => undefined))
   }
+  return chain
 }
 
 function sendJson (res: ServerResponse, status: number, data: UploadResult): void {
@@ -239,7 +241,11 @@ export function createUploadHandler (
       const originalExt = originalName.split('.').pop() ?? ''
       sizes = buildSizeMetadata(processed, originalExt)
 
-      await writeVariants(imageCtx.storage, storedName, processed)
+      const variantResult = await writeVariants(imageCtx.storage, storedName, processed)
+      if (variantResult.isErr()) {
+        sendError(res, 500, variantResult.error.message)
+        return
+      }
     }
 
     const result = buildUploadResult(originalName, storedName, mimeType, data.length, focalX, focalY, sizes)

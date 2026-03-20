@@ -6,21 +6,36 @@ import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
-function mockReq (url: string): IncomingMessage {
-  return { url, method: 'GET', headers: {} } as IncomingMessage
+interface MockRequest {
+  url: string
+  method: string
+  headers: Record<string, string>
 }
 
-function mockRes (): ServerResponse & { _status: number; _body: Buffer; _headers: Record<string, string | number> } {
+function mockReq (url: string): MockRequest {
+  return { url, method: 'GET', headers: {} }
+}
+
+interface MockResponse {
+  _status: number
+  _body: Buffer
+  _headers: Record<string, string | number>
+  writeHead: (s: number, h?: Record<string, string | number>) => void
+  end: (data?: Buffer | string) => void
+  setHeader: () => void
+}
+
+function mockRes (): MockResponse {
   const chunks: Buffer[] = []
-  const res = {
+  const res: MockResponse = {
     _status: 0,
-    _headers: {} as Record<string, string | number>,
+    _headers: {},
     get _body () { return Buffer.concat(chunks) },
     writeHead (s: number, h?: Record<string, string | number>) { res._status = s; if (h) Object.assign(res._headers, h) },
     end (data?: Buffer | string) { if (data) chunks.push(Buffer.isBuffer(data) ? data : Buffer.from(data)) },
     setHeader () {}
   }
-  return res as ServerResponse & { _status: number; _body: Buffer; _headers: Record<string, string | number> }
+  return res
 }
 
 describe('serve handler with storage adapter', () => {
@@ -41,7 +56,7 @@ describe('serve handler with storage adapter', () => {
     const handler = createServeHandler(testDir, storage)
     const req = mockReq('/media/test.jpg')
     const res = mockRes()
-    await handler(req, res)
+    await handler(req as IncomingMessage, res as ServerResponse)
     expect(res._status).toBe(200)
     expect(res._body.toString()).toBe('image data')
     expect(res._headers['Content-Type']).toBe('image/jpeg')
@@ -52,7 +67,7 @@ describe('serve handler with storage adapter', () => {
     const handler = createServeHandler(testDir, storage)
     const req = mockReq('/media/nonexistent.jpg')
     const res = mockRes()
-    await handler(req, res)
+    await handler(req as IncomingMessage, res as ServerResponse)
     expect(res._status).toBe(404)
   })
 
@@ -61,7 +76,7 @@ describe('serve handler with storage adapter', () => {
     const handler = createServeHandler(testDir)
     const req = mockReq('/media/legacy.jpg')
     const res = mockRes()
-    await handler(req, res)
+    await handler(req as IncomingMessage, res as ServerResponse)
     expect(res._status).toBe(200)
     expect(res._body.toString()).toBe('legacy data')
   })
@@ -72,7 +87,7 @@ describe('serve handler with storage adapter', () => {
     const handler = createServeHandler(testDir, storage)
     const req = mockReq('/media/cached.jpg')
     const res = mockRes()
-    await handler(req, res)
+    await handler(req as IncomingMessage, res as ServerResponse)
     expect(res._headers['Cache-Control']).toContain('immutable')
   })
 })
@@ -87,7 +102,7 @@ describe('buildMediaUrl()', () => {
   })
 
   it('handles filenames with no extension', () => {
-    expect(buildMediaUrl('abc123', 'thumb')).toBe('/media/abc123-thumb.')
+    expect(buildMediaUrl('abc123', 'thumb')).toBe('/media/abc123-thumb')
   })
 
   it('URL-encodes special characters', () => {
