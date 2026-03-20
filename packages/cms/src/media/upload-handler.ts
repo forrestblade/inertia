@@ -6,7 +6,7 @@ import { writeFile } from 'node:fs/promises'
 import { join, resolve, basename } from 'node:path'
 import { randomBytes } from 'node:crypto'
 import { getMimeType } from './media-config.js'
-import type { UploadConfig } from './media-config.js'
+import type { ImageSize, UploadConfig } from './media-config.js'
 import type { StorageAdapter } from './storage-adapter.js'
 import { processImageSizes } from './image-processor.js'
 import type { ProcessedImage } from './image-processor.js'
@@ -49,6 +49,12 @@ export interface UploadResult {
   readonly focalX?: number | undefined
   readonly focalY?: number | undefined
   readonly sizes?: Record<string, SizeMetadata> | undefined
+}
+
+interface ImageProcessingContext {
+  readonly storage: StorageAdapter
+  readonly imageSizes: readonly ImageSize[]
+  readonly formats: readonly string[]
 }
 
 function parseFocalPoint (req: IncomingMessage): { x: number; y: number } | undefined {
@@ -113,15 +119,18 @@ function sendError (res: ServerResponse, status: number, message: string): void 
   res.end(JSON.stringify({ error: message }))
 }
 
-function hasImageSizes (
+function getImageProcessingContext (
   storage: StorageAdapter | undefined,
   mimeType: string,
   uploadConfig: UploadConfig | undefined
-): uploadConfig is UploadConfig & { readonly imageSizes: readonly import('./media-config.js').ImageSize[] } {
-  return storage !== undefined &&
-    isImageFile(mimeType) &&
-    uploadConfig?.imageSizes !== undefined &&
-    uploadConfig.imageSizes.length > 0
+): ImageProcessingContext | null {
+  if (!storage || !isImageFile(mimeType)) return null
+  if (!uploadConfig?.imageSizes || uploadConfig.imageSizes.length === 0) return null
+  return {
+    storage,
+    imageSizes: uploadConfig.imageSizes,
+    formats: uploadConfig.formats ?? []
+  }
 }
 
 async function writeMainFile (
@@ -215,12 +224,12 @@ export function createUploadHandler (
       }
     }
 
-    if (hasImageSizes(storage, mimeType, uploadConfig)) {
+    const imageCtx = getImageProcessingContext(storage, mimeType, uploadConfig)
+    if (imageCtx) {
       const focalPoint = (focalX !== undefined && focalY !== undefined)
         ? { x: focalX, y: focalY }
         : undefined
-      const formats = uploadConfig.formats ?? []
-      const processResult = await processImageSizes(data, uploadConfig.imageSizes, formats, focalPoint)
+      const processResult = await processImageSizes(data, imageCtx.imageSizes, imageCtx.formats, focalPoint)
       if (processResult.isErr()) {
         sendError(res, 500, processResult.error.message)
         return
@@ -230,8 +239,7 @@ export function createUploadHandler (
       const originalExt = originalName.split('.').pop() ?? ''
       sizes = buildSizeMetadata(processed, originalExt)
 
-      // storage is guaranteed non-undefined by hasImageSizes guard
-      await writeVariants(storage!, storedName, processed)
+      await writeVariants(imageCtx.storage, storedName, processed)
     }
 
     const result = buildUploadResult(originalName, storedName, mimeType, data.length, focalX, focalY, sizes)
