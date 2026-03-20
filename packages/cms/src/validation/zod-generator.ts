@@ -20,7 +20,8 @@ const FIELD_SCHEMA_MAP: Record<string, (field: FieldConfig) => ZodTypeAny> = {
   json: buildJsonSchema,
   color: buildColorSchema,
   multiselect: buildMultiselectSchema,
-  array: buildArraySchema
+  array: buildArraySchema,
+  blocks: buildBlocksSchema
 }
 
 function buildTextSchema (field: FieldConfig): ZodTypeAny {
@@ -140,6 +141,33 @@ function buildArraySchema (field: FieldConfig): ZodTypeAny {
     return z.array(buildObjectSchema(field.fields))
   }
   return z.array(z.object({}))
+}
+
+function buildBlocksSchema (field: FieldConfig): ZodTypeAny {
+  if (!('blocks' in field)) return z.array(z.object({}))
+  const blockSchemas = field.blocks.map(block => {
+    const shape = buildObjectSchema(block.fields).shape
+    return z.object({ blockType: z.literal(block.slug), ...shape })
+  })
+  let itemSchema: ZodTypeAny
+  const first = blockSchemas[0]
+  if (first !== undefined && blockSchemas.length >= 2) {
+    const rest = blockSchemas.slice(1)
+    // Zod discriminatedUnion requires [schema, ...schema[]] tuple
+    itemSchema = z.discriminatedUnion('blockType', [first, ...rest] as [typeof first, ...(typeof first)[]])
+  } else if (first !== undefined) {
+    itemSchema = first
+  } else {
+    return z.array(z.object({}))
+  }
+  let schema = z.array(itemSchema)
+  if ('minRows' in field && field.minRows !== undefined) {
+    schema = schema.min(field.minRows)
+  }
+  if ('maxRows' in field && field.maxRows !== undefined) {
+    schema = schema.max(field.maxRows)
+  }
+  return schema
 }
 
 function buildObjectSchema (fields: readonly FieldConfig[]): ZodObject {

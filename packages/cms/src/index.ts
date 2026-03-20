@@ -33,6 +33,8 @@ export type {
   ColorFieldConfig,
   MultiselectFieldConfig,
   ArrayFieldConfig,
+  BlockDefinition,
+  BlocksFieldConfig,
   CollectionConfig,
   CollectionLabels,
   GlobalConfig,

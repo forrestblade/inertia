@@ -6,3 +6,4 @@ export type { InteractionBase, InteractionDetail } from './interaction-emitter.j
 export { localeObserver } from './locale-observer.js'
 export type { LocaleSubscriber } from './locale-observer.js'
 export { resolveSpace } from './resolve-space.js'
+export { themeManager } from '../tokens/theme-manager.js'
