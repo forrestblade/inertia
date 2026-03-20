@@ -9,13 +9,26 @@
     "lint": "eslint .",
     "typecheck": "pnpm build",
     "validate": "pnpm typecheck && pnpm lint",
-    "prepare": "husky"
+    "prepare": "husky",
+    "test:integration": "vitest run --project integration",
+    "test:e2e": "playwright test",
+    "test:coverage": "vitest run --coverage",
+    "test:mutate": "stryker run",
+    "test:smoke": "vitest run --tags-filter=smoke"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@stryker-mutator/core": "^9.6.0",
+    "@stryker-mutator/vitest-runner": "^9.6.0",
+    "@testcontainers/postgresql": "^11.13.0",
+    "@types/supertest": "^7.2.0",
+    "@vitest/coverage-v8": "^4.1.0",
     "eslint": "^9.22.0",
     "happy-dom": "^20.8.3",
     "husky": "^9.1.7",
+    "msw": "^2.12.13",
     "neostandard": "^0.13.0",
+    "supertest": "^7.2.2",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   },
@@ -25,7 +38,8 @@
   },
   "pnpm": {
     "onlyBuiltDependencies": [
-      "argon2"
+      "argon2",
+      "msw"
     ]
   },
   "license": "MIT",
