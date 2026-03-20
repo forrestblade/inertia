@@ -134,4 +134,4 @@ export { isUploadEnabled, getMediaFields, getMimeType, createServeHandler, creat
 export type { UploadResult } from './media/index.js'
 
 export { buildCms } from './config/index.js'
-export type { CmsConfig, CmsInstance, Plugin } from './config/index.js'
+export type { CmsConfig, CmsInstance, Plugin, LocaleConfig, LocalizationConfig } from './config/index.js'
