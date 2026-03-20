@@ -82,3 +82,7 @@ export type { TelemetryConfig, TelemetryHandle } from './init.js'
 // Server ingestion handler
 export { createIngestionHandler } from './handler.js'
 export type { IngestionHandlerConfig } from './handler.js'
+
+// Server-side event logger
+export { createServerEventLogger } from './server-events.js'
+export type { ServerEventLogger } from './server-events.js'
