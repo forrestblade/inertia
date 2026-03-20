@@ -138,3 +138,6 @@ export type { UploadResult } from './media/index.js'
 
 export { buildCms } from './config/index.js'
 export type { CmsConfig, CmsInstance, Plugin } from './config/index.js'
+
+export { startPublishScheduler } from './scheduler.js'
+export type { SchedulerHandle } from './scheduler.js'
