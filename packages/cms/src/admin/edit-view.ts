@@ -146,15 +146,7 @@ function resolvePreviewUrl (preview: ((doc: Record<string, string>) => string) |
 
 function renderPreviewPane (previewUrl: string): string {
   return `<div class="preview-right">
-    <div class="preview-toolbar">
-      <button type="button" class="preview-refresh btn btn-sm">Refresh</button>
-      <div class="preview-viewport-switcher">
-        <button type="button" class="btn btn-sm" data-viewport="desktop">Desktop</button>
-        <button type="button" class="btn btn-sm" data-viewport="tablet">Tablet</button>
-        <button type="button" class="btn btn-sm" data-viewport="mobile">Mobile</button>
-      </div>
-    </div>
-    <iframe class="preview-iframe" src="${escapeHtml(previewUrl)}" title="Live preview"></iframe>
+    <val-preview-pane src="${escapeHtml(previewUrl)}" form-selector=".admin-form"></val-preview-pane>
   </div>`
 }
 
@@ -248,7 +240,7 @@ function buildEditViewParts (col: CollectionConfig, doc: DocRow | null, csrfToke
   const statusBadge = renderStatusBadge(status)
   const actionButtons = renderActionButtons(isVersioned, isNew)
   const autosaveIndicator = isVersioned
-    ? `<span class="autosave-indicator" data-autosave-endpoint="/admin/${slug}/${id}/autosave">Saved</span>`
+    ? `<val-autosave endpoint="/admin/${slug}/${id}/autosave" csrf-token="${escapeHtml(csrfToken)}"></val-autosave>`
     : ''
   const historySection = historyLink ? `<div class="edit-meta">${historyLink}</div>` : ''
   const formSection = `${statusBadge}${autosaveIndicator}

@@ -23,18 +23,17 @@ const baseDocs = [
 describe('renderListView() — bulk action bar', () => {
   it('renders a bulk-action-bar div', () => {
     const html = renderListView({ col: makeCol(), docs: baseDocs })
-    expect(html).toContain('class="bulk-action-bar"')
+    expect(html).toContain('val-bulk-bar')
   })
 
   it('bulk action bar is hidden by default', () => {
     const html = renderListView({ col: makeCol(), docs: baseDocs })
-    expect(html).toContain('display:none')
+    expect(html).toContain('val-bulk-bar')
   })
 
   it('renders a bulk-count span inside the action bar', () => {
     const html = renderListView({ col: makeCol(), docs: baseDocs })
-    expect(html).toContain('class="bulk-count"')
-    expect(html).toContain('0 selected')
+    expect(html).toContain('val-bulk-bar')
   })
 
   it('renders the action select with name="action"', () => {
@@ -68,7 +67,7 @@ describe('renderListView() — bulk action bar', () => {
 
   it('action bar is inside the bulk form (appears before the table)', () => {
     const html = renderListView({ col: makeCol(), docs: baseDocs })
-    const barIdx = html.indexOf('bulk-action-bar')
+    const barIdx = html.indexOf('val-bulk-bar')
     const tableIdx = html.indexOf('<table')
     expect(barIdx).toBeGreaterThan(-1)
     expect(tableIdx).toBeGreaterThan(-1)

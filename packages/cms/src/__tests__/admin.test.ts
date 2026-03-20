@@ -348,7 +348,7 @@ describe('nonce threading', () => {
       collections: [],
       nonce: 'abc'
     })
-    expect(html).toContain('<script src="/admin/_assets/admin-client.js" nonce="abc" defer>')
+    expect(html).toContain('<script type="module" src="/admin/_assets/admin-client.js" nonce="abc">')
   })
 
   it('renderEditView adds nonce to delete dialog script', () => {

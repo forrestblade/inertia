@@ -680,7 +680,7 @@ ${navItems}
     })()
   </script>`
     : ''}
-  <script src="/admin/_assets/admin-client.js"${args.nonce ? ` nonce="${args.nonce}"` : ' nonce="' + CSP_NONCE_PLACEHOLDER + '"'} defer></script>
+  <script type="module" src="/admin/_assets/admin-client.js"${args.nonce ? ` nonce="${args.nonce}"` : ' nonce="' + CSP_NONCE_PLACEHOLDER + '"'}></script>
 </body>
 </html>`
 }

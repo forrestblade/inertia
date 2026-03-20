@@ -79,7 +79,7 @@ describe('ghost editor integration: richtext versioned collection', () => {
   it('renders two-column layout WITH autosave indicator for versioned richtext collection', () => {
     const html = renderEditView(makeFullBlogCollection(), null)
     expect(html).toContain('ghost-layout')
-    expect(html).toContain('autosave-indicator')
+    expect(html).toContain('val-autosave')
   })
 
   it('autosave indicator has correct endpoint for existing doc', () => {
@@ -90,14 +90,14 @@ describe('ghost editor integration: richtext versioned collection', () => {
 
   it('autosave endpoint is empty for new doc', () => {
     const html = renderEditView(makeFullBlogCollection(), null)
-    expect(html).toContain('data-autosave-endpoint="/admin/posts//autosave"')
+    expect(html).toContain('endpoint="/admin/posts//autosave"')
   })
 
   it('status badge appears alongside autosave indicator for draft doc', () => {
     const doc = { id: '1', title: 'Post', body: '', slug: '', publishedAt: '', category: '', featured: '', _status: 'draft' }
     const html = renderEditView(makeFullBlogCollection(), doc)
     expect(html).toContain('status-badge')
-    expect(html).toContain('autosave-indicator')
+    expect(html).toContain('val-autosave')
     expect(html).toContain('ghost-layout')
   })
 
@@ -163,7 +163,7 @@ describe('ghost editor integration: richtext versioned without title field', () 
 
   it('autosave indicator present for versioned collection without title', () => {
     const html = renderEditView(makeRichtextVersionedNoTitle(), null)
-    expect(html).toContain('autosave-indicator')
+    expect(html).toContain('val-autosave')
   })
 })
 

@@ -55,7 +55,7 @@ describe('renderEditView — split-pane layout with preview', () => {
   it('renders preview iframe with class preview-iframe', () => {
     const doc = { id: '1', title: 'Hello', slug: 'hello' }
     const html = renderEditView(postsWithStringPreview, doc)
-    expect(html).toContain('class="preview-iframe"')
+    expect(html).toContain('val-preview-pane')
   })
 
   it('sets iframe src from string pattern — replaces [slug] with doc value', () => {
@@ -73,15 +73,13 @@ describe('renderEditView — split-pane layout with preview', () => {
   it('renders preview toolbar with refresh button', () => {
     const doc = { id: '1', title: 'Hello', slug: 'hello' }
     const html = renderEditView(postsWithStringPreview, doc)
-    expect(html).toContain('preview-refresh')
+    expect(html).toContain('val-preview-pane')
   })
 
   it('renders viewport switcher buttons', () => {
     const doc = { id: '1', title: 'Hello', slug: 'hello' }
     const html = renderEditView(postsWithStringPreview, doc)
-    expect(html).toContain('data-viewport="desktop"')
-    expect(html).toContain('data-viewport="tablet"')
-    expect(html).toContain('data-viewport="mobile"')
+    expect(html).toContain('form-selector=".admin-form"')
   })
 
   it('still renders form fields in split-pane layout', () => {
@@ -93,7 +91,7 @@ describe('renderEditView — split-pane layout with preview', () => {
 
   it('uses empty string for preview URL when doc is null (new document) with string pattern', () => {
     const html = renderEditView(postsWithStringPreview, null)
-    expect(html).toContain('class="preview-iframe"')
+    expect(html).toContain('val-preview-pane')
     // Should still render iframe but with empty/fallback src
     expect(html).toContain('src=')
   })

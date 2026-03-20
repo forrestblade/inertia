@@ -42,3 +42,17 @@ describe('stripTrailingSlash', () => {
     expect(stripTrailingSlash('//')).toBe('/')
   })
 })
+
+describe('open redirect prevention', () => {
+  it('returns null for protocol-relative URL //evil.com/', () => {
+    expect(stripTrailingSlash('//evil.com/')).toBe(null)
+  })
+
+  it('returns null for protocol-relative URL //evil.com/path/', () => {
+    expect(stripTrailingSlash('//evil.com/path/')).toBe(null)
+  })
+
+  it('returns null for protocol-relative URL with query //evil.com/?x=1', () => {
+    expect(stripTrailingSlash('//evil.com/?x=1')).toBe(null)
+  })
+})
