@@ -3,6 +3,7 @@ import { FieldType } from '../schema/field-types.js'
 import type { BlocksFieldConfig, BlockDefinition, FieldConfig } from '../schema/field-types.js'
 import { field } from '../schema/fields.js'
 import { generateZodSchema, generatePartialSchema } from '../validation/zod-generator.js'
+import { getColumnType } from '../db/column-map.js'
 
 describe('FieldType.BLOCKS', () => {
   it('exists and equals "blocks"', () => {
@@ -166,5 +167,16 @@ describe('Zod validation for blocks field', () => {
     const schema = generatePartialSchema([blocksField])
     const result = schema.safeParse({})
     expect(result.success).toBe(true)
+  })
+})
+
+describe('Column map for blocks field', () => {
+  it('getColumnType returns JSONB for blocks field', () => {
+    const blocksField: FieldConfig = {
+      type: 'blocks',
+      name: 'content',
+      blocks: [{ slug: 'hero', fields: [{ type: 'text', name: 'heading' } as FieldConfig] }]
+    }
+    expect(getColumnType(blocksField)).toBe('JSONB')
   })
 })
