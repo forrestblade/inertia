@@ -97,8 +97,28 @@ function renderBooleanFilter (args: ListViewArgs, f: BooleanFieldConfig): string
 </span>`
 }
 
+function renderStatusFilter (args: ListViewArgs): string {
+  const current = args.filters?.['filter_status'] ?? ''
+  const base = baseParams(args)
+  const allQs = buildQuery(base, { filter_status: '' })
+  const draftQs = buildQuery(base, { filter_status: 'draft' })
+  const publishedQs = buildQuery(base, { filter_status: 'published' })
+  const allClass = current === '' ? ' filter-active' : ''
+  const draftClass = current === 'draft' ? ' filter-active' : ''
+  const publishedClass = current === 'published' ? ' filter-active' : ''
+  return `<span class="list-filter-label">Status:
+  <a href="?${allQs}" class="filter-link${allClass}">All</a>
+  <a href="?${draftQs}" class="filter-link${draftClass}">Draft</a>
+  <a href="?${publishedQs}" class="filter-link${publishedClass}">Published</a>
+</span>`
+}
+
 function renderFilters (args: ListViewArgs): string {
   const parts: string[] = []
+  const isVersioned = args.col.versions?.drafts === true
+  if (isVersioned) {
+    parts.push(renderStatusFilter(args))
+  }
   for (const f of args.col.fields) {
     if (f.type === 'select') parts.push(renderSelectFilter(args, f))
     if (f.type === 'boolean') parts.push(renderBooleanFilter(args, f))
@@ -134,7 +154,9 @@ function renderPagination (args: ListViewArgs): string {
 
 function renderTable (args: ListViewArgs): string {
   const { col, docs } = args
+  const isVersioned = col.versions?.drafts === true
   const displayFields = col.fields.slice(0, 3)
+  const statusHeader = isVersioned ? '<th>Status</th>' : ''
   const headerCells = displayFields.map(f => {
     const label = f.label ?? f.name
     return `<th>${sortLink(args, f.name, label)}</th>`
@@ -143,10 +165,13 @@ function renderTable (args: ListViewArgs): string {
     const cells = displayFields.map(f => `<td>${escapeHtml(String(doc[f.name] ?? ''))}</td>`).join('')
     const safeId = escapeHtml(doc.id)
     const safeSlug = escapeHtml(col.slug)
-    return `<tr><td><a href="/admin/${safeSlug}/${safeId}/edit">${safeId.slice(0, 8)}\u2026</a></td>${cells}<td class="actions-cell"><a href="/admin/${safeSlug}/${safeId}/edit" class="action-link">Edit</a></td></tr>`
+    const statusCell = isVersioned
+      ? `<td><span class="status-badge status-${escapeHtml(String(doc._status ?? 'draft'))}">${doc._status === 'published' ? 'Published' : 'Draft'}</span></td>`
+      : ''
+    return `<tr><td><a href="/admin/${safeSlug}/${safeId}/edit">${safeId.slice(0, 8)}\u2026</a></td>${cells}${statusCell}<td class="actions-cell"><a href="/admin/${safeSlug}/${safeId}/edit" class="action-link">Edit</a></td></tr>`
   }).join('\n')
   return `<table>
-  <thead><tr><th>ID</th>${headerCells}<th>Actions</th></tr></thead>
+  <thead><tr><th>ID</th>${headerCells}${statusHeader}<th>Actions</th></tr></thead>
   <tbody>${rows}</tbody>
 </table>`
 }
