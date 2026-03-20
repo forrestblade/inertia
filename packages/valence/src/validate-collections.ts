@@ -27,15 +27,13 @@ function validateSlugFormat (slug: string): Result<void, CollectionValidationErr
   return ok(undefined)
 }
 
-function getTopLevelFieldNames (fields: readonly FieldConfig[]): ReadonlySet<string> {
-  return new Set(fields.map((f) => f.name))
-}
-
 function validateSlugFromFields (
   collection: CollectionConfig
 ): Result<void, CollectionValidationError> {
-  const fieldNames = getTopLevelFieldNames(collection.fields)
-  const slugFields = collection.fields.filter((f): f is Extract<FieldConfig, { type: 'slug' }> => f.type === 'slug')
+  const fieldNames = new Set(collection.fields.map((f) => f.name))
+  const slugFields = collection.fields.filter(
+    (f): f is Extract<FieldConfig, { type: 'slug' }> => f.type === 'slug'
+  )
 
   for (const slugField of slugFields) {
     const { slugFrom } = slugField
@@ -53,15 +51,14 @@ function validateSlugFromFields (
 export function validateCollections (
   collections: readonly CollectionConfig[]
 ): Result<void, CollectionValidationError> {
+  const seen = new Set<string>()
+
   for (const col of collections) {
     const formatResult = validateSlugFormat(col.slug)
     if (formatResult.isErr()) {
       return formatResult
     }
-  }
 
-  const seen = new Set<string>()
-  for (const col of collections) {
     if (seen.has(col.slug)) {
       return err({
         code: CollectionValidationCode.DUPLICATE_COLLECTION_SLUG,
@@ -69,9 +66,7 @@ export function validateCollections (
       })
     }
     seen.add(col.slug)
-  }
 
-  for (const col of collections) {
     const slugFromResult = validateSlugFromFields(col)
     if (slugFromResult.isErr()) {
       return slugFromResult
