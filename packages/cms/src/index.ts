@@ -130,8 +130,8 @@ export {
   escapeHtml
 } from './admin/index.js'
 
-export { isUploadEnabled, getMediaFields, getMimeType, createServeHandler, createUploadHandler } from './media/index.js'
-export type { UploadResult } from './media/index.js'
+export { isUploadEnabled, getMediaFields, getMimeType, getUploadConfig, createServeHandler, createUploadHandler } from './media/index.js'
+export type { ImageSize, UploadConfig, UploadResult } from './media/index.js'
 
 export { buildCms } from './config/index.js'
 export type { CmsConfig, CmsInstance, Plugin } from './config/index.js'
