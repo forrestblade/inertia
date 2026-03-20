@@ -13,3 +13,6 @@ export {
   validateTheme,
 } from './theme-contract.js'
 export type { ThemeToken, DarkThemeToken } from './theme-contract.js'
+export { createTokenSheet, lightTokenSheet, darkTokenSheet, mergeTokenSheets, LIGHT_TOKENS_CSS, DARK_TOKENS_CSS } from './token-sheets.js'
+export { ThemeMode, themeManager } from './theme-manager.js'
+export type { ThemeMode as ThemeModeType } from './theme-manager.js'

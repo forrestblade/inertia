@@ -14,16 +14,25 @@ export type ThemeMode = typeof ThemeMode[keyof typeof ThemeMode]
 
 type ResolvedTheme = 'light' | 'dark'
 
-const darkMatcher: { matches: boolean, addEventListener: (t: string, h: (e: MediaQueryListEvent) => void) => void, removeEventListener: (t: string, h: (e: MediaQueryListEvent) => void) => void } =
-  typeof matchMedia === 'function'
-    ? matchMedia('(prefers-color-scheme: dark)')
-    : { matches: false, addEventListener () {}, removeEventListener () {} }
+interface DarkMatcher {
+  matches: boolean
+  addEventListener (t: string, h: (e: MediaQueryListEvent) => void): void
+  removeEventListener (t: string, h: (e: MediaQueryListEvent) => void): void
+}
+
+function getDarkMatcher (): DarkMatcher {
+  if (typeof globalThis.matchMedia === 'function') {
+    return globalThis.matchMedia('(prefers-color-scheme: dark)')
+  }
+  return { matches: false, addEventListener () {}, removeEventListener () {} }
+}
 
 class ThemeManagerImpl {
   private _mode: ThemeMode = ThemeMode.Light
   private readonly _roots = new Set<ShadowRoot>()
   private _overrideSheet: CSSStyleSheet | null = null
   private _activeSheet: CSSStyleSheet = lightTokenSheet
+  private _darkMatcher: DarkMatcher = getDarkMatcher()
   private readonly _systemHandler = (e: MediaQueryListEvent): void => {
     if (this._mode !== ThemeMode.System) return
     this._applyResolved(e.matches ? 'dark' : 'light')
@@ -33,7 +42,7 @@ class ThemeManagerImpl {
     const resolved: Record<ThemeMode, () => ResolvedTheme> = {
       [ThemeMode.Light]: () => 'light',
       [ThemeMode.Dark]: () => 'dark',
-      [ThemeMode.System]: () => darkMatcher.matches ? 'dark' : 'light',
+      [ThemeMode.System]: () => this._darkMatcher.matches ? 'dark' : 'light',
     }
     return resolved[this._mode]()
   }
@@ -41,9 +50,9 @@ class ThemeManagerImpl {
   setTheme (mode: ThemeMode): void {
     this._mode = mode
     if (mode === ThemeMode.System) {
-      darkMatcher.addEventListener('change', this._systemHandler)
+      this._darkMatcher.addEventListener('change', this._systemHandler)
     } else {
-      darkMatcher.removeEventListener('change', this._systemHandler)
+      this._darkMatcher.removeEventListener('change', this._systemHandler)
     }
     this._applyResolved(this.resolveTheme())
     document.dispatchEvent(new CustomEvent('val:theme-change', {
@@ -81,11 +90,12 @@ class ThemeManagerImpl {
 
   /** Test-only: reset all state. */
   _reset (): void {
-    darkMatcher.removeEventListener('change', this._systemHandler)
+    this._darkMatcher.removeEventListener('change', this._systemHandler)
     this._roots.clear()
     this._overrideSheet = null
     this._mode = ThemeMode.Light
     this._activeSheet = lightTokenSheet
+    this._darkMatcher = getDarkMatcher()
   }
 
   private _applyResolved (resolved: ResolvedTheme): void {

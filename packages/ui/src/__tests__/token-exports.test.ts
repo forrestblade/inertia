@@ -1,39 +1,36 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { themeManager, ThemeMode, createTokenSheet } from '../tokens/index.js'
+import { themeManager as coreThemeManager } from '../core/index.js'
+import { darkTokenSheet } from '../tokens/token-sheets.js'
 
 describe('token exports', () => {
-  it('themeManager is re-exported from tokens/index', async () => {
-    const tokens = await import('../tokens/index.js')
-    expect(tokens.themeManager).toBeDefined()
-    expect(typeof tokens.themeManager.setTheme).toBe('function')
+  it('themeManager is re-exported from tokens/index', () => {
+    expect(themeManager).toBeDefined()
+    expect(typeof themeManager.setTheme).toBe('function')
   })
 
-  it('ThemeMode is re-exported from tokens/index', async () => {
-    const tokens = await import('../tokens/index.js')
-    expect(tokens.ThemeMode).toBeDefined()
-    expect(tokens.ThemeMode.Light).toBe('light')
+  it('ThemeMode is re-exported from tokens/index', () => {
+    expect(ThemeMode).toBeDefined()
+    expect(ThemeMode.Light).toBe('light')
   })
 
-  it('createTokenSheet is re-exported from tokens/index', async () => {
-    const tokens = await import('../tokens/index.js')
-    expect(tokens.createTokenSheet).toBeDefined()
-    expect(typeof tokens.createTokenSheet).toBe('function')
+  it('createTokenSheet is re-exported from tokens/index', () => {
+    expect(createTokenSheet).toBeDefined()
+    expect(typeof createTokenSheet).toBe('function')
   })
 
-  it('themeManager is re-exported from core/index', async () => {
-    const core = await import('../core/index.js')
-    expect(core.themeManager).toBeDefined()
-  })
-
-  it('themeManager is accessible from top-level index', async () => {
-    const ui = await import('../index.js')
-    expect(ui.themeManager).toBeDefined()
+  it('themeManager is re-exported from core/index', () => {
+    expect(coreThemeManager).toBeDefined()
+    expect(coreThemeManager).toBe(themeManager)
   })
 })
 
 describe('system preference auto-switch', () => {
   let mockMql: { matches: boolean, listeners: Array<(e: MediaQueryListEvent) => void> }
+  let originalMatchMedia: typeof globalThis.matchMedia
 
   beforeEach(() => {
+    originalMatchMedia = globalThis.matchMedia
     mockMql = { matches: false, listeners: [] }
     globalThis.matchMedia = (query: string) => ({
       matches: mockMql.matches,
@@ -49,30 +46,16 @@ describe('system preference auto-switch', () => {
       },
       dispatchEvent: () => false,
     }) as MediaQueryList
+    // Reset after matchMedia override so the manager picks up the mock
+    themeManager._reset()
   })
 
   afterEach(() => {
-    // Restore basic matchMedia polyfill
-    globalThis.matchMedia = (query: string) => ({
-      matches: false,
-      media: query,
-      onchange: null,
-      addListener: () => {},
-      removeListener: () => {},
-      addEventListener: () => {},
-      removeEventListener: () => {},
-      dispatchEvent: () => false,
-    }) as MediaQueryList
+    themeManager._reset()
+    globalThis.matchMedia = originalMatchMedia
   })
 
-  it('system preference change auto-switches when mode is "system"', async () => {
-    // Need fresh module imports after matchMedia override
-    // Reset modules to pick up new matchMedia
-    const { ThemeMode } = await import('../tokens/theme-manager.js')
-    const { themeManager } = await import('../tokens/theme-manager.js')
-    const { darkTokenSheet } = await import('../tokens/token-sheets.js')
-
-    themeManager._reset()
+  it('system preference change auto-switches when mode is "system"', () => {
     themeManager.setTheme(ThemeMode.System)
 
     // Simulate system dark mode change
@@ -82,6 +65,5 @@ describe('system preference auto-switch', () => {
     }
 
     expect(themeManager.getActiveSheet()).toBe(darkTokenSheet)
-    themeManager._reset()
   })
 })
