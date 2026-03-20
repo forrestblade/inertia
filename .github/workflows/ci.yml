@@ -171,3 +171,62 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
+
+  release:
+    needs: [publish]
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - name: Create GitHub releases for newly published packages
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for pkg in packages/ui packages/core packages/db packages/telemetry packages/cms packages/valence; do
+            VERSION=$(node -p "require('./$pkg/package.json').version")
+            NAME=$(node -p "require('./$pkg/package.json').name")
+            SHORT=$(echo "$NAME" | sed 's/@valencets\///')
+            TAG="${SHORT}@${VERSION}"
+
+            # Skip if tag already exists
+            if git rev-parse "refs/tags/$TAG" >/dev/null 2>&1; then
+              echo "Tag $TAG already exists, skipping"
+              continue
+            fi
+
+            # Check if this version was actually published (not skipped)
+            PUBLISHED=$(npm view "$NAME@$VERSION" version 2>/dev/null || echo "")
+            if [ "$PUBLISHED" != "$VERSION" ]; then
+              echo "Version $NAME@$VERSION not on npm, skipping release"
+              continue
+            fi
+
+            # Find previous tag for this package to generate changelog
+            PREV_TAG=$(git tag -l "${SHORT}@*" --sort=-v:refname | head -1)
+            if [ -n "$PREV_TAG" ]; then
+              CHANGELOG=$(git log --pretty=format:"- %s (%h)" "$PREV_TAG"..HEAD -- "$pkg")
+            else
+              CHANGELOG=$(git log --pretty=format:"- %s (%h)" -20 -- "$pkg")
+            fi
+
+            if [ -z "$CHANGELOG" ]; then
+              CHANGELOG="- Release $TAG"
+            fi
+
+            # Create tag and release
+            git tag "$TAG"
+            git push origin "$TAG"
+
+            gh release create "$TAG" \
+              --title "$NAME v$VERSION" \
+              --notes "$(printf '## %s v%s\n\n### Changes\n\n%s\n\n### Install\n\n```bash\npnpm add %s@%s\n```' "$NAME" "$VERSION" "$CHANGELOG" "$NAME" "$VERSION")"
+
+            echo "Created release $TAG"
+          done
