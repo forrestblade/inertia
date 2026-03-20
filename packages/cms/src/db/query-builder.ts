@@ -99,21 +99,15 @@ function buildLocaleExtracts (state: QueryState): string {
 }
 
 function buildSelectSql (state: QueryState, table: string): string {
+  const extras: string[] = []
   const localeExtracts = buildLocaleExtracts(state)
-  const hasLocale = localeExtracts.length > 0
-
+  if (localeExtracts.length > 0) extras.push(localeExtracts)
   if (state.searchQuery !== null) {
     const searchParamIdx = getWhereParamCount(state) + 1
     const lang = sanitizeLanguage(state.searchLanguage)
-    const rank = `ts_rank(search_vector, plainto_tsquery('${lang}', $${searchParamIdx})) AS search_rank`
-    if (hasLocale) {
-      return `SELECT *, ${localeExtracts}, ${rank} FROM ${table}`
-    }
-    return `SELECT *, ${rank} FROM ${table}`
+    extras.push(`ts_rank(search_vector, plainto_tsquery('${lang}', $${searchParamIdx})) AS search_rank`)
   }
-  if (hasLocale) {
-    return `SELECT *, ${localeExtracts} FROM ${table}`
-  }
+  if (extras.length > 0) return `SELECT *, ${extras.join(', ')} FROM ${table}`
   return `SELECT * FROM ${table}`
 }
 
