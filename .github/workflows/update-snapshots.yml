@@ -12,7 +12,10 @@ jobs:
   update-snapshots:
     if: >
       github.event.issue.pull_request != null &&
-      github.event.comment.body == '/update-snapshots'
+      github.event.comment.body == '/update-snapshots' &&
+      (github.event.comment.author_association == 'OWNER' ||
+       github.event.comment.author_association == 'MEMBER' ||
+       github.event.comment.author_association == 'COLLABORATOR')
     runs-on: ubuntu-24.04
     services:
       postgres:
@@ -28,7 +31,7 @@ jobs:
     steps:
       - name: Get PR branch
         id: pr
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b
         with:
           script: |
             const pr = await github.rest.pulls.get({
@@ -66,7 +69,7 @@ jobs:
           PGUSER: postgres
 
       - name: Commit updated snapshots
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@b863ae1933cb653a53c021fe36dbb774e1fb9403
         with:
           commit_message: 'chore: update visual snapshots [skip ci]'
           file_pattern: 'tests/e2e/__snapshots__/**/*.png'

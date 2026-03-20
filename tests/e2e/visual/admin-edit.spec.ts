@@ -8,6 +8,7 @@ test.describe('Visual: Edit form', () => {
     const edit = new EditPage(page)
     await edit.gotoNew('posts')
     await expect(edit.heading).toBeVisible()
+    await page.locator('[contenteditable]').first().waitFor({ state: 'visible' }).catch(() => {})
     await page.evaluate(() => document.fonts.ready)
     await expect(page).toHaveScreenshot('edit-new-post.png')
   })
