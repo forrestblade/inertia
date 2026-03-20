@@ -9,6 +9,20 @@ import type { StorageAdapter } from './storage-adapter.js'
 
 const SAFE_FILENAME_RE = /^[a-zA-Z0-9][a-zA-Z0-9._-]*$/
 
+function sendFile (res: ServerResponse, filename: string, data: Buffer): void {
+  res.writeHead(200, {
+    'Content-Type': getMimeType(filename),
+    'Content-Length': data.length,
+    'Cache-Control': 'public, max-age=31536000, immutable'
+  })
+  res.end(data)
+}
+
+function sendError (res: ServerResponse, status: number, error: string): void {
+  res.writeHead(status, { 'Content-Type': 'application/json' })
+  res.end(JSON.stringify({ error }))
+}
+
 export function createServeHandler (
   uploadDir: string,
   storage?: StorageAdapter
@@ -18,40 +32,29 @@ export function createServeHandler (
   return async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
     const rawFilename = req.url?.split('/').pop()
     if (!rawFilename) {
-      res.writeHead(400, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ error: 'Missing filename' }))
+      sendError(res, 400, 'Missing filename')
       return
     }
 
     const filename = basename(rawFilename)
     if (!SAFE_FILENAME_RE.test(filename)) {
-      res.writeHead(400, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ error: 'Invalid filename' }))
+      sendError(res, 400, 'Invalid filename')
       return
     }
 
     if (storage) {
       const result = await storage.read(filename)
       if (result.isErr()) {
-        res.writeHead(404, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify({ error: 'File not found' }))
+        sendError(res, 404, 'File not found')
         return
       }
-      const data = result.value
-      const contentType = getMimeType(filename)
-      res.writeHead(200, {
-        'Content-Type': contentType,
-        'Content-Length': data.length,
-        'Cache-Control': 'public, max-age=31536000, immutable'
-      })
-      res.end(data)
+      sendFile(res, filename, result.value)
       return
     }
 
     const filePath = resolve(join(resolvedUploadDir, filename))
     if (!filePath.startsWith(resolvedUploadDir)) {
-      res.writeHead(403, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ error: 'Forbidden' }))
+      sendError(res, 403, 'Forbidden')
       return
     }
 
@@ -64,19 +67,11 @@ export function createServeHandler (
     )
 
     if (result.isErr()) {
-      res.writeHead(404, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ error: 'File not found' }))
+      sendError(res, 404, 'File not found')
       return
     }
 
-    const data = result.value
-    const contentType = getMimeType(filename)
-    res.writeHead(200, {
-      'Content-Type': contentType,
-      'Content-Length': data.length,
-      'Cache-Control': 'public, max-age=31536000, immutable'
-    })
-    res.end(data)
+    sendFile(res, filename, result.value)
   }
 }
 
