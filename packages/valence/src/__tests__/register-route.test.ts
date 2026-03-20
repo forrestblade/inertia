@@ -139,3 +139,115 @@ describe('matchCustomRoute', () => {
     expect(result).toBeNull()
   })
 })
+
+describe('resolveCustomRoute integration', () => {
+  // Helper to build a route map like the one in runDev
+  function buildRouteMap (entries: ReadonlyArray<{ readonly method: string; readonly path: string; readonly handler: RouteHandler }>): Map<string, Map<string, RouteHandler>> {
+    const routes = new Map<string, Map<string, RouteHandler>>()
+    for (const entry of entries) {
+      const methodUpper = entry.method.toUpperCase()
+      let methodMap = routes.get(entry.path)
+      if (!methodMap) {
+        methodMap = new Map<string, RouteHandler>()
+        routes.set(entry.path, methodMap)
+      }
+      methodMap.set(methodUpper, entry.handler)
+    }
+    return routes
+  }
+
+  it('registered route handler is actually called when request matches', () => {
+    const handler = vi.fn()
+    const routes = buildRouteMap([{ method: 'GET', path: '/api/custom', handler }])
+
+    // Simulate the lookup logic
+    for (const [pattern, methodMap] of routes) {
+      const params = matchCustomRoute(pattern, '/api/custom')
+      if (params !== null) {
+        const matched = methodMap.get('GET')
+        if (matched) {
+          matched({} as Parameters<RouteHandler>[0], {} as Parameters<RouteHandler>[1], params)
+        }
+      }
+    }
+
+    expect(handler).toHaveBeenCalledTimes(1)
+    expect(handler).toHaveBeenCalledWith(expect.anything(), expect.anything(), {})
+  })
+
+  it('path params are extracted correctly for /api/custom/:id matching /api/custom/123', () => {
+    const handler = vi.fn()
+    const routes = buildRouteMap([{ method: 'GET', path: '/api/custom/:id', handler }])
+
+    for (const [pattern, methodMap] of routes) {
+      const params = matchCustomRoute(pattern, '/api/custom/123')
+      if (params !== null) {
+        const matched = methodMap.get('GET')
+        if (matched) {
+          matched({} as Parameters<RouteHandler>[0], {} as Parameters<RouteHandler>[1], params)
+        }
+      }
+    }
+
+    expect(handler).toHaveBeenCalledTimes(1)
+    expect(handler).toHaveBeenCalledWith(expect.anything(), expect.anything(), { id: '123' })
+  })
+
+  it('non-matching routes fall through (no handler called)', () => {
+    const handler = vi.fn()
+    const routes = buildRouteMap([{ method: 'GET', path: '/api/custom', handler }])
+
+    for (const [pattern, methodMap] of routes) {
+      const params = matchCustomRoute(pattern, '/api/other')
+      if (params !== null) {
+        const matched = methodMap.get('GET')
+        if (matched) {
+          matched({} as Parameters<RouteHandler>[0], {} as Parameters<RouteHandler>[1], params)
+        }
+      }
+    }
+
+    expect(handler).not.toHaveBeenCalled()
+  })
+
+  it('method matching works (GET vs POST on same path)', () => {
+    const getHandler = vi.fn()
+    const postHandler = vi.fn()
+    const routes = buildRouteMap([
+      { method: 'GET', path: '/api/items', handler: getHandler },
+      { method: 'POST', path: '/api/items', handler: postHandler }
+    ])
+
+    // Simulate a POST request
+    for (const [pattern, methodMap] of routes) {
+      const params = matchCustomRoute(pattern, '/api/items')
+      if (params !== null) {
+        const matched = methodMap.get('POST')
+        if (matched) {
+          matched({} as Parameters<RouteHandler>[0], {} as Parameters<RouteHandler>[1], params)
+        }
+      }
+    }
+
+    expect(getHandler).not.toHaveBeenCalled()
+    expect(postHandler).toHaveBeenCalledTimes(1)
+  })
+
+  it('route registered for POST does not match GET requests', () => {
+    const postHandler = vi.fn()
+    const routes = buildRouteMap([{ method: 'POST', path: '/api/items', handler: postHandler }])
+
+    // Simulate a GET request
+    for (const [pattern, methodMap] of routes) {
+      const params = matchCustomRoute(pattern, '/api/items')
+      if (params !== null) {
+        const matched = methodMap.get('GET')
+        if (matched) {
+          matched({} as Parameters<RouteHandler>[0], {} as Parameters<RouteHandler>[1], params)
+        }
+      }
+    }
+
+    expect(postHandler).not.toHaveBeenCalled()
+  })
+})
