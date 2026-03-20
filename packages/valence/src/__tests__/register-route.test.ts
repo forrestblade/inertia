@@ -251,3 +251,27 @@ describe('resolveCustomRoute integration', () => {
     expect(postHandler).not.toHaveBeenCalled()
   })
 })
+
+describe('exports from @valencets/valence', () => {
+  it('RouteHandler type is exported from the package index', async () => {
+    // Import RouteHandler from the package index to verify the re-export.
+    // This is a type-level test: if the import compiles, the export exists.
+    const { defineConfig } = await import('../index.js')
+    // Use a RouteHandler-typed variable via the index import path
+    const handler: import('../index.js').RouteHandler = vi.fn()
+    expect(typeof handler).toBe('function')
+    expect(typeof defineConfig).toBe('function')
+  })
+
+  it('OnServerContext includes registerRoute in its type', () => {
+    // Type-level test: if this compiles, registerRoute is on OnServerContext
+    const mockCtx: OnServerContext = {
+      server: {} as Server,
+      pool: {} as OnServerContext['pool'],
+      cms: {} as OnServerContext['cms'],
+      registerRoute: vi.fn()
+    }
+    // Verify registerRoute is callable
+    expect(typeof mockCtx.registerRoute).toBe('function')
+  })
+})
