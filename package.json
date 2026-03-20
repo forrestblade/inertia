@@ -39,7 +39,10 @@
     "supertest": "^7.2.2",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18",
-    "@valencets/graphql": "workspace:*"
+    "@valencets/graphql": "workspace:*",
+    "@valencets/plugin-seo": "workspace:*",
+    "@valencets/plugin-nested-docs": "workspace:*",
+    "@valencets/plugin-cloud-storage": "workspace:*"
   },
   "packageManager": "pnpm@10.30.3",
   "engines": {
