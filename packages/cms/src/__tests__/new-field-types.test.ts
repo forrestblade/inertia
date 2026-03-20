@@ -47,7 +47,7 @@ describe('FieldType — new types', () => {
   })
 
   it('has exactly 18 types total', () => {
-    expect(Object.keys(FieldType)).toHaveLength(18)
+    expect(Object.keys(FieldType)).toHaveLength(19)
   })
 })
 
@@ -361,9 +361,10 @@ describe('FieldConfig union — 18 types', () => {
       { type: 'json', name: 'o' },
       { type: 'color', name: 'p' },
       { type: 'multiselect', name: 'q', options: [{ label: 'A', value: 'a' }] },
-      { type: 'array', name: 'r', fields: [{ type: 'text', name: 'sub' }] }
+      { type: 'array', name: 'r', fields: [{ type: 'text', name: 'sub' }] },
+      { type: 'blocks', name: 's', blocks: [{ slug: 'hero', fields: [{ type: 'text', name: 'heading' }] }] }
     ]
-    expect(fields).toHaveLength(18)
-    expect(new Set(fields.map(f => f.type)).size).toBe(18)
+    expect(fields).toHaveLength(19)
+    expect(new Set(fields.map(f => f.type)).size).toBe(19)
   })
 })

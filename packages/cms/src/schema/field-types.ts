@@ -16,7 +16,8 @@ export const FieldType = {
   JSON: 'json',
   COLOR: 'color',
   MULTISELECT: 'multiselect',
-  ARRAY: 'array'
+  ARRAY: 'array',
+  BLOCKS: 'blocks'
 } as const
 
 export type FieldType = typeof FieldType[keyof typeof FieldType]
@@ -152,3 +153,17 @@ export type FieldConfig =
   | ColorFieldConfig
   | MultiselectFieldConfig
   | ArrayFieldConfig
+  | BlocksFieldConfig
+
+export interface BlockDefinition {
+  readonly slug: string
+  readonly fields: readonly FieldConfig[]
+  readonly labels?: { readonly singular?: string; readonly plural?: string } | undefined
+}
+
+export interface BlocksFieldConfig extends FieldBaseConfig {
+  readonly type: 'blocks'
+  readonly blocks: readonly BlockDefinition[]
+  readonly minRows?: number | undefined
+  readonly maxRows?: number | undefined
+}

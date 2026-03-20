@@ -1,7 +1,9 @@
+import { initBlocksFields } from './blocks-client.js'
 import { initAllEditors } from './lexical-entry.js'
 
 // Script is defer'd so DOM is ready — no need for DOMContentLoaded
 initAllEditors()
+initBlocksFields()
 
 // Wire up delete dialog triggers
 const trigger = document.querySelector<HTMLElement>('.delete-trigger')

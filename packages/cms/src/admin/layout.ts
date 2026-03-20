@@ -430,6 +430,68 @@ export function renderLayout (args: LayoutArgs): string {
       color: var(--val-color-text);
     }
 
+
+    /* --- Blocks field --- */
+    .blocks-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .blocks-item {
+      border: 1px solid var(--val-color-border);
+      border-radius: var(--val-radius-lg);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .blocks-item legend {
+      font-size: var(--val-text-sm);
+      font-weight: var(--val-weight-semibold);
+      color: var(--val-color-text-muted);
+      padding: 0 0.5rem;
+    }
+    .blocks-remove {
+      align-self: flex-end;
+      background: none;
+      border: 1px solid var(--val-color-error);
+      border-radius: var(--val-radius-md);
+      padding: 0.25rem 0.5rem;
+      color: var(--val-color-error);
+      font-size: var(--val-text-xs);
+      cursor: pointer;
+    }
+    .blocks-remove:hover {
+      background: var(--val-color-error);
+      color: oklch(1 0 0);
+    }
+    .blocks-add {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .blocks-type-select {
+      background: var(--val-color-bg-muted);
+      border: 1px solid var(--val-color-border);
+      border-radius: var(--val-radius-md);
+      padding: 0.375rem 0.75rem;
+      color: var(--val-color-text);
+      font-size: var(--val-text-sm);
+    }
+    .blocks-add-btn {
+      background: var(--val-color-bg-muted);
+      border: 1px dashed var(--val-color-border);
+      border-radius: var(--val-radius-md);
+      padding: 0.375rem 0.75rem;
+      color: var(--val-color-text-muted);
+      font-size: var(--val-text-sm);
+      cursor: pointer;
+    }
+    .blocks-add-btn:hover {
+      border-color: var(--val-blue-500);
+      color: var(--val-color-text);
+    }
+
     /* --- Edit meta + revisions --- */
     .edit-meta {
       margin-top: 1rem;

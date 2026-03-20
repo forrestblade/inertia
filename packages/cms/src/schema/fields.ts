@@ -1,4 +1,5 @@
 import type {
+  BlocksFieldConfig,
   TextFieldConfig,
   TextareaFieldConfig,
   RichtextFieldConfig,
@@ -90,5 +91,9 @@ export const field = {
 
   array (opts: Omit<ArrayFieldConfig, 'type'>): ArrayFieldConfig {
     return { type: 'array', ...opts }
+  },
+
+  blocks (opts: Omit<BlocksFieldConfig, 'type'>): BlocksFieldConfig {
+    return { type: 'blocks', ...opts }
   }
 }
