@@ -11,11 +11,19 @@ interface SessionRow {
   readonly expires_at: string
 }
 
-export function createSession (userId: string, pool: DbPool): ResultAsync<string, CmsError> {
+/** Default session lifetime in seconds (2 hours). */
+export const DEFAULT_SESSION_MAX_AGE = 7200
+
+/**
+ * Create a new session for the given user.
+ * @param maxAgeSeconds — session lifetime in seconds (default 7200 = 2 hours)
+ */
+export function createSession (userId: string, pool: DbPool, maxAgeSeconds = DEFAULT_SESSION_MAX_AGE): ResultAsync<string, CmsError> {
+  const intervalSec = Math.max(60, Math.floor(maxAgeSeconds))
   return safeQuery<SessionRow[]>(
     pool,
-    'INSERT INTO cms_sessions (user_id, expires_at) VALUES ($1, NOW() + INTERVAL \'2 hours\') RETURNING id, user_id',
-    [userId]
+    'INSERT INTO cms_sessions (user_id, expires_at) VALUES ($1, NOW() + make_interval(secs => $2)) RETURNING id, user_id',
+    [userId, intervalSec]
   ).andThen((rows) => {
     const row = rows[0]
     if (!row) {
@@ -39,7 +47,7 @@ export function validateSession (sessionId: string, pool: DbPool): ResultAsync<s
   })
 }
 
-export function buildSessionCookie (sessionId: string, maxAgeSeconds = 7200, secure = true): string {
+export function buildSessionCookie (sessionId: string, maxAgeSeconds = DEFAULT_SESSION_MAX_AGE, secure = true): string {
   const secureFlag = secure ? '; Secure' : ''
   return `cms_session=${sessionId}; Path=/; HttpOnly; SameSite=Strict${secureFlag}; Max-Age=${maxAgeSeconds}`
 }

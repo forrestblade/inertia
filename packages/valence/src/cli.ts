@@ -27,7 +27,8 @@ const COMMANDS = {
   migrate: 'Run pending database migrations',
   build: 'Build the project for production',
   'user:create': 'Create an admin user',
-  learn: 'Manage learn mode tutorial'
+  learn: 'Manage learn mode tutorial',
+  'telemetry:aggregate': 'Aggregate telemetry data for analytics dashboard'
 } as const
 
 type Command = keyof typeof COMMANDS
@@ -38,7 +39,8 @@ const commandMap: Record<Command, (args: ReadonlyArray<string>) => Promise<void>
   migrate: runMigrate,
   build: runBuild,
   'user:create': runUserCreate,
-  learn: runLearn
+  learn: runLearn,
+  'telemetry:aggregate': runTelemetryAggregate
 }
 
 export async function run (argv: ReadonlyArray<string>): Promise<void> {
@@ -277,6 +279,51 @@ CREATE TABLE IF NOT EXISTS "events" (
 CREATE INDEX IF NOT EXISTS idx_events_session ON "events"("session_id");
 CREATE INDEX IF NOT EXISTS idx_events_time_category ON "events"("created_at", "event_category");
 
+CREATE TABLE IF NOT EXISTS "session_summaries" (
+  "id" SERIAL PRIMARY KEY,
+  "period_start" TIMESTAMPTZ NOT NULL,
+  "period_end" TIMESTAMPTZ NOT NULL,
+  "total_sessions" INT,
+  "unique_referrers" INT,
+  "device_mobile" INT,
+  "device_desktop" INT,
+  "device_tablet" INT,
+  "created_at" TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE("period_start", "period_end")
+);
+
+CREATE TABLE IF NOT EXISTS "event_summaries" (
+  "id" SERIAL PRIMARY KEY,
+  "period_start" TIMESTAMPTZ NOT NULL,
+  "period_end" TIMESTAMPTZ NOT NULL,
+  "event_category" VARCHAR(100),
+  "total_count" INT,
+  "unique_sessions" INT,
+  "created_at" TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE("period_start", "period_end", "event_category")
+);
+
+CREATE TABLE IF NOT EXISTS "conversion_summaries" (
+  "id" SERIAL PRIMARY KEY,
+  "period_start" TIMESTAMPTZ NOT NULL,
+  "period_end" TIMESTAMPTZ NOT NULL,
+  "intent_type" VARCHAR(100),
+  "total_count" INT,
+  "top_sources" JSONB DEFAULT '[]',
+  "created_at" TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE("period_start", "period_end", "intent_type")
+);
+
+CREATE TABLE IF NOT EXISTS "ingestion_health" (
+  "id" SERIAL PRIMARY KEY,
+  "period_start" TIMESTAMPTZ NOT NULL,
+  "payloads_accepted" INT,
+  "payloads_rejected" INT,
+  "avg_processing_ms" FLOAT,
+  "buffer_saturation_pct" FLOAT,
+  "created_at" TIMESTAMPTZ DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS "daily_summaries" (
   "id" SERIAL PRIMARY KEY,
   "site_id" TEXT NOT NULL,
@@ -442,7 +489,8 @@ async function runDev (): Promise<void> {
     secret: process.env.CMS_SECRET ?? 'dev-secret',
     uploadDir: join(projectDir, 'uploads'),
     collections: userConfig,
-    telemetryPool: telemetryEnabled ? pool : undefined
+    telemetryPool: telemetryEnabled ? pool : undefined,
+    telemetrySiteId: loadedConfig.telemetry?.siteId
   })
 
   if (cmsResult.isErr()) {
@@ -754,6 +802,64 @@ function detectPackageManager (): string {
   return 'npm'
 }
 
+// -- telemetry:aggregate --
+async function runTelemetryAggregate (_args: ReadonlyArray<string>): Promise<void> {
+  const dbConfig = loadEnvConfig()
+  if (!dbConfig) {
+    console.error('  Error: missing .env or database configuration. Run from your project root.')
+    process.exit(1)
+  }
+
+  const loadedConfig = await loadUserConfig()
+  const siteId = loadedConfig?.telemetry?.siteId ?? 'default'
+
+  log('Connecting to database...')
+  const pool = createPool(dbConfig)
+
+  try {
+    const { aggregateSessionSummary, aggregateEventSummary, aggregateConversionSummary } = await import('@valencets/telemetry')
+    const { generateDailySummary } = await import('@valencets/telemetry')
+
+    const now = new Date()
+    const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const dayEnd = new Date(dayStart.getTime() + 86_400_000)
+    const period = { start: dayStart, end: dayEnd }
+
+    log(`Aggregating telemetry for ${dayStart.toISOString().slice(0, 10)}...`)
+
+    const sessionResult = await aggregateSessionSummary(pool, period)
+    sessionResult.match(
+      (row) => { log(`  Sessions: ${row.total_sessions} total`) },
+      (err) => { log(`  Session aggregation skipped: ${err.message}`) }
+    )
+
+    const eventResult = await aggregateEventSummary(pool, period)
+    eventResult.match(
+      (rows) => { log(`  Events: ${rows.length} categories aggregated`) },
+      (err) => { log(`  Event aggregation skipped: ${err.message}`) }
+    )
+
+    const conversionResult = await aggregateConversionSummary(pool, period)
+    conversionResult.match(
+      (rows) => { log(`  Conversions: ${rows.length} intent types aggregated`) },
+      (err) => { log(`  Conversion aggregation skipped: ${err.message}`) }
+    )
+
+    const dailyResult = await generateDailySummary(pool, siteId, 'default', now)
+    dailyResult.match(
+      (row) => { log(`  Daily summary: ${row.session_count} sessions, ${row.pageview_count} pageviews, ${row.conversion_count} conversions`) },
+      (err) => { log(`  Daily summary skipped: ${err.message}`) }
+    )
+
+    log('Aggregation complete.')
+  } catch (err) {
+    console.error('  Aggregation failed:', err instanceof Error ? err.message : 'unknown error')
+    process.exit(1)
+  } finally {
+    await closePool(pool)
+  }
+}
+
 async function runMigrationsForProject (projectDir: string, config: DbConfig): Promise<boolean> {
   const migrationsDir = join(projectDir, 'migrations')
   if (!existsSync(migrationsDir)) {
@@ -762,6 +868,19 @@ async function runMigrationsForProject (projectDir: string, config: DbConfig): P
   }
 
   const pool = createPool(config)
+
+  // Run telemetry package migrations first (if telemetry is enabled)
+  const telemetryMigrationsDir = join(projectDir, 'node_modules', '@valencets', 'telemetry', 'migrations')
+  if (existsSync(telemetryMigrationsDir)) {
+    const telLoadResult = await loadMigrations(telemetryMigrationsDir)
+    if (telLoadResult.isOk() && telLoadResult.value.length > 0) {
+      const telResult = await runMigrations(pool, telLoadResult.value)
+      if (telResult.isOk() && telResult.value > 0) {
+        log(`Applied ${telResult.value} telemetry migration(s).`)
+      }
+    }
+  }
+
   const loadResult = await loadMigrations(migrationsDir)
   if (loadResult.isErr()) {
     log(`Error loading migrations: ${loadResult.error.message}`)
