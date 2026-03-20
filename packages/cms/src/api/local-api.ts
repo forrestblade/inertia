@@ -146,6 +146,22 @@ function filterReadAccess (
   return filtered as DocumentRow
 }
 
+function filterWriteAccess (
+  data: DocumentData,
+  fields: readonly FieldConfig[],
+  context: AccessArgs,
+  operation: 'create' | 'update'
+): DocumentData {
+  const filtered: Record<string, SqlValue> = {}
+  for (const [key, value] of Object.entries(data)) {
+    const fieldConfig = fields.find(f => f.name === key)
+    const accessFn = operation === 'create' ? fieldConfig?.access?.create : fieldConfig?.access?.update
+    if (accessFn && !accessFn(context)) continue
+    filtered[key] = value
+  }
+  return filtered
+}
+
 function mergeLocalizedUpdate (
   pool: DbPool,
   slug: string,
@@ -200,6 +216,17 @@ export function createLocalApi (
     return filterReadAccess(doc, col.value.fields, context)
   }
 
+  function applyWriteFilter (
+    data: DocumentData,
+    collectionSlug: string,
+    operation: 'create' | 'update'
+  ): DocumentData {
+    const col = collections.get(collectionSlug)
+    if (col.isErr()) return data
+    const context: AccessArgs = {}
+    return filterWriteAccess(data, col.value.fields, context, operation)
+  }
+
   return {
     find (args) {
       let builder = qb.query(args.collection)
@@ -252,6 +279,8 @@ export function createLocalApi (
         data = wrapLocalizedFields(data, col.value.fields, args.locale)
       }
 
+      data = applyWriteFilter(data, args.collection, 'create')
+
       return qb.query(args.collection).insert(data)
         .map((doc) => applyReadFilter(doc, args.collection))
     },
@@ -267,6 +296,8 @@ export function createLocalApi (
       } else if (isVersioned && args.draft) {
         data = { ...data, _status: StatusCode.DRAFT }
       }
+
+      data = applyWriteFilter(data, args.collection, 'update')
 
       const localizedNames = new Set(col.value.fields.filter(f => f.localized).map(f => f.name))
       if (args.locale && localizedNames.size > 0) {
