@@ -23,7 +23,9 @@ export type {
   JsonFieldConfig,
   ColorFieldConfig,
   MultiselectFieldConfig,
-  ArrayFieldConfig
+  ArrayFieldConfig,
+  BlockDefinition,
+  BlocksFieldConfig
 } from './field-types.js'
 
 export { field } from './fields.js'
