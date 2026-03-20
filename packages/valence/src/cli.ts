@@ -16,7 +16,7 @@ import { landingPage } from './landing-page.js'
 import { loadEnvConfig, loadUserConfig } from './config-loader.js'
 import type { RouteHandler } from './define-config.js'
 import { resolveCustomRoute } from './route-matcher.js'
-import { resolveStaticPath, resolveMimeType, sendHtml, serveStaticFile } from '@valencets/core/server'
+import { resolveStaticPath, resolveMimeType, sendHtml, serveStaticFile, stripTrailingSlash } from '@valencets/core/server'
 import { resolvePageRoute } from './page-router.js'
 import { regenerateFromConfig } from './codegen/regenerate.js'
 import { startConfigWatcher } from './learn/watcher.js'
@@ -571,6 +571,14 @@ async function runDev (): Promise<void> {
   const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
     const url = new URL(req.url ?? '/', `http://${req.headers.host}`)
     const method = (req.method ?? 'GET') as 'GET' | 'POST' | 'PATCH' | 'DELETE'
+
+    // Trailing-slash redirect (301) — before any route matching
+    const redirectTarget = stripTrailingSlash(req.url ?? '/')
+    if (redirectTarget !== null) {
+      res.writeHead(301, { Location: redirectTarget })
+      res.end()
+      return
+    }
 
     // Learn mode routes (before everything else)
     if (learnActive && learnSignals && currentLearnProgress) {
