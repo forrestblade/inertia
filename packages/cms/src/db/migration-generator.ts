@@ -6,6 +6,7 @@ import { CmsErrorCode } from '../schema/types.js'
 import type { CmsError } from '../schema/types.js'
 import { getColumnType, getColumnConstraints } from './column-map.js'
 import { isValidIdentifier } from './sql-sanitize.js'
+import { getUploadConfig } from '../media/media-config.js'
 
 export interface MigrationOutput {
   readonly name: string
@@ -73,6 +74,17 @@ export function generateCreateTableSql (collection: CollectionConfig): string {
     const colResult = buildColumnDef(f)
     if (colResult.isErr()) return `-- ERROR: ${colResult.error.message}`
     columns.push(`  ${colResult.value}`)
+  }
+
+  const uploadConfig = getUploadConfig(collection)
+  if (uploadConfig !== null) {
+    if (uploadConfig.focalPoint) {
+      columns.push('  "focalX" NUMERIC DEFAULT 0.5')
+      columns.push('  "focalY" NUMERIC DEFAULT 0.5')
+    }
+    if (uploadConfig.imageSizes && uploadConfig.imageSizes.length > 0) {
+      columns.push('  "sizes" JSONB')
+    }
   }
 
   if (collection.timestamps) {
