@@ -1,8 +1,9 @@
-import { describe, it, expect } from 'vitest'
-import { generateCollectionRoutes } from '../route-generator.js'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { generateCollectionRoutes, buildGeneratedRouteMap } from '../route-generator.js'
 import type { GeneratedRoute } from '../route-generator.js'
 import type { CollectionConfig } from '@valencets/cms'
 import type { RouteConfig } from '../define-config.js'
+import type { IncomingMessage, ServerResponse } from 'node:http'
 
 const makeCollection = (overrides: Partial<CollectionConfig> = {}): CollectionConfig => ({
   slug: 'posts',
@@ -111,5 +112,153 @@ describe('generateCollectionRoutes', () => {
   it('no-op when customRoutes is undefined', () => {
     const result = generateCollectionRoutes([makeCollection()], undefined)
     expect(result).toHaveLength(2)
+  })
+})
+
+// -- buildGeneratedRouteMap --
+
+const makeRes = (): ServerResponse => {
+  const res = {
+    writeHead: vi.fn(),
+    end: vi.fn(),
+    getHeader: vi.fn(),
+    setHeader: vi.fn()
+  }
+  return res as unknown as ServerResponse
+}
+
+const makeReq = (overrides: Partial<{ headers: Record<string, string>, method: string }> = {}): IncomingMessage => {
+  return {
+    headers: {},
+    method: 'GET',
+    ...overrides
+  } as unknown as IncomingMessage
+}
+
+describe('buildGeneratedRouteMap', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('returns a Map with entries for each generated route', () => {
+    const routes: readonly GeneratedRoute[] = [
+      { path: '/posts', method: 'GET', collection: 'posts', type: 'list' },
+      { path: '/posts/:id', method: 'GET', collection: 'posts', type: 'detail' }
+    ]
+    const map = buildGeneratedRouteMap(routes, '/fake/project')
+    expect(map.size).toBe(2)
+    expect(map.has('/posts')).toBe(true)
+    expect(map.has('/posts/:id')).toBe(true)
+  })
+
+  it('each route entry has a GET handler', () => {
+    const routes: readonly GeneratedRoute[] = [
+      { path: '/posts', method: 'GET', collection: 'posts', type: 'list' }
+    ]
+    const map = buildGeneratedRouteMap(routes, '/fake/project')
+    const methodMap = map.get('/posts')
+    expect(methodMap).toBeDefined()
+    expect(typeof methodMap?.get('GET')).toBe('function')
+  })
+
+  it('returns empty map for empty routes array', () => {
+    const map = buildGeneratedRouteMap([], '/fake/project')
+    expect(map.size).toBe(0)
+  })
+
+  it('serves JSON response when no HTML template exists', async () => {
+    const routes: readonly GeneratedRoute[] = [
+      { path: '/posts', method: 'GET', collection: 'posts', type: 'list' }
+    ]
+    const map = buildGeneratedRouteMap(routes, '/nonexistent/project/dir')
+    const handler = map.get('/posts')?.get('GET')
+    expect(handler).toBeDefined()
+
+    const req = makeReq()
+    const res = makeRes()
+    await handler?.(req, res, {})
+
+    expect(res.writeHead).toHaveBeenCalledWith(200, expect.objectContaining({
+      'Content-Type': expect.stringContaining('application/json')
+    }))
+    expect(res.end).toHaveBeenCalled()
+  })
+
+  it('JSON response contains collection name and type', async () => {
+    const routes: readonly GeneratedRoute[] = [
+      { path: '/posts', method: 'GET', collection: 'posts', type: 'list' }
+    ]
+    const map = buildGeneratedRouteMap(routes, '/nonexistent/project/dir')
+    const handler = map.get('/posts')?.get('GET')
+
+    const req = makeReq()
+    const res = makeRes()
+    await handler?.(req, res, {})
+
+    const body = (res.end as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as string
+    const parsed = JSON.parse(body) as { collection: string, type: string }
+    expect(parsed.collection).toBe('posts')
+    expect(parsed.type).toBe('list')
+  })
+
+  it('JSON response for detail route includes params', async () => {
+    const routes: readonly GeneratedRoute[] = [
+      { path: '/posts/:id', method: 'GET', collection: 'posts', type: 'detail' }
+    ]
+    const map = buildGeneratedRouteMap(routes, '/nonexistent/project/dir')
+    const handler = map.get('/posts/:id')?.get('GET')
+
+    const req = makeReq()
+    const res = makeRes()
+    await handler?.(req, res, { id: '42' })
+
+    const body = (res.end as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as string
+    const parsed = JSON.parse(body) as { params: { id: string } }
+    expect(parsed.params).toEqual({ id: '42' })
+  })
+
+  it('detects X-Valence-Fragment header and includes fragment flag in JSON', async () => {
+    const routes: readonly GeneratedRoute[] = [
+      { path: '/posts', method: 'GET', collection: 'posts', type: 'list' }
+    ]
+    const map = buildGeneratedRouteMap(routes, '/nonexistent/project/dir')
+    const handler = map.get('/posts')?.get('GET')
+
+    const req = makeReq({ headers: { 'x-valence-fragment': 'true' } })
+    const res = makeRes()
+    await handler?.(req, res, {})
+
+    const body = (res.end as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as string
+    const parsed = JSON.parse(body) as { fragment: boolean }
+    expect(parsed.fragment).toBe(true)
+  })
+
+  it('fragment flag is false when X-Valence-Fragment header is absent', async () => {
+    const routes: readonly GeneratedRoute[] = [
+      { path: '/posts', method: 'GET', collection: 'posts', type: 'list' }
+    ]
+    const map = buildGeneratedRouteMap(routes, '/nonexistent/project/dir')
+    const handler = map.get('/posts')?.get('GET')
+
+    const req = makeReq()
+    const res = makeRes()
+    await handler?.(req, res, {})
+
+    const body = (res.end as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as string
+    const parsed = JSON.parse(body) as { fragment: boolean }
+    expect(parsed.fragment).toBe(false)
+  })
+
+  it('handles multiple collections each getting their own entries', () => {
+    const routes: readonly GeneratedRoute[] = [
+      { path: '/posts', method: 'GET', collection: 'posts', type: 'list' },
+      { path: '/posts/:id', method: 'GET', collection: 'posts', type: 'detail' },
+      { path: '/authors', method: 'GET', collection: 'authors', type: 'list' },
+      { path: '/authors/:id', method: 'GET', collection: 'authors', type: 'detail' }
+    ]
+    const map = buildGeneratedRouteMap(routes, '/nonexistent/project/dir')
+    expect(map.size).toBe(4)
+    expect(map.has('/authors')).toBe(true)
+    expect(map.has('/authors/:id')).toBe(true)
   })
 })
