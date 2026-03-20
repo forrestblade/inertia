@@ -1,9 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import type { DbPool } from '@valencets/db'
 import { startPublishScheduler } from '../scheduler.js'
 import { createCollectionRegistry } from '../schema/registry.js'
 import { collection } from '../schema/collection.js'
 import { field } from '../schema/fields.js'
 import { makeMockPool } from './test-helpers.js'
+
+function getUnsafeCalls (pool: DbPool): Array<[string, ...Array<unknown>]> {
+  return (pool.sql as ReturnType<typeof vi.fn> & { unsafe: ReturnType<typeof vi.fn> }).unsafe.mock.calls
+}
 
 describe('startPublishScheduler()', () => {
   beforeEach(() => {
@@ -35,7 +40,7 @@ describe('startPublishScheduler()', () => {
 
     vi.advanceTimersByTime(1000)
 
-    const calls = (pool.sql as ReturnType<typeof vi.fn> & { unsafe: ReturnType<typeof vi.fn> }).unsafe.mock.calls
+    const calls = getUnsafeCalls(pool)
     expect(calls.length).toBeGreaterThan(0)
     const sql = calls[0]?.[0] ?? ''
     expect(sql).toContain('UPDATE "posts"')
@@ -56,8 +61,7 @@ describe('startPublishScheduler()', () => {
 
     vi.advanceTimersByTime(1000)
 
-    const calls = (pool.sql as ReturnType<typeof vi.fn> & { unsafe: ReturnType<typeof vi.fn> }).unsafe.mock.calls
-    expect(calls.length).toBe(0)
+    expect(getUnsafeCalls(pool).length).toBe(0)
 
     handle.stop()
   })
@@ -73,12 +77,12 @@ describe('startPublishScheduler()', () => {
     const handle = startPublishScheduler(pool, registry, 1000)
 
     vi.advanceTimersByTime(1000)
-    const callsAfterFirst = (pool.sql as ReturnType<typeof vi.fn> & { unsafe: ReturnType<typeof vi.fn> }).unsafe.mock.calls.length
+    const callsAfterFirst = getUnsafeCalls(pool).length
 
     handle.stop()
     vi.advanceTimersByTime(5000)
 
-    expect((pool.sql as ReturnType<typeof vi.fn> & { unsafe: ReturnType<typeof vi.fn> }).unsafe.mock.calls.length).toBe(callsAfterFirst)
+    expect(getUnsafeCalls(pool).length).toBe(callsAfterFirst)
   })
 
   it('runs on each interval tick', () => {
@@ -93,8 +97,7 @@ describe('startPublishScheduler()', () => {
 
     vi.advanceTimersByTime(1500)
 
-    const calls = (pool.sql as ReturnType<typeof vi.fn> & { unsafe: ReturnType<typeof vi.fn> }).unsafe.mock.calls
-    expect(calls.length).toBe(3) // 500, 1000, 1500
+    expect(getUnsafeCalls(pool).length).toBe(3) // 500, 1000, 1500
 
     handle.stop()
   })
