@@ -11,7 +11,7 @@ function isPlainObject (value: unknown): value is Record<string, string> {
 
 function isPreviewMessageData (value: unknown): value is PreviewMessageData {
   if (!isPlainObject(value)) return false
-  const obj = value as Record<string, unknown>
+  const obj = value as { type?: string; data?: Record<string, string> }
   return obj['type'] === PREVIEW_MESSAGE_TYPE && isPlainObject(obj['data'])
 }
 
