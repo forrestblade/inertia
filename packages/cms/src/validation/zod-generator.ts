@@ -200,3 +200,9 @@ export function generateZodSchema (fields: readonly FieldConfig[]): ZodObject {
 export function generatePartialSchema (fields: readonly FieldConfig[]): ZodObject {
   return buildObjectSchema(fields).partial()
 }
+
+/** Draft schema for incomplete saves. Currently identical to partial schema
+ *  but will diverge when draft-specific system field requirements are added. */
+export function generateDraftSchema (fields: readonly FieldConfig[]): ZodObject {
+  return buildObjectSchema(fields).partial()
+}

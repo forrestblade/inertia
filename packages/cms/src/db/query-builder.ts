@@ -44,6 +44,8 @@ interface QueryState {
   readonly limitVal: number | null
   readonly offsetVal: number | null
   readonly includeDeleted: boolean
+  readonly includeDrafts: boolean
+  readonly isVersioned: boolean
   readonly searchQuery: string | null
   readonly searchLanguage: string
 }
@@ -100,6 +102,10 @@ function buildWhereSql (state: QueryState): string {
 
   if (!state.includeDeleted) {
     parts.push('"deleted_at" IS NULL')
+  }
+
+  if (state.isVersioned && !state.includeDrafts) {
+    parts.push('"_status" = \'published\'')
   }
 
   for (const w of state.wheres) {
@@ -167,6 +173,7 @@ export interface CollectionQueryBuilder {
   limit (n: number): CollectionQueryBuilder
   offset (n: number): CollectionQueryBuilder
   withDeleted (): CollectionQueryBuilder
+  includeDrafts (): CollectionQueryBuilder
   search (query: string, language?: string): CollectionQueryBuilder
   all<T = DocumentRow> (): ResultAsync<T[], CmsError>
   first<T = DocumentRow> (): ResultAsync<T | null, CmsError>
@@ -182,7 +189,7 @@ function createBuilder (
   registry: CollectionRegistry,
   state: QueryState
 ): CollectionQueryBuilder {
-  function guard (): { error: CmsError } | { allowedFields: Set<string> } {
+  function guard (): { error: CmsError } | { allowedFields: Set<string>, resolved: QueryState } {
     if (!isValidIdentifier(state.slug)) {
       return { error: { code: CmsErrorCode.INVALID_INPUT, message: `Invalid collection slug: ${state.slug}` } }
     }
@@ -191,7 +198,8 @@ function createBuilder (
     const allowedFields = getValidFieldNames(result.value)
     const fieldErr = validateFields(state, allowedFields)
     if (fieldErr) return { error: fieldErr }
-    return { allowedFields }
+    const isVersioned = result.value.versions?.drafts === true
+    return { allowedFields, resolved: { ...state, isVersioned } }
   }
 
   function whereImpl (fieldOrName: string, operatorOrValue: SqlValue | WhereOperator, maybeValue?: SqlValue): CollectionQueryBuilder {
@@ -226,6 +234,10 @@ function createBuilder (
       return createBuilder(pool, registry, { ...state, includeDeleted: true })
     },
 
+    includeDrafts () {
+      return createBuilder(pool, registry, { ...state, includeDrafts: true })
+    },
+
     search (query, language) {
       return createBuilder(pool, registry, {
         ...state,
@@ -238,14 +250,14 @@ function createBuilder (
       const g = guard()
       if ('error' in g) return errAsync(g.error)
       const table = `"${state.slug}"`
-      return executeQuery<T[]>(pool, `${buildSelectSql(state, table)}${buildWhereSql(state)}${buildOrderSql(state)}${buildLimitOffsetSql(state)}`, getWhereValues(state))
+      return executeQuery<T[]>(pool, `${buildSelectSql(g.resolved, table)}${buildWhereSql(g.resolved)}${buildOrderSql(g.resolved)}${buildLimitOffsetSql(g.resolved)}`, getWhereValues(g.resolved))
     },
 
     first<T> () {
       const g = guard()
       if ('error' in g) return errAsync(g.error)
       const table = `"${state.slug}"`
-      return executeQuery<T[]>(pool, `${buildSelectSql(state, table)}${buildWhereSql(state)}${buildOrderSql(state)} LIMIT 1`, getWhereValues(state))
+      return executeQuery<T[]>(pool, `${buildSelectSql(g.resolved, table)}${buildWhereSql(g.resolved)}${buildOrderSql(g.resolved)} LIMIT 1`, getWhereValues(g.resolved))
         .map((rows: T[]) => (rows[0] as T | undefined) ?? null)
     },
 
@@ -253,7 +265,7 @@ function createBuilder (
       const g = guard()
       if ('error' in g) return errAsync(g.error)
       const table = `"${state.slug}"`
-      return executeQuery<Array<{ count: string }>>(pool, `SELECT COUNT(*) as count FROM ${table}${buildWhereSql(state)}`, getWhereValues(state))
+      return executeQuery<Array<{ count: string }>>(pool, `SELECT COUNT(*) as count FROM ${table}${buildWhereSql(g.resolved)}`, getWhereValues(g.resolved))
         .map(rows => Number(rows[0]?.count ?? 0))
     },
 
@@ -276,10 +288,10 @@ function createBuilder (
       const dataErr = validateDataKeys(data, g.allowedFields)
       if (dataErr) return errAsync(dataErr)
       const keys = Object.keys(data)
-      const whereParams = getWhereValues(state)
+      const whereParams = getWhereValues(g.resolved)
       const setClauses = keys.map((k, i) => `"${k}" = $${whereParams.length + i + 1}`).join(', ')
       const table = `"${state.slug}"`
-      return executeQuery<T[]>(pool, `UPDATE ${table} SET ${setClauses}${buildWhereSql(state)} RETURNING *`, [...whereParams, ...Object.values(data)])
+      return executeQuery<T[]>(pool, `UPDATE ${table} SET ${setClauses}${buildWhereSql(g.resolved)} RETURNING *`, [...whereParams, ...Object.values(data)])
         .map(rows => rows[0] as T)
     },
 
@@ -287,7 +299,7 @@ function createBuilder (
       const g = guard()
       if ('error' in g) return errAsync(g.error)
       const table = `"${state.slug}"`
-      return executeQuery<T[]>(pool, `UPDATE ${table} SET "deleted_at" = NOW()${buildWhereSql(state)} RETURNING *`, getWhereValues(state))
+      return executeQuery<T[]>(pool, `UPDATE ${table} SET "deleted_at" = NOW()${buildWhereSql(g.resolved)} RETURNING *`, getWhereValues(g.resolved))
         .map(rows => rows[0] as T)
     },
 
@@ -295,8 +307,8 @@ function createBuilder (
       const g = guard()
       if ('error' in g) return errAsync(g.error)
       const table = `"${state.slug}"`
-      const where = buildWhereSql(state)
-      const whereParams = getWhereValues(state)
+      const where = buildWhereSql(g.resolved)
+      const whereParams = getWhereValues(g.resolved)
       const safePerPage = Number(perPage)
       const safePageNum = Number(pageNum)
 
@@ -306,7 +318,7 @@ function createBuilder (
           const totalPages = Math.ceil(totalDocs / safePerPage)
           const pageOffset = (safePageNum - 1) * safePerPage
 
-          return executeQuery<T[]>(pool, `${buildSelectSql(state, table)}${where}${buildOrderSql(state)} LIMIT ${safePerPage} OFFSET ${pageOffset}`, whereParams)
+          return executeQuery<T[]>(pool, `${buildSelectSql(g.resolved, table)}${where}${buildOrderSql(g.resolved)} LIMIT ${safePerPage} OFFSET ${pageOffset}`, whereParams)
             .map((docs): PaginatedResult<T> => ({
               docs,
               totalDocs,
@@ -335,6 +347,8 @@ export function createQueryBuilder (pool: DbPool, registry: CollectionRegistry):
         limitVal: null,
         offsetVal: null,
         includeDeleted: false,
+        includeDrafts: false,
+        isVersioned: false,
         searchQuery: null,
         searchLanguage: 'english'
       })

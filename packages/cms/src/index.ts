@@ -2,6 +2,7 @@
 
 export {
   CmsErrorCode,
+  StatusCode,
   FieldType,
   field,
   collection,
@@ -37,6 +38,7 @@ export type {
   BlocksFieldConfig,
   CollectionConfig,
   CollectionLabels,
+  VersionsConfig,
   GlobalConfig,
   CollectionRegistry,
   GlobalRegistry,
@@ -47,6 +49,7 @@ export type {
 export {
   generateZodSchema,
   generatePartialSchema,
+  generateDraftSchema,
   isValidSlug,
   isValidEmail
 } from './validation/index.js'
@@ -135,3 +138,6 @@ export type { ImageSize, UploadConfig, UploadResult, SizeMetadata, StorageAdapte
 
 export { buildCms } from './config/index.js'
 export type { CmsConfig, CmsInstance, Plugin } from './config/index.js'
+
+export { startPublishScheduler } from './scheduler.js'
+export type { SchedulerHandle } from './scheduler.js'
