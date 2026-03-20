@@ -10,6 +10,7 @@ import type { PrefetchHandle } from './prefetch.js'
 import { initPageCache } from './page-cache.js'
 import { wrapInTransition, supportsViewTransitions } from './view-transitions.js'
 import type { PageCacheHandle } from './page-cache.js'
+import { swapOutletContent } from './outlet-swap.js'
 
 export interface RouterHandle {
   readonly destroy: () => void
@@ -47,6 +48,7 @@ interface NavigationResult {
   readonly source: NavigationPerformance['source']
   readonly version: string | null
   readonly title: string | null
+  readonly outletName?: string | undefined
 }
 
 function csrfHeaders (): Record<string, string> {
@@ -178,7 +180,8 @@ function performNavigation (
       }
       const version = response.headers.get('X-Valence-Version')
       const titleHeader = response.headers.get('X-Valence-Title')
-      return response.text().then((html) => ({ html, version, titleHeader }))
+      const outletName = response.headers.get('X-Valence-Outlet') ?? undefined
+      return response.text().then((html) => ({ html, version, titleHeader, outletName }))
     }),
     (reason): RouterError => {
       if (reason instanceof Error) {
@@ -192,8 +195,8 @@ function performNavigation (
         message: `Navigation fetch failed for ${url}`
       }
     }
-  ).andThen(({ html, version, titleHeader }) => {
-    const result = processHtml(html, config.contentSelector, config.enableViewTransitions)
+  ).andThen(({ html, version, titleHeader, outletName }) => {
+    const result = processHtml(html, config.contentSelector, config.enableViewTransitions, outletName)
     if (result.isErr()) return err(result.error)
 
     const title = titleHeader ?? result.value
@@ -214,11 +217,34 @@ function performNavigation (
       pageCacheHandle.setVersion(version)
     }
 
-    return ok({ source: 'network' as const, version, title })
+    return ok({ source: 'network' as const, version, title, outletName })
   })
 }
 
-function processHtml (html: string, contentSelector: string, enableViewTransitions: boolean = false): Result<string | null, RouterError> {
+function processHtml (
+  html: string,
+  contentSelector: string,
+  enableViewTransitions: boolean = false,
+  outletName?: string
+): Result<string | null, RouterError> {
+  // Outlet-targeted swap: route content to a named val-outlet instead of full swap
+  if (outletName !== undefined) {
+    const liveRoot = document.querySelector(contentSelector) ?? document.body
+    const outletSwapResult = swapOutletContent(liveRoot, outletName, html)
+
+    // If outlet not found in live DOM, fall back to full content swap below
+    if (outletSwapResult.isOk()) {
+      const docResult = parseHtml(html)
+      const title = docResult.isOk() ? extractTitle(docResult.value) : null
+      return ok(title)
+    }
+
+    if (outletSwapResult.error.code !== RouterErrorCode.SELECTOR_MISS) {
+      return err(outletSwapResult.error)
+    }
+    // SELECTOR_MISS from outlet means outlet not in DOM -- fall through to full swap
+  }
+
   const docResult = parseHtml(html)
   if (docResult.isErr()) return err(docResult.error)
 
