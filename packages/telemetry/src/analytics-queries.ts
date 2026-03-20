@@ -93,10 +93,48 @@ export function getPageviewsByPath (
   ).map((rows) => rows as ReadonlyArray<PageviewCount>)
 }
 
+function queryDailyEventCounts (
+  pool: DbPool,
+  start: Date,
+  end: Date,
+  categories: string[]
+): Promise<DailyEventCount[]> {
+  return pool.sql<DailyEventCount[]>`
+    SELECT DATE(created_at)::text AS day,
+      event_category,
+      dom_target,
+      COUNT(*)::int AS count
+    FROM events
+    WHERE created_at BETWEEN ${start} AND ${end}
+      AND event_category = ANY(${pool.sql.array(categories)})
+    GROUP BY DATE(created_at), event_category, dom_target
+    ORDER BY day DESC, count DESC
+  `
+}
+
+function queryDailyEventCountsAll (
+  pool: DbPool,
+  start: Date,
+  end: Date
+): Promise<DailyEventCount[]> {
+  return pool.sql<DailyEventCount[]>`
+    SELECT DATE(created_at)::text AS day,
+      event_category,
+      dom_target,
+      COUNT(*)::int AS count
+    FROM events
+    WHERE created_at BETWEEN ${start} AND ${end}
+    GROUP BY DATE(created_at), event_category, dom_target
+    ORDER BY day DESC, count DESC
+  `
+}
+
 /**
  * Get daily event counts grouped by category and dom_target.
  * Generic — works for any event categories, no hardcoded dom_targets.
- * If categories are provided, filters to those categories; otherwise returns all.
+ * If categories are provided and non-empty, filters to those categories; otherwise returns all.
+ * Note: an empty array is treated the same as no filter (returns all categories).
+ * This is intentional — callers who want zero results should not call this function.
  */
 export function getDailyEventCounts (
   pool: DbPool,
@@ -104,34 +142,9 @@ export function getDailyEventCounts (
   end: Date,
   categories?: string[]
 ): ResultAsync<ReadonlyArray<DailyEventCount>, DbError> {
-  if (categories !== undefined && categories.length > 0) {
-    return ResultAsync.fromPromise(
-      pool.sql<DailyEventCount[]>`
-        SELECT DATE(created_at)::text AS day,
-          event_category,
-          dom_target,
-          COUNT(*)::int AS count
-        FROM events
-        WHERE created_at BETWEEN ${start} AND ${end}
-          AND event_category = ANY(${pool.sql.array(categories)})
-        GROUP BY DATE(created_at), event_category, dom_target
-        ORDER BY day DESC, count DESC
-      `,
-      mapPostgresError
-    ).map((rows) => rows as ReadonlyArray<DailyEventCount>)
-  }
-
-  return ResultAsync.fromPromise(
-    pool.sql<DailyEventCount[]>`
-      SELECT DATE(created_at)::text AS day,
-        event_category,
-        dom_target,
-        COUNT(*)::int AS count
-      FROM events
-      WHERE created_at BETWEEN ${start} AND ${end}
-      GROUP BY DATE(created_at), event_category, dom_target
-      ORDER BY day DESC, count DESC
-    `,
-    mapPostgresError
-  ).map((rows) => rows as ReadonlyArray<DailyEventCount>)
+  const query = (categories !== undefined && categories.length > 0)
+    ? queryDailyEventCounts(pool, start, end, categories)
+    : queryDailyEventCountsAll(pool, start, end)
+  return ResultAsync.fromPromise(query, mapPostgresError)
+    .map((rows) => rows as ReadonlyArray<DailyEventCount>)
 }
