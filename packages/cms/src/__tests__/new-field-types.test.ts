@@ -46,8 +46,8 @@ describe('FieldType — new types', () => {
     expect(FieldType.ARRAY).toBe('array')
   })
 
-  it('has exactly 18 types total', () => {
-    expect(Object.keys(FieldType)).toHaveLength(19)
+  it('has exactly 22 types total', () => {
+    expect(Object.keys(FieldType)).toHaveLength(22)
   })
 })
 

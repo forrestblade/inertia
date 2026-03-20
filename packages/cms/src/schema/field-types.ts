@@ -19,7 +19,10 @@ export const FieldType = {
   COLOR: 'color',
   MULTISELECT: 'multiselect',
   ARRAY: 'array',
-  BLOCKS: 'blocks'
+  BLOCKS: 'blocks',
+  TABS: 'tabs',
+  ROW: 'row',
+  COLLAPSIBLE: 'collapsible'
 } as const
 
 export type FieldType = typeof FieldType[keyof typeof FieldType]
@@ -159,6 +162,9 @@ export type FieldConfig =
   | MultiselectFieldConfig
   | ArrayFieldConfig
   | BlocksFieldConfig
+  | TabsFieldConfig
+  | RowFieldConfig
+  | CollapsibleFieldConfig
 
 export interface BlockDefinition {
   readonly slug: string
@@ -171,4 +177,26 @@ export interface BlocksFieldConfig extends FieldBaseConfig {
   readonly blocks: readonly BlockDefinition[]
   readonly minRows?: number | undefined
   readonly maxRows?: number | undefined
+}
+
+export interface TabDefinition {
+  readonly label: string
+  readonly fields: readonly FieldConfig[]
+}
+
+export interface TabsFieldConfig extends FieldBaseConfig {
+  readonly type: 'tabs'
+  readonly tabs: readonly TabDefinition[]
+}
+
+export interface RowFieldConfig extends FieldBaseConfig {
+  readonly type: 'row'
+  readonly fields: readonly FieldConfig[]
+}
+
+export interface CollapsibleFieldConfig extends FieldBaseConfig {
+  readonly type: 'collapsible'
+  readonly label: string
+  readonly collapsed?: boolean | undefined
+  readonly fields: readonly FieldConfig[]
 }
