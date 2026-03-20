@@ -3,7 +3,7 @@ export type { AuthConfig } from './auth-config.js'
 
 export { hashPassword, verifyPassword } from './password.js'
 
-export { createSession, validateSession, destroySession, destroyUserSessions, buildSessionCookie, buildExpiredSessionCookie } from './session.js'
+export { createSession, DEFAULT_SESSION_MAX_AGE, validateSession, destroySession, destroyUserSessions, buildSessionCookie, buildExpiredSessionCookie } from './session.js'
 
 export { createAuthMiddleware, createCmsAuthValidator, createCmsAuthGuard } from './middleware.js'
 export type { AuthContext, AuthMiddleware, CmsAuthGuardOptions } from './middleware.js'
