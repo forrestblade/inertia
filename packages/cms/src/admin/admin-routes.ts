@@ -16,7 +16,7 @@ import { renderEditView } from './edit-view.js'
 import type { RelationContext } from './field-renderers.js'
 import { createLocalApi } from '../api/local-api.js'
 import { createGlobalRegistry } from '../schema/registry.js'
-import { createSession, validateSession, destroySession, buildSessionCookie, buildExpiredSessionCookie } from '../auth/session.js'
+import { createSession, validateSession, destroySession, buildSessionCookie, buildExpiredSessionCookie, DEFAULT_SESSION_MAX_AGE } from '../auth/session.js'
 import { verifyPassword } from '../auth/password.js'
 import { parseCookie } from '../auth/cookie.js'
 import { renderLoginPage } from './login-view.js'
@@ -39,6 +39,8 @@ type AdminRouteHandler = (req: IncomingMessage, res: ServerResponse, ctx: Record
 interface AdminOptions {
   readonly requireAuth?: boolean | undefined
   readonly telemetryPool?: DbPool | undefined
+  readonly telemetrySiteId?: string | undefined
+  readonly sessionMaxAge?: number | undefined
   readonly headTags?: readonly string[] | undefined
 }
 
@@ -243,14 +245,15 @@ export function createAdminRoutes (
         sendHtml(res, html, 401)
         return
       }
-      const sessionResult = await createSession(user.id, pool)
+      const sessionMaxAge = options.sessionMaxAge ?? DEFAULT_SESSION_MAX_AGE
+      const sessionResult = await createSession(user.id, pool, sessionMaxAge)
       if (sessionResult.isErr()) {
         const token = freshCsrfToken()
         const html = renderLoginPage({ error: 'Could not create session. Please try again.', csrfToken: token })
         sendHtml(res, html, 500)
         return
       }
-      res.setHeader('Set-Cookie', buildSessionCookie(sessionResult.value))
+      res.setHeader('Set-Cookie', buildSessionCookie(sessionResult.value, sessionMaxAge))
       res.writeHead(302, { Location: '/admin' })
       res.end()
     }
@@ -282,8 +285,9 @@ export function createAdminRoutes (
         const { getDailyBreakdowns, getDailyTrend } = await import('@valencets/telemetry/daily-summary-queries')
         const now = new Date()
         const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-        const trendResult = await getDailyTrend(telPool, 'default', thirtyDaysAgo, now)
-        const breakdownResult = await getDailyBreakdowns(telPool, 'default', thirtyDaysAgo, now)
+        const siteId = options.telemetrySiteId ?? 'default'
+        const trendResult = await getDailyTrend(telPool, siteId, thirtyDaysAgo, now)
+        const breakdownResult = await getDailyBreakdowns(telPool, siteId, thirtyDaysAgo, now)
         const trend = trendResult.match(rows => rows, () => [])
         const breakdowns = breakdownResult.match(b => b, () => ({ top_pages: [], top_referrers: [], intent_counts: {} }))
         let sessionCount = 0

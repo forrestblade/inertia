@@ -39,6 +39,8 @@ export interface CmsConfig {
   readonly uploadDir?: string | undefined
   readonly requireAuth?: boolean | undefined
   readonly telemetryPool?: DbPool | undefined
+  readonly telemetrySiteId?: string | undefined
+  readonly sessionMaxAge?: number | undefined
   readonly headTags?: readonly string[] | undefined
   readonly localization?: LocalizationConfig | undefined
 }
@@ -84,7 +86,7 @@ export function buildCms (inputConfig: CmsConfig): Result<CmsInstance, CmsError>
 
   const api = createLocalApi(config.db, collections, globals, config.localization?.defaultLocale)
   const restRoutes = createRestRoutes(config.db, collections, globals, config.localization)
-  const adminRoutes = createAdminRoutes(config.db, collections, { requireAuth: config.requireAuth, telemetryPool: config.telemetryPool, headTags: config.headTags })
+  const adminRoutes = createAdminRoutes(config.db, collections, { requireAuth: config.requireAuth, telemetryPool: config.telemetryPool, telemetrySiteId: config.telemetrySiteId, sessionMaxAge: config.sessionMaxAge, headTags: config.headTags })
 
   const hasAuthCollection = config.collections.some(c => isAuthEnabled(c))
   if (hasAuthCollection) {
