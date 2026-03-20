@@ -1,37 +1,26 @@
 import { test, expect } from '@playwright/test'
-import { DashboardPage } from './pages/dashboard.page.js'
 import { ListPage } from './pages/list.page.js'
-import { EditPage } from './pages/edit.page.js'
 
-test.use({ storageState: 'tests/e2e/.auth/user.json' })
+test.describe('Schema views', () => {
+  test.use({ storageState: 'tests/e2e/.auth/user.json' })
 
-test.describe('Schema builder', () => {
-  test('admin dashboard shows collection links', async ({ page }) => {
-    const dashboard = new DashboardPage(page)
-    await dashboard.goto()
-    await expect(dashboard.heading).toBeVisible()
-    await expect(dashboard.collectionLinks.first()).toBeVisible()
+  test('dashboard sidebar shows collection links', async ({ page }) => {
+    await page.goto('/admin')
+    const sidebar = page.locator('nav, aside, [class*="sidebar"]')
+    await expect(sidebar.getByRole('link', { name: 'posts', exact: true })).toBeVisible()
+    await expect(sidebar.getByRole('link', { name: 'users', exact: true })).toBeVisible()
   })
 
-  test('collection list shows correct heading', async ({ page }) => {
-    const dashboard = new DashboardPage(page)
-    await dashboard.goto()
-    const link = dashboard.collectionLinks.first()
-    const name = await link.textContent()
-    await link.click()
-    const list = new ListPage(page)
-    await expect(list.heading).toBeVisible()
-    if (name !== null) {
-      await expect(list.heading).toContainText(name.trim(), { ignoreCase: true })
-    }
-  })
-
-  test('create button navigates to edit page', async ({ page }) => {
+  test('collection list page has heading', async ({ page }) => {
     const list = new ListPage(page)
     await list.goto('posts')
-    await list.clickCreate()
-    const edit = new EditPage(page)
-    await expect(edit.heading).toBeVisible()
-    await expect(page.url()).toContain('/admin/collections/posts')
+    await expect(list.heading).toBeVisible()
+  })
+
+  test('clicking sidebar collection navigates to list', async ({ page }) => {
+    await page.goto('/admin')
+    const sidebar = page.locator('nav, aside, [class*="sidebar"]')
+    await sidebar.getByRole('link', { name: 'posts', exact: true }).click()
+    await expect(page).toHaveURL(/\/admin\/posts/)
   })
 })

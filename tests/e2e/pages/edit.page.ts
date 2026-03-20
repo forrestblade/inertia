@@ -4,17 +4,15 @@ export class EditPage {
   readonly heading: Locator
   readonly saveButton: Locator
   readonly deleteButton: Locator
-  readonly fields: Locator
 
   constructor (private readonly page: Page) {
-    this.heading = page.getByRole('heading', { level: 1 })
-    this.saveButton = page.getByRole('button', { name: /save/i })
-    this.deleteButton = page.getByRole('button', { name: /delete/i })
-    this.fields = page.getByRole('main').locator('[data-field]')
+    this.heading = page.locator('h1')
+    this.saveButton = page.getByRole('button', { name: /save|submit|update/i })
+    this.deleteButton = page.locator('.delete-trigger, [class*="delete"]')
   }
 
   async goto (collection: string, id: string): Promise<void> {
-    await this.page.goto(`/admin/collections/${collection}/${id}`)
+    await this.page.goto(`/admin/${collection}/${id}`)
   }
 
   async fillField (name: string, value: string): Promise<void> {
@@ -23,10 +21,5 @@ export class EditPage {
 
   async save (): Promise<void> {
     await this.saveButton.click()
-  }
-
-  async delete (): Promise<void> {
-    await this.deleteButton.click()
-    await this.page.getByRole('button', { name: /confirm/i }).click()
   }
 }

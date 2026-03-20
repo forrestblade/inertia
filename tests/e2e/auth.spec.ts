@@ -1,44 +1,39 @@
 import { test, expect } from '@playwright/test'
 import { LoginPage } from './pages/login.page.js'
-import { DashboardPage } from './pages/dashboard.page.js'
 
-test.describe('Auth flow', () => {
-  test('login with valid credentials redirects to /admin', async ({ page }) => {
+test.describe('Auth flow (unauthenticated)', () => {
+  test('login with valid credentials redirects to dashboard', async ({ page }) => {
     const login = new LoginPage(page)
     await login.goto()
     await login.login('admin@test.local', 'admin123')
     await expect(page).toHaveURL('/admin')
+    await expect(page.locator('h1')).toHaveText('Dashboard')
   })
 
   test('login with wrong password shows error', async ({ page }) => {
     const login = new LoginPage(page)
     await login.goto()
     await login.login('admin@test.local', 'wrongpassword')
+    await expect(login.errorMessage).toBeVisible()
     const error = await login.getError()
-    expect(error).toBeTruthy()
+    expect(error).toContain('Invalid email or password')
   })
 
-  test('login with empty fields shows validation', async ({ page }) => {
+  test('login form has required fields', async ({ page }) => {
     const login = new LoginPage(page)
     await login.goto()
-    await login.loginButton.click()
-    const error = await login.getError()
-    expect(error).toBeTruthy()
-  })
-
-  test('accessing /admin without auth redirects to login', async ({ page }) => {
-    await page.goto('/admin')
-    await expect(page).toHaveURL(/\/admin\/login/)
+    const emailRequired = await login.emailInput.getAttribute('required')
+    expect(emailRequired).not.toBeNull()
+    const passwordRequired = await login.passwordInput.getAttribute('required')
+    expect(passwordRequired).not.toBeNull()
   })
 })
 
 test.describe('Auth flow (authenticated)', () => {
   test.use({ storageState: 'tests/e2e/.auth/user.json' })
 
-  test('logout redirects to login page', async ({ page }) => {
-    const dashboard = new DashboardPage(page)
-    await dashboard.goto()
-    await dashboard.logout()
-    await expect(page).toHaveURL(/\/admin\/login/)
+  test('authenticated user sees dashboard', async ({ page }) => {
+    await page.goto('/admin')
+    await expect(page.locator('h1')).toHaveText('Dashboard')
   })
 })

@@ -11,8 +11,10 @@ export default defineConfig({
     ? [['html', { open: 'never' }], ['github']]
     : [['html', { open: 'on-failure' }]],
 
+  globalSetup: './tests/e2e/global-setup.ts',
+
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://localhost:3111',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure'
   },
@@ -30,12 +32,5 @@ export default defineConfig({
       },
       dependencies: ['setup']
     }
-  ],
-
-  webServer: {
-    command: 'pnpm dev',
-    port: 3000,
-    reuseExistingServer: !process.env.CI,
-    timeout: 60_000
-  }
+  ]
 })

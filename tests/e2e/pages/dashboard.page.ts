@@ -2,25 +2,18 @@ import { type Locator, type Page } from '@playwright/test'
 
 export class DashboardPage {
   readonly heading: Locator
-  readonly collectionLinks: Locator
-  readonly userMenu: Locator
+  readonly collectionCards: Locator
 
   constructor (private readonly page: Page) {
-    this.heading = page.getByRole('heading', { level: 1 })
-    this.collectionLinks = page.getByRole('navigation').getByRole('link')
-    this.userMenu = page.getByRole('button', { name: /user menu|account/i })
+    this.heading = page.locator('h1')
+    this.collectionCards = page.locator('.collection-card, .stat-card, [class*="card"]')
   }
 
   async goto (): Promise<void> {
     await this.page.goto('/admin')
   }
 
-  getCollectionLink (name: string): Locator {
-    return this.collectionLinks.filter({ hasText: name })
-  }
-
-  async logout (): Promise<void> {
-    await this.userMenu.click()
-    await this.page.getByRole('menuitem', { name: /log\s*out|sign\s*out/i }).click()
+  async getCollectionLink (name: string): Promise<Locator> {
+    return this.page.getByRole('link', { name })
   }
 }

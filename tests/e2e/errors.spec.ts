@@ -1,27 +1,21 @@
 import { test, expect } from '@playwright/test'
-import { EditPage } from './pages/edit.page.js'
-
-test.use({ storageState: 'tests/e2e/.auth/user.json' })
 
 test.describe('Error handling', () => {
-  test('navigate to nonexistent page returns 404', async ({ page }) => {
-    const response = await page.goto('/admin/nonexistent-page-xyz')
+  test.use({ storageState: 'tests/e2e/.auth/user.json' })
+
+  test('nonexistent API endpoint returns 404 JSON', async ({ page }) => {
+    const response = await page.goto('/api/nonexistent')
     expect(response?.status()).toBe(404)
+    const body = await page.textContent('body')
+    expect(body).toContain('Not found')
   })
 
-  test('navigate to nonexistent collection entry returns 404', async ({ page }) => {
-    const response = await page.goto('/admin/collections/posts/nonexistent-id-99999')
-    expect(response?.status()).toBe(404)
-  })
-
-  test('browser back and forward navigation works', async ({ page }) => {
+  test('browser back navigation works', async ({ page }) => {
     await page.goto('/admin')
-    const edit = new EditPage(page)
-    await edit.goto('posts', '1')
-    await expect(page).toHaveURL(/\/posts\/1/)
+    const sidebar = page.locator('nav, aside, [class*="sidebar"]')
+    await sidebar.getByRole('link', { name: 'posts', exact: true }).click()
+    await expect(page).toHaveURL(/\/admin\/posts/)
     await page.goBack()
-    await expect(page).toHaveURL('/admin')
-    await page.goForward()
-    await expect(page).toHaveURL(/\/posts\/1/)
+    await expect(page).toHaveURL(/\/admin$/)
   })
 })

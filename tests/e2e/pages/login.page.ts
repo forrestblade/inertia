@@ -9,8 +9,8 @@ export class LoginPage {
   constructor (private readonly page: Page) {
     this.emailInput = page.getByLabel('Email')
     this.passwordInput = page.getByLabel('Password')
-    this.loginButton = page.getByRole('button', { name: /log\s*in/i })
-    this.errorMessage = page.getByRole('alert')
+    this.loginButton = page.getByRole('button', { name: /sign\s*in/i })
+    this.errorMessage = page.locator('.login-error')
   }
 
   async goto (): Promise<void> {
@@ -24,6 +24,8 @@ export class LoginPage {
   }
 
   async getError (): Promise<string | null> {
+    const count = await this.errorMessage.count()
+    if (count === 0) return null
     return this.errorMessage.textContent()
   }
 }
