@@ -1,9 +1,10 @@
-import type { DbConfig, DbPool } from '@valencets/db'
+import type { DbConfig, DbError, DbPool } from '@valencets/db'
+import type { ResultAsync } from 'neverthrow'
 import { log } from './cli-utils.js'
 
 interface PoolFactory {
   readonly createPool: (config: DbConfig) => DbPool
-  readonly closePool: (pool: DbPool) => Promise<void> | import('neverthrow').ResultAsync<void, import('@valencets/db').DbError>
+  readonly closePool: (pool: DbPool) => ResultAsync<void, DbError>
 }
 
 export function toDevDbConfig (config: DbConfig): DbConfig {
