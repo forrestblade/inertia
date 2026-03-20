@@ -1,4 +1,5 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises'
+import { ResultAsync, fromThrowable } from 'neverthrow'
 import { join } from 'node:path'
 import type { LearnProgress, LearnStepId } from './types.js'
 
@@ -32,13 +33,16 @@ export function createInitialProgress (initialCounts: { readonly posts: number; 
   }
 }
 
+const safeJsonParse = fromThrowable(JSON.parse, () => null)
+
 export async function readLearnProgress (projectDir: string): Promise<LearnProgress | null> {
-  try {
-    const raw = await readFile(join(projectDir, LEARN_DIR, LEARN_FILE), 'utf-8')
-    return JSON.parse(raw) as LearnProgress
-  } catch {
-    return null
-  }
+  const readResult = await ResultAsync.fromPromise(
+    readFile(join(projectDir, LEARN_DIR, LEARN_FILE), 'utf-8'),
+    () => null
+  )
+  if (readResult.isErr()) return null
+  const parseResult = safeJsonParse(readResult.value)
+  return parseResult.isOk() && parseResult.value !== null ? parseResult.value as LearnProgress : null
 }
 
 export async function writeLearnProgress (projectDir: string, progress: LearnProgress): Promise<void> {

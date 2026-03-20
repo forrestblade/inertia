@@ -8,7 +8,8 @@ vi.mock('node:fs/promises', () => ({
 }))
 
 vi.mock('node:child_process', () => ({
-  execSync: vi.fn(() => Buffer.from(''))
+  execSync: vi.fn(() => Buffer.from('')),
+  execFileSync: vi.fn(() => Buffer.from(''))
 }))
 
 const mockedWriteFile = vi.mocked(writeFile)

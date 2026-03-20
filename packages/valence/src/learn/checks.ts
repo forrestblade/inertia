@@ -1,21 +1,28 @@
 import { readdirSync } from 'node:fs'
+import type { Dirent } from 'node:fs'
+import { fromThrowable, ResultAsync } from 'neverthrow'
 import type { LearnCheckDeps, LearnProgress, LearnStepId } from './types.js'
 
 const DEFAULT_SLUGS: ReadonlySet<string> = new Set(['categories', 'posts', 'pages', 'users'])
 const IGNORED_ROOT_FILES: ReadonlySet<string> = new Set(['valence.config.ts', 'tsconfig.json'])
+
+const safeReaddirSync = fromThrowable(
+  (dir: string): Dirent[] => readdirSync(dir, { withFileTypes: true }),
+  () => null
+)
 
 export async function checkVisitAdmin (deps: LearnCheckDeps): Promise<boolean> {
   return deps.signals.adminPageViews > 0
 }
 
 export async function checkCreatePost (deps: LearnCheckDeps, initialCount: number): Promise<boolean> {
-  try {
-    const rows = await deps.pool.sql.unsafe('SELECT count(*)::int AS count FROM "posts" WHERE "deleted_at" IS NULL')
-    const count = Number(rows[0]?.count ?? 0)
-    return count > initialCount
-  } catch {
-    return false
-  }
+  const result = await ResultAsync.fromPromise(
+    deps.pool.sql.unsafe('SELECT count(*)::int AS count FROM "posts" WHERE "deleted_at" IS NULL'),
+    () => null
+  )
+  if (result.isErr() || result.value === null) return false
+  const count = Number((result.value as Array<{ count?: number }>)[0]?.count ?? 0)
+  return count > initialCount
 }
 
 export async function checkHitApi (deps: LearnCheckDeps): Promise<boolean> {
@@ -28,26 +35,23 @@ export async function checkAddCollection (deps: LearnCheckDeps): Promise<boolean
 }
 
 export async function checkCreateUser (deps: LearnCheckDeps, initialCount: number): Promise<boolean> {
-  try {
-    const rows = await deps.pool.sql.unsafe('SELECT count(*)::int AS count FROM "users" WHERE "deleted_at" IS NULL')
-    const count = Number(rows[0]?.count ?? 0)
-    return count > initialCount
-  } catch {
-    return false
-  }
+  const result = await ResultAsync.fromPromise(
+    deps.pool.sql.unsafe('SELECT count(*)::int AS count FROM "users" WHERE "deleted_at" IS NULL'),
+    () => null
+  )
+  if (result.isErr() || result.value === null) return false
+  const count = Number((result.value as Array<{ count?: number }>)[0]?.count ?? 0)
+  return count > initialCount
 }
 
 export async function checkCreateFile (deps: LearnCheckDeps): Promise<boolean> {
-  try {
-    const entries = readdirSync(deps.projectDir, { withFileTypes: true })
-    return entries.some(e =>
-      e.isFile() &&
-      e.name.endsWith('.ts') &&
-      !IGNORED_ROOT_FILES.has(e.name)
-    )
-  } catch {
-    return false
-  }
+  const result = safeReaddirSync(deps.projectDir)
+  if (result.isErr() || result.value === null) return false
+  return result.value.some(e =>
+    e.isFile() &&
+    e.name.endsWith('.ts') &&
+    !IGNORED_ROOT_FILES.has(e.name)
+  )
 }
 
 type StepChecker = (deps: LearnCheckDeps, initialCount: number) => Promise<boolean>
