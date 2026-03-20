@@ -1,12 +1,15 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { initTelemetry } from '../init.js'
-
-// Mock crypto.randomUUID
-vi.stubGlobal('crypto', { ...crypto, randomUUID: () => 'test-uuid' })
+import { TelemetryErrorCode } from '@valencets/core'
 
 describe('initTelemetry autoPageview', () => {
   beforeEach(() => {
-    // happy-dom provides location and document
+    vi.spyOn(crypto, 'randomUUID').mockReturnValue('test-uuid' as ReturnType<typeof crypto.randomUUID>)
+    vi.spyOn(navigator, 'sendBeacon').mockReturnValue(true)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   it('fires PAGEVIEW by default', () => {
@@ -18,6 +21,11 @@ describe('initTelemetry autoPageview', () => {
     })
     expect(result.isOk()).toBe(true)
     const handle = result._unsafeUnwrap()
+
+    const flushResult = handle.flushNow()
+    expect(flushResult.isOk()).toBe(true)
+    expect(flushResult._unsafeUnwrap()).toBe(1)
+
     handle.destroy()
   })
 
@@ -31,6 +39,11 @@ describe('initTelemetry autoPageview', () => {
     })
     expect(result.isOk()).toBe(true)
     const handle = result._unsafeUnwrap()
+
+    const flushResult = handle.flushNow()
+    expect(flushResult.isErr()).toBe(true)
+    expect(flushResult._unsafeUnwrapErr().code).toBe(TelemetryErrorCode.FLUSH_EMPTY)
+
     handle.destroy()
   })
 })
