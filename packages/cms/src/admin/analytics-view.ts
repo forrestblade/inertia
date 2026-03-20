@@ -16,6 +16,9 @@ interface AnalyticsData {
   readonly conversionCount: number
   readonly topPages: ReadonlyArray<TopPageEntry>
   readonly topReferrers: ReadonlyArray<TopReferrerEntry>
+  readonly eventCategories?: ReadonlyArray<{ event_category: string; count: number }>
+  readonly pageviewsByPath?: ReadonlyArray<{ path: string; views: number }>
+  readonly dailyEvents?: ReadonlyArray<{ day: string; event_category: string; dom_target: string; count: number }>
 }
 
 export function renderAnalyticsView (data: AnalyticsData | null): string {
@@ -60,6 +63,46 @@ ${data.topReferrers.map(r => `    <tr><td>${escapeHtml(r.referrer)}</td><td styl
 </table>`
     : ''
 
+  const eventCategoriesSection = data.eventCategories && data.eventCategories.length > 0
+    ? `<div class="analytics-section">
+  <h3>Event Categories</h3>
+  <table class="val-table">
+    <thead><tr><th>Category</th><th>Count</th></tr></thead>
+    <tbody>
+${data.eventCategories.map(e => `      <tr><td>${escapeHtml(e.event_category)}</td><td>${e.count.toLocaleString()}</td></tr>`).join('\n')}
+    </tbody>
+  </table>
+</div>`
+    : ''
+
+  const pageviewsByPathSection = data.pageviewsByPath && data.pageviewsByPath.length > 0
+    ? `<div class="analytics-section">
+  <h3>Top Pages (Detailed)</h3>
+  <div style="overflow-x: auto">
+    <table class="val-table">
+      <thead><tr><th>Path</th><th>Views</th></tr></thead>
+      <tbody>
+${data.pageviewsByPath.map(p => `        <tr><td>${escapeHtml(p.path)}</td><td>${p.views.toLocaleString()}</td></tr>`).join('\n')}
+      </tbody>
+    </table>
+  </div>
+</div>`
+    : ''
+
+  const dailyEventsSection = data.dailyEvents && data.dailyEvents.length > 0
+    ? `<div class="analytics-section">
+  <h3>Daily Activity</h3>
+  <div style="overflow-x: auto">
+    <table class="val-table">
+      <thead><tr><th>Day</th><th>Category</th><th>Target</th><th>Count</th></tr></thead>
+      <tbody>
+${data.dailyEvents.map(e => `        <tr><td>${escapeHtml(e.day)}</td><td>${escapeHtml(e.event_category)}</td><td>${escapeHtml(e.dom_target)}</td><td>${e.count.toLocaleString()}</td></tr>`).join('\n')}
+      </tbody>
+    </table>
+  </div>
+</div>`
+    : ''
+
   const noData = data.topPages.length === 0 && data.topReferrers.length === 0 && data.sessionCount === 0
     ? '<p class="empty-state">No analytics data yet. Data will appear here once visitors start arriving.</p>'
     : ''
@@ -67,5 +110,8 @@ ${data.topReferrers.map(r => `    <tr><td>${escapeHtml(r.referrer)}</td><td styl
   return `${statCards}
 ${pagesTable}
 ${referrersTable}
+${eventCategoriesSection}
+${pageviewsByPathSection}
+${dailyEventsSection}
 ${noData}`
 }
