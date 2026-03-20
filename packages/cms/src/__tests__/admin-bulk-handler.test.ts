@@ -36,18 +36,18 @@ function makeMockRes (): Record<string, ReturnType<typeof vi.fn>> {
   return { writeHead: vi.fn(), end: vi.fn(), setHeader: vi.fn() }
 }
 
-/** Get a fresh CSRF token by hitting the list GET route */
+/** Get a fresh CSRF token by hitting the new-doc form GET route */
 async function getValidCsrfToken (routes: ReturnType<typeof createAdminRoutes>, colSlug: string): Promise<string> {
-  const getReq = { headers: {}, url: `/admin/${colSlug}`, method: 'GET' }
+  const getReq = { headers: {}, url: `/admin/${colSlug}/new`, method: 'GET' }
   let htmlBody = ''
   const getRes = {
     writeHead: vi.fn(),
     end: vi.fn((data: string) => { htmlBody = data }),
     setHeader: vi.fn()
   }
-  await routes.get(`/admin/${colSlug}`)!.GET!(getReq as never, getRes as never, {})
+  await routes.get(`/admin/${colSlug}/new`)!.GET!(getReq as never, getRes as never, {})
   const csrfMatch = htmlBody.match(/name="_csrf" value="([^"]+)"/)
-  if (!csrfMatch?.[1]) throw new Error('CSRF token not found in list view HTML')
+  if (!csrfMatch?.[1]) throw new Error('CSRF token not found in new-doc form HTML')
   return csrfMatch[1]
 }
 
@@ -177,9 +177,10 @@ describe('admin bulk handler — unpublish action', () => {
 })
 
 describe('admin bulk handler — list GET includes CSRF token', () => {
-  it('renders _csrf hidden input in the list view bulk form', async () => {
+  it('renders _csrf hidden input in the list view bulk form when docs exist', async () => {
     const registry = createCollectionRegistry()
     registry.register(makePostsCollection())
+    // Pool must return at least one doc to trigger renderTable (which contains the bulk form with CSRF)
     const pool = makeMockPool([{ id: '1', title: 'Test', slug: 'test' }])
     const routes = createAdminRoutes(pool, registry)
     const getReq = { headers: {}, url: '/admin/posts', method: 'GET' }
