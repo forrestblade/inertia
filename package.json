@@ -16,8 +16,10 @@
     "test:mutate": "stryker run",
     "test:smoke": "pnpm test",
     "test:regression": "pnpm test",
-    "test:quarantine": "echo \"No quarantine tests configured\"",
-    "test:watch": "vitest --watch"
+    "test:quarantine": "vitest run --reporter=verbose --tags-filter=flaky",
+    "test:watch": "vitest --watch",
+    "test:flaky:detect": "bash scripts/detect-flaky-vitest.sh && playwright test --config=tests/e2e/flaky-detection.config.ts",
+    "test:flaky:deadlines": "bash scripts/check-flaky-deadlines.sh"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
