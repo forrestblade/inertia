@@ -87,33 +87,23 @@ describe('admin login rate limiting', () => {
     expect(res.body).toContain('Too many login attempts')
   })
 
-  it('resets rate limiter on successful login', async () => {
+  it('allows exactly 5 attempts before blocking', async () => {
     const registry = createCollectionRegistry()
     registry.register(makeUsersCollection())
-    // First 4 calls: empty user rows (login fails)
-    // 5th call: return user row with a password hash
-    // 6th call: session insert succeeds (createSession)
-    // Then subsequent calls: empty user rows again for post-reset failures
-    // We need the pool to return specific results in sequence:
-    //   calls 1-4: [] (no user found — login fails)
-    //   call 5: [{ id: 'u1', password_hash: '<hash>' }] (user found — but we need to mock verifyPassword)
-    // Since verifyPassword uses argon2, and we can't easily mock it in this context,
-    // we test the rate limit message presence instead.
-    // A simpler approach: verify that after 4 failures, the 5th still works (not rate limited)
-    // and the limiter hasn't kicked in yet.
     const pool = makeMockPool([])
     const routes = createAdminRoutes(pool, registry)
 
-    // Make 4 failed attempts
+    // Attempts 1-4 should all pass through to login logic (return 401, not 429)
     for (let i = 0; i < 4; i++) {
       const token = await getCsrfToken(routes)
       const body = `email=test%40test.com&password=wrong&_csrf=${token}`
       const req = makeMockLoginReq(body)
       const res = makeMockRes()
       await routes.get('/admin/login')!.POST!(req as never, res as never, {})
+      expect(res.writeHead).not.toHaveBeenCalledWith(429)
     }
 
-    // 5th attempt should still be allowed (not rate limited) — it's the last one
+    // 5th attempt is the last allowed — still not rate limited
     const token5 = await getCsrfToken(routes)
     const body5 = `email=test%40test.com&password=wrong&_csrf=${token5}`
     const req5 = makeMockLoginReq(body5)
@@ -121,7 +111,7 @@ describe('admin login rate limiting', () => {
     await routes.get('/admin/login')!.POST!(req5 as never, res5 as never, {})
     expect(res5.writeHead).not.toHaveBeenCalledWith(429)
 
-    // 6th should be rate limited
+    // 6th attempt crosses the threshold
     const token6 = await getCsrfToken(routes)
     const body6 = `email=test%40test.com&password=wrong&_csrf=${token6}`
     const req6 = makeMockLoginReq(body6)
