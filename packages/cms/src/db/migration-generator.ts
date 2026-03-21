@@ -15,6 +15,8 @@ export interface MigrationOutput {
   readonly down: string
 }
 
+const SEARCHABLE_FIELD_TYPES = new Set(['text', 'textarea', 'richtext', 'slug', 'email'])
+
 function checkIdentifier (name: string): CmsError | null {
   if (!isValidIdentifier(name)) {
     return { code: CmsErrorCode.INVALID_INPUT, message: `Invalid SQL identifier: ${name}` }
@@ -67,6 +69,45 @@ function buildIndexStatements (collection: CollectionConfig): Result<string[], C
   return ok(statements)
 }
 
+function getSearchableFieldNames (collection: CollectionConfig): readonly string[] {
+  return flattenFields(collection.fields)
+    .filter(f => SEARCHABLE_FIELD_TYPES.has(f.type))
+    .map(f => f.name)
+}
+
+function buildTsvectorExpression (fields: readonly string[]): string {
+  return fields
+    .map(f => `to_tsvector('english', COALESCE(NEW."${f}", ''))`)
+    .join(' || ')
+}
+
+function buildSearchStatements (collection: CollectionConfig): string[] {
+  const slug = collection.slug
+  const searchFields = getSearchableFieldNames(collection)
+  if (searchFields.length === 0) return []
+
+  const indexName = `${slug}_search_idx`
+  const functionName = `${slug}_search_update`
+  const triggerName = `${slug}_search_update`
+  const tsvectorExpr = buildTsvectorExpression(searchFields)
+
+  return [
+    '',
+    `CREATE INDEX IF NOT EXISTS "${indexName}" ON "${slug}" USING GIN (search_vector);`,
+    '',
+    `CREATE OR REPLACE FUNCTION ${functionName}() RETURNS trigger AS $$`,
+    'BEGIN',
+    `  NEW.search_vector := ${tsvectorExpr};`,
+    '  RETURN NEW;',
+    'END;',
+    '$$ LANGUAGE plpgsql;',
+    '',
+    `CREATE TRIGGER "${triggerName}"`,
+    `  BEFORE INSERT OR UPDATE ON "${slug}"`,
+    `  FOR EACH ROW EXECUTE FUNCTION ${functionName}();`
+  ]
+}
+
 export function generateCreateTableSql (collection: CollectionConfig, hasLocalization?: boolean): string {
   const slugErr = checkIdentifier(collection.slug)
   if (slugErr) return `-- ERROR: ${slugErr.message}`
@@ -104,6 +145,11 @@ export function generateCreateTableSql (collection: CollectionConfig, hasLocaliz
 
   columns.push('  "deleted_at" TIMESTAMPTZ')
 
+  const searchFields = getSearchableFieldNames(collection)
+  if (searchFields.length > 0) {
+    columns.push('  "search_vector" TSVECTOR')
+  }
+
   const fkResult = buildForeignKeys(flattenFields(collection.fields))
   if (fkResult.isErr()) return `-- ERROR: ${fkResult.error.message}`
   const allEntries = [...columns, ...fkResult.value]
@@ -117,6 +163,11 @@ export function generateCreateTableSql (collection: CollectionConfig, hasLocaliz
   if (indexResult.value.length > 0) {
     parts.push('')
     parts.push(...indexResult.value)
+  }
+
+  const searchStatements = buildSearchStatements(collection)
+  if (searchStatements.length > 0) {
+    parts.push(...searchStatements)
   }
 
   return parts.join('\n')

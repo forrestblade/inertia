@@ -356,3 +356,128 @@ describe('generateCreateTable()', () => {
     expect(migration.name).toMatch(/^\d+_create_posts$/)
   })
 })
+
+describe('generateCreateTableSql() with search_vector', () => {
+  it('includes search_vector TSVECTOR column when collection has text fields', () => {
+    const posts = collection({
+      slug: 'posts',
+      fields: [
+        field.text({ name: 'title', required: true }),
+        field.slug({ name: 'slug', required: true })
+      ]
+    })
+    const sql = generateCreateTableSql(posts)
+    expect(sql).toContain('"search_vector" TSVECTOR')
+  })
+
+  it('includes GIN index on search_vector when collection has text fields', () => {
+    const posts = collection({
+      slug: 'posts',
+      fields: [
+        field.text({ name: 'title', required: true })
+      ]
+    })
+    const sql = generateCreateTableSql(posts)
+    expect(sql).toContain('CREATE INDEX IF NOT EXISTS "posts_search_idx"')
+    expect(sql).toContain('USING GIN (search_vector)')
+  })
+
+  it('includes trigger function when collection has text fields', () => {
+    const posts = collection({
+      slug: 'posts',
+      fields: [
+        field.text({ name: 'title', required: true })
+      ]
+    })
+    const sql = generateCreateTableSql(posts)
+    expect(sql).toContain('CREATE OR REPLACE FUNCTION')
+    expect(sql).toContain('posts_search_update')
+    expect(sql).toContain('RETURNS trigger')
+  })
+
+  it('includes trigger referencing all searchable fields', () => {
+    const posts = collection({
+      slug: 'posts',
+      fields: [
+        field.text({ name: 'title', required: true }),
+        field.textarea({ name: 'body' }),
+        field.email({ name: 'contact' })
+      ]
+    })
+    const sql = generateCreateTableSql(posts)
+    expect(sql).toContain("COALESCE(NEW.\"title\", '')")
+    expect(sql).toContain("COALESCE(NEW.\"body\", '')")
+    expect(sql).toContain("COALESCE(NEW.\"contact\", '')")
+  })
+
+  it('includes BEFORE INSERT OR UPDATE trigger', () => {
+    const posts = collection({
+      slug: 'posts',
+      fields: [
+        field.text({ name: 'title', required: true })
+      ]
+    })
+    const sql = generateCreateTableSql(posts)
+    expect(sql).toContain('BEFORE INSERT OR UPDATE ON "posts"')
+    expect(sql).toContain('CREATE TRIGGER "posts_search_update"')
+  })
+
+  it('does NOT include search_vector for collections with only boolean/number fields', () => {
+    const metrics = collection({
+      slug: 'metrics',
+      fields: [
+        field.number({ name: 'count' }),
+        field.boolean({ name: 'active' })
+      ]
+    })
+    const sql = generateCreateTableSql(metrics)
+    expect(sql).not.toContain('search_vector')
+    expect(sql).not.toContain('GIN')
+    expect(sql).not.toContain('TRIGGER')
+  })
+
+  it('does NOT include search_vector for collections with only relation/date fields', () => {
+    const events = collection({
+      slug: 'events',
+      fields: [
+        field.date({ name: 'startDate' }),
+        field.relation({ name: 'author', relationTo: 'users' })
+      ]
+    })
+    const sql = generateCreateTableSql(events)
+    expect(sql).not.toContain('search_vector')
+  })
+
+  it('includes search_vector for textarea fields', () => {
+    const pages = collection({
+      slug: 'pages',
+      fields: [
+        field.textarea({ name: 'description' })
+      ]
+    })
+    const sql = generateCreateTableSql(pages)
+    expect(sql).toContain('"search_vector" TSVECTOR')
+  })
+
+  it('includes search_vector for richtext fields', () => {
+    const articles = collection({
+      slug: 'articles',
+      fields: [
+        field.richtext({ name: 'content' })
+      ]
+    })
+    const sql = generateCreateTableSql(articles)
+    expect(sql).toContain('"search_vector" TSVECTOR')
+  })
+
+  it('includes search_vector for email fields', () => {
+    const contacts = collection({
+      slug: 'contacts',
+      fields: [
+        field.email({ name: 'email' })
+      ]
+    })
+    const sql = generateCreateTableSql(contacts)
+    expect(sql).toContain('"search_vector" TSVECTOR')
+  })
+})

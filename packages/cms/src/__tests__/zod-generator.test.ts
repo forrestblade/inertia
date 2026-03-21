@@ -459,3 +459,41 @@ describe('generateConditionalPartialSchema()', () => {
     expect(schema.safeParse({ count: 'not-a-number' }).success).toBe(false)
   })
 })
+
+describe('Email field empty string handling', () => {
+  it('accepts empty string for optional email field (converts to undefined)', () => {
+    const fields: readonly FieldConfig[] = [
+      field.email({ name: 'contact' })
+    ]
+    const schema = generateZodSchema(fields)
+    const result = schema.safeParse({ contact: '' })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects invalid email for optional email field', () => {
+    const fields: readonly FieldConfig[] = [
+      field.email({ name: 'contact' })
+    ]
+    const schema = generateZodSchema(fields)
+    const result = schema.safeParse({ contact: 'not-an-email' })
+    expect(result.success).toBe(false)
+  })
+
+  it('accepts valid email for optional email field', () => {
+    const fields: readonly FieldConfig[] = [
+      field.email({ name: 'contact' })
+    ]
+    const schema = generateZodSchema(fields)
+    const result = schema.safeParse({ contact: 'user@example.com' })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects empty string for required email field', () => {
+    const fields: readonly FieldConfig[] = [
+      field.email({ name: 'contact', required: true })
+    ]
+    const schema = generateZodSchema(fields)
+    const result = schema.safeParse({ contact: '' })
+    expect(result.success).toBe(false)
+  })
+})

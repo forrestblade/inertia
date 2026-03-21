@@ -44,7 +44,9 @@ export function renderLayout (args: LayoutArgs): string {
   }).join('\n')
 
   const collectionNav = ungroupedNav + (groupedNav ? '\n' + groupedNav : '')
-  const navItems = collectionNav + '\n<li style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--val-color-border);"><a href="/admin/analytics">Analytics</a></li>'
+  const analyticsItem = '\n<li style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--val-color-border);"><a href="/admin/analytics">Analytics</a></li>'
+  const logoutItem = '\n<li style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--val-color-border);"><form method="POST" action="/admin/logout" style="margin:0;"><button type="submit" class="sidebar-logout-btn" style="display:block;width:100%;padding:0.5rem 0.75rem;border-radius:var(--val-radius-md);color:var(--val-color-text-muted);font-size:var(--val-text-sm);font-weight:var(--val-weight-medium);background:none;border:none;cursor:pointer;text-align:left;">Log out</button></form></li>'
+  const navItems = collectionNav + analyticsItem + logoutItem
 
   const toastHtml = args.toast ? renderToast(args.toast) : ''
 

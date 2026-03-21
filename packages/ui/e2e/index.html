@@ -6,13 +6,10 @@
   <title>@valencets/ui — e2e test harness</title>
   <link rel="stylesheet" href="/src/tokens/primitives.css" />
   <link rel="stylesheet" href="/src/tokens/semantic.css" />
-  <script type="module" src="/src/components/val-button.ts"></script>
-  <script type="module" src="/src/components/val-input.ts"></script>
-  <script type="module" src="/src/components/val-textarea.ts"></script>
-  <script type="module" src="/src/components/val-select.ts"></script>
-  <script type="module" src="/src/components/val-checkbox.ts"></script>
-  <script type="module" src="/src/components/val-toggle.ts"></script>
-  <script type="module" src="/src/components/val-form.ts"></script>
+  <script type="module">
+    import { registerAll } from '/src/components/register.ts'
+    registerAll()
+  </script>
 </head>
 <body>
   <div id="test-root"></div>

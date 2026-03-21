@@ -483,7 +483,7 @@ export function createAdminRoutes (
         }
         const formData = bodyResult.value
         const submittedToken = String(formData._csrf ?? '')
-        const { _csrf, ...data } = formData
+        const { _csrf, _action, ...data } = formData
         if (!submittedToken || !validateCsrf(submittedToken)) {
           const token = freshCsrfToken()
           const html = renderErrorPage(col, allCollections, `New ${col.labels?.singular ?? col.slug}`, data as FormSnapshot, token, { type: 'error', text: 'Forbidden: invalid CSRF token' })
@@ -499,7 +499,8 @@ export function createAdminRoutes (
           sendHtml(res, html, 400)
           return
         }
-        const result = await api.create({ collection: col.slug, data: stripUndefined(validation.data as DocumentData) })
+        const isDraft = String(_action ?? 'publish') === 'draft'
+        const result = await api.create({ collection: col.slug, data: stripUndefined(validation.data as DocumentData), draft: isDraft })
         result.match(
           () => {
             setFlashCookie(res, { type: 'success', text: `${col.labels?.singular ?? col.slug} created successfully` })
@@ -654,7 +655,7 @@ export function createAdminRoutes (
         }
         const formData = bodyResult.value
         const submittedToken = String(formData._csrf ?? '')
-        const { _csrf, ...data } = formData
+        const { _csrf, _action, ...data } = formData
         if (!submittedToken || !validateCsrf(submittedToken)) {
           const token = freshCsrfToken()
           const html = renderErrorPage(col, allCollections, `Edit ${col.labels?.singular ?? col.slug}`, { id, ...data } as FormSnapshot, token, { type: 'error', text: 'Forbidden: invalid CSRF token' })
@@ -670,7 +671,8 @@ export function createAdminRoutes (
           sendHtml(res, html, 400)
           return
         }
-        const result = await api.update({ collection: col.slug, id, data: stripUndefined(validation.data as DocumentData) })
+        const shouldPublish = String(_action ?? '') === 'publish'
+        const result = await api.update({ collection: col.slug, id, data: stripUndefined(validation.data as DocumentData), publish: shouldPublish || undefined })
         result.match(
           (updated) => {
             // Save revision on successful update

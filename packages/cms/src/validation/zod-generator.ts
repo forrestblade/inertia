@@ -181,7 +181,7 @@ function buildObjectSchema (fields: readonly FieldConfig[], wrapLocalized?: bool
       fieldSchema = z.record(z.string(), fieldSchema)
     }
     if (!f.required) {
-      if (f.type === 'relation' || f.type === 'media') {
+      if (f.type === 'relation' || f.type === 'media' || f.type === 'email' || f.type === 'url' || f.type === 'color' || f.type === 'json' || f.type === 'password') {
         fieldSchema = z.preprocess(
           (val) => (typeof val === 'string' && val === '') ? undefined : val,
           fieldSchema.optional()

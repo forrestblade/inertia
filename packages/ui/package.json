@@ -59,7 +59,6 @@
     "url": "https://github.com/valencets/valence/issues"
   },
   "sideEffects": [
-    "./src/components/register.ts",
     "./dist/components/register.js"
   ]
 }

@@ -480,3 +480,24 @@ describe('admin GET /admin/:slug query param wiring', () => {
     expect(res.writeHead).toHaveBeenCalledWith(400)
   })
 })
+
+describe('renderLayout() logout button', () => {
+  it('includes a logout form with POST method and /admin/logout action', () => {
+    const html = renderLayout({
+      title: 'Dashboard',
+      content: '',
+      collections: [makePostsCollection()]
+    })
+    expect(html).toContain('action="/admin/logout"')
+    expect(html).toContain('method="POST"')
+  })
+
+  it('includes logout label text', () => {
+    const html = renderLayout({
+      title: 'Dashboard',
+      content: '',
+      collections: [makePostsCollection()]
+    })
+    expect(html.toLowerCase()).toMatch(/log\s*out/)
+  })
+})

@@ -36,17 +36,23 @@ describe('renderRichtextEditor', () => {
     expect(html).not.toContain('<template')
   })
 
-  it('escapes HTML in the hidden input value', () => {
+  it('escapes HTML in the hidden input value attribute', () => {
     const f = field.richtext({ name: 'body' })
     const html = renderFieldInput(f, '<script>alert("xss")</script>')
-    // The hidden input value should be escaped
-    expect(html).toContain('&lt;script&gt;')
-    expect(html).not.toContain('<script>alert')
+    // The hidden input value= attribute should be escaped
+    expect(html).toContain('value="&lt;script&gt;alert')
   })
 
   it('renders label with field name', () => {
     const f = field.richtext({ name: 'body', label: 'Body Content' })
     const html = renderFieldInput(f, '')
     expect(html).toContain('Body Content')
+  })
+
+  it('puts raw HTML in template tag without double-encoding', () => {
+    const f = field.richtext({ name: 'body' })
+    const html = renderFieldInput(f, '<p>Hello <strong>world</strong></p>')
+    // The template tag must contain raw HTML, not escaped entities
+    expect(html).toContain('<template class="richtext-initial"><p>Hello <strong>world</strong></p></template>')
   })
 })
