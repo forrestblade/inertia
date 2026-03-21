@@ -104,7 +104,7 @@ describe('POST /admin/:slug/new — draft vs publish action', () => {
 
     // The SQL should contain 'draft' as the _status value
     const sqlCalls = (pool.sql as MockSql).unsafe.mock.calls
-    const allParams = sqlCalls.flatMap(c => c[1] as unknown[])
+    const allParams = sqlCalls.flatMap(c => c[1] as (string | number | boolean | null)[])
     expect(allParams).toContain('draft')
   })
 
@@ -126,7 +126,7 @@ describe('POST /admin/:slug/new — draft vs publish action', () => {
 
     // The SQL should contain 'published' as the _status value (not 'draft')
     const sqlCalls = (pool.sql as MockSql).unsafe.mock.calls
-    const allParams = sqlCalls.flatMap(c => c[1] as unknown[])
+    const allParams = sqlCalls.flatMap(c => c[1] as (string | number | boolean | null)[])
     expect(allParams).toContain('published')
     expect(allParams).not.toContain('draft')
   })
@@ -148,7 +148,7 @@ describe('POST /admin/:slug/new — draft vs publish action', () => {
     expect(writeHeadCall?.[0]).toBe(302)
 
     const sqlCalls = (pool.sql as MockSql).unsafe.mock.calls
-    const allParams = sqlCalls.flatMap(c => c[1] as unknown[])
+    const allParams = sqlCalls.flatMap(c => c[1] as (string | number | boolean | null)[])
     expect(allParams).toContain('published')
     expect(allParams).not.toContain('draft')
   })
@@ -195,7 +195,7 @@ describe('POST /admin/:slug/:id/edit — publish action', () => {
 
     // When _action=draft, _status should remain draft (not 'published')
     const sqlCalls = (pool.sql as MockSql).unsafe.mock.calls
-    const allParams = sqlCalls.flatMap(c => c[1] as unknown[])
+    const allParams = sqlCalls.flatMap(c => c[1] as (string | number | boolean | null)[])
     // Should not set published status
     expect(allParams).not.toContain('published')
   })

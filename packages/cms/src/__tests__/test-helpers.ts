@@ -7,7 +7,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
  * Avoids banned `as unknown as` double-cast by typing the mock shape directly.
  */
 export interface MockSql {
-  (...args: readonly unknown[]): Promise<readonly Record<string, string | number | null>[]>
+  (strings: TemplateStringsArray, ...values: readonly (string | number | boolean | null)[]): ReturnType<typeof vi.fn>
   readonly unsafe: ReturnType<typeof vi.fn>
 }
 
@@ -85,6 +85,6 @@ export function asReq (mock: MockIncomingMessage): IncomingMessage {
 }
 
 /** Cast a MockServerResponse to ServerResponse (with optional extra fields). */
-export function asRes<T extends Record<string, unknown> = Record<string, never>> (mock: MockServerResponse): ServerResponse & T {
+export function asRes<T extends object = Record<string, never>> (mock: MockServerResponse): ServerResponse & T {
   return mock as unknown as ServerResponse & T
 }

@@ -152,7 +152,7 @@ describe('admin bulk handler — delete action', () => {
     const req = makeMockReq(body)
     const res = makeMockRes()
     await routes.get('/admin/posts/bulk')!.POST!(req, res, {})
-    const setCookieCalls = res.setHeader.mock.calls.filter((c: unknown[]) => c[0] === 'Set-Cookie')
+    const setCookieCalls = res.setHeader.mock.calls.filter((c: [string, string | string[]]) => c[0] === 'Set-Cookie')
     expect(setCookieCalls.length).toBeGreaterThan(0)
   })
 })

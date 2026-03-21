@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { createAdminRoutes } from '../admin/admin-routes.js'
+import type { AdminRouteHandler } from '../admin/admin-routes.js'
 import { createCollectionRegistry } from '../schema/registry.js'
 import { collection } from '../schema/collection.js'
 import { field } from '../schema/fields.js'
@@ -13,10 +14,6 @@ function makeUsersCollection () {
     auth: true,
     fields: [field.text({ name: 'name' })]
   })
-}
-
-interface AdminRouteHandler {
-  (req: IncomingMessage, res: ServerResponse, params: Record<string, string>): Promise<void>
 }
 
 interface AdminRouteEntry {
