@@ -1,8 +1,8 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./assets/logo-dark-animated.png">
-    <source media="(prefers-color-scheme: light)" srcset="./assets/logo-light-animated.png">
-    <img alt="Valence" src="./assets/logo-light-animated.png" width="280">
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/valencets/valence/master/assets/logo-dark-animated.png">
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/valencets/valence/master/assets/logo-light-animated.png">
+    <img alt="Valence" src="https://raw.githubusercontent.com/valencets/valence/master/assets/logo-light-animated.png" width="280">
   </picture>
 </p>
 
@@ -97,7 +97,7 @@ Open `http://localhost:3000/admin` to sign in. Open `http://localhost:3000` for 
 - **REST API** at `/api/:collection`. CRUD with Zod validation, parameterized queries, `Result<T, E>` error handling.
 - **Migrations** generated from schema diffs. Deterministic SQL, idempotent, version-tracked.
 - **18 field types**. text, textarea, richtext, number, boolean, select, date, slug, media, relation, group, email, url, password, json, color, multiselect, array.
-- **Rich text editor**. Lexical-powered editor in the admin panel with heading, list, blockquote, link, and code formatting.
+- **Rich text editor**. Tiptap-powered editor in the admin panel with heading, list, blockquote, link, and code formatting.
 - **FSD scaffold**. `valence init` generates `src/` with Feature-Sliced Design: `app/`, `pages/`, `entities/`, `features/`, `shared/`.
 - **Entity codegen**. Typed interfaces + API clients generated from your schema. `// @generated` files regenerate on config change; user-edited files are never overwritten.
 - **Static file serving**. `public/` served with MIME types and path traversal protection.
@@ -137,13 +137,13 @@ Valence includes a complete, privacy-respecting analytics pipeline that runs ent
 | **@valencets/ui** | 18 Web Components. ARIA, i18n, telemetry hooks, hydration directives. OKLCH design tokens. | none |
 | **@valencets/core** | Router + server. `pushState` nav, fragment swaps, prefetch, view transitions, server islands. | [neverthrow](https://github.com/supermacro/neverthrow) |
 | **@valencets/db** | PostgreSQL query layer. Tagged template SQL, parameterized queries, `Result<T,E>`, migration runner. | [postgres](https://github.com/porsager/postgres), [neverthrow](https://github.com/supermacro/neverthrow), [zod](https://github.com/colinhacks/zod) |
-| **@valencets/cms** | Schema engine. `collection()` + `field.*` produces tables, validators, REST API, admin UI, auth, media. Rich text via Lexical. | [lexical](https://github.com/facebook/lexical), [argon2](https://github.com/ranisalt/node-argon2), [zod](https://github.com/colinhacks/zod), [neverthrow](https://github.com/supermacro/neverthrow) |
+| **@valencets/cms** | Schema engine. `collection()` + `field.*` produces tables, validators, REST API, admin UI, auth, media. Rich text via Tiptap (ProseMirror). | [tiptap](https://tiptap.dev), [argon2](https://github.com/ranisalt/node-argon2), [zod](https://github.com/colinhacks/zod), [neverthrow](https://github.com/supermacro/neverthrow) |
 | **@valencets/telemetry** | Beacon ingestion, event storage, daily summaries, fleet aggregation. | [postgres](https://github.com/porsager/postgres), [neverthrow](https://github.com/supermacro/neverthrow) |
 | **@valencets/valence** | CLI + FSD scaffold + entity codegen. `valence init`, `valence dev`, `valence migrate`, `valence build`. | [tsx](https://github.com/privatenumber/tsx), [zod](https://github.com/colinhacks/zod), [neverthrow](https://github.com/supermacro/neverthrow) |
 
-**Total external runtime deps:** 6 — postgres, neverthrow, zod, lexical, argon2, tsx. All MIT-licensed, all audited via [Socket](https://socket.dev/npm/package/@valencets/valence).
+**Total external runtime deps:** 6 — postgres, neverthrow, zod, tiptap, argon2, tsx. All MIT-licensed, all audited via [Socket](https://socket.dev/npm/package/@valencets/valence).
 
-**Browser JS:** Public-facing pages ship zero third-party JavaScript. The admin panel uses [Lexical](https://lexical.dev/) (Meta, MIT, ~40kB gzipped) for rich text editing only.
+**Browser JS:** Public-facing pages ship zero third-party JavaScript. The admin panel uses [Tiptap](https://tiptap.dev/) (ProseMirror, MIT) for rich text editing only.
 
 ## Non-Negotiable
 
@@ -153,8 +153,8 @@ Valence includes a complete, privacy-respecting analytics pipeline that runs ent
 | `Result<T, E>` everywhere | If it can fail, the type signature says so. Both branches handled or it doesn't compile. |
 | 14kB critical shell | First paint in the first TCP data flight. CDN-ready with cache profiles and server islands. |
 | Pre-allocated ring buffer | Zero allocation in the telemetry hot path. |
-| Zero third-party JS on public pages | Your site ships your code. Lexical is admin-only. Nothing phones home. |
-| 1,547 tests | Strict TypeScript, neostandard, CI on every push. |
+| Zero third-party JS on public pages | Your site ships your code. Tiptap is admin-only. Nothing phones home. |
+| 3,022 tests | Strict TypeScript, neostandard, CI on every push. |
 
 ## Documentation
 
