@@ -1,3 +1,4 @@
+import type { IncomingMessage } from 'node:http'
 import type { Middleware } from './middleware-types.js'
 
 export const ContentCategory = {
@@ -59,6 +60,35 @@ export function resolveContentCategory (contentType: string | undefined): Conten
   return CONTENT_TYPE_MAP[base] ?? ContentCategory.RAW
 }
 
+function enforceStreamingLimit (req: IncomingMessage, limit: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    let received = 0
+    let aborted = false
+
+    req.on('data', (chunk: Buffer) => {
+      if (aborted) return
+      received += chunk.length
+      if (received > limit) {
+        aborted = true
+        req.destroy()
+        resolve(false)
+      }
+    })
+
+    req.on('end', () => {
+      if (!aborted) resolve(true)
+    })
+
+    req.on('error', () => {
+      if (!aborted) resolve(false)
+    })
+
+    req.on('close', () => {
+      if (!aborted) resolve(true)
+    })
+  })
+}
+
 export function createBodyLimitMiddleware (config?: BodyLimitConfig): Middleware {
   const limits: ResolvedLimits = {
     json: config?.json ?? DEFAULT_LIMITS.json,
@@ -76,22 +106,34 @@ export function createBodyLimitMiddleware (config?: BodyLimitConfig): Middleware
     }
 
     const contentType = req.headers['content-type']
-    const contentLength = req.headers['content-length']
-    if (contentLength === undefined) {
-      await next()
-      return
-    }
-
-    const length = parseInt(contentLength, 10)
-    if (Number.isNaN(length)) {
-      await next()
-      return
-    }
-
     const category = resolveContentCategory(typeof contentType === 'string' ? contentType : undefined)
     const limit = limits[category]
+    const contentLength = req.headers['content-length']
 
-    if (length > limit) {
+    if (contentLength !== undefined) {
+      const length = parseInt(contentLength, 10)
+      if (Number.isNaN(length)) {
+        await next()
+        return
+      }
+
+      if (length > limit) {
+        const body = JSON.stringify({ error: 'Request entity too large' })
+        res.writeHead(413, {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Content-Length': Buffer.byteLength(body)
+        })
+        res.end(body)
+        return
+      }
+
+      await next()
+      return
+    }
+
+    // No Content-Length header — enforce limit via streaming byte counter
+    const withinLimit = await enforceStreamingLimit(req, limit)
+    if (!withinLimit) {
       const body = JSON.stringify({ error: 'Request entity too large' })
       res.writeHead(413, {
         'Content-Type': 'application/json; charset=utf-8',
