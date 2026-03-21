@@ -133,7 +133,7 @@ jobs:
           install-playwright: 'true'
           playwright-browser: chromium
       - run: pnpm build
-      - run: npx playwright test --grep-invert Visual --shard=${{ matrix.shard }}/2
+      - run: pnpm test:e2e --grep-invert Visual --shard=${{ matrix.shard }}/2
         env:
           PGHOST: localhost
           PGPORT: 5432
@@ -239,6 +239,8 @@ jobs:
     name: Visual Regression
     needs: [unit]
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
 
     services:
       postgres:
@@ -316,7 +318,15 @@ jobs:
       - uses: ./.github/actions/setup-project
       - run: pnpm build
       - name: Start test server
-        run: nohup npx tsx tests/e2e/server-start.mjs > /tmp/lhci-server.log 2>&1 &
+        run: |
+          nohup npx tsx tests/e2e/server-start.mjs > /tmp/lhci-server.log 2>&1 &
+          SERVER_PID=$!
+          sleep 5
+          if ! kill -0 $SERVER_PID 2>/dev/null; then
+            echo "Server crashed on startup"
+            cat /tmp/lhci-server.log || true
+            exit 1
+          fi
         env:
           PGHOST: localhost
           PGPORT: 5432
