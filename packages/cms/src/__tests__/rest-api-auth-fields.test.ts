@@ -39,6 +39,7 @@ function setupWithAuth (poolReturn: readonly Record<string, string | number | nu
   const usersCol = injectAuthFields(collection({
     slug: 'users',
     auth: true,
+    versions: { drafts: true },
     fields: [
       field.text({ name: 'name', required: true }),
       field.select({
@@ -63,7 +64,7 @@ function setupWithAuth (poolReturn: readonly Record<string, string | number | nu
 }
 
 describe('PATCH /api/:collection/:id auth field protection', () => {
-  it('strips role field from PATCH on auth-enabled collections', async () => {
+  it('rejects role field from PATCH on auth-enabled collections', async () => {
     const updated = { id: 'user-1', name: 'Test', role: 'editor' }
     const { pool, collections, globals } = setupWithAuth([updated])
     const routes = createRestRoutes(pool, collections, globals)
@@ -77,7 +78,7 @@ describe('PATCH /api/:collection/:id auth field protection', () => {
     expect(res.writeHead).toHaveBeenCalledWith(400, expect.any(Object))
   })
 
-  it('strips password_hash field from PATCH on auth-enabled collections', async () => {
+  it('rejects password_hash field from PATCH on auth-enabled collections', async () => {
     const updated = { id: 'user-1', name: 'Test' }
     const { pool, collections, globals } = setupWithAuth([updated])
     const routes = createRestRoutes(pool, collections, globals)
@@ -91,7 +92,7 @@ describe('PATCH /api/:collection/:id auth field protection', () => {
     expect(res.writeHead).toHaveBeenCalledWith(400, expect.any(Object))
   })
 
-  it('strips email field from PATCH on auth-enabled collections', async () => {
+  it('rejects email field from PATCH on auth-enabled collections', async () => {
     const updated = { id: 'user-1', name: 'Test' }
     const { pool, collections, globals } = setupWithAuth([updated])
     const routes = createRestRoutes(pool, collections, globals)
@@ -119,7 +120,7 @@ describe('PATCH /api/:collection/:id auth field protection', () => {
     expect(res.writeHead).toHaveBeenCalledWith(200, expect.any(Object))
   })
 
-  it('does not strip fields from PATCH on non-auth collections', async () => {
+  it('does not reject fields from PATCH on non-auth collections', async () => {
     const updated = { id: 'post-1', title: 'Updated', slug: 'updated' }
     const { pool, collections, globals } = setupWithAuth([updated])
     const routes = createRestRoutes(pool, collections, globals)
@@ -134,7 +135,7 @@ describe('PATCH /api/:collection/:id auth field protection', () => {
 })
 
 describe('POST /api/:collection auth field protection', () => {
-  it('strips role field from POST on auth-enabled collections', async () => {
+  it('rejects role field from POST on auth-enabled collections', async () => {
     const { pool, collections, globals } = setupWithAuth()
     const routes = createRestRoutes(pool, collections, globals)
     const handler = routes.get('/api/users')?.POST
@@ -149,6 +150,22 @@ describe('POST /api/:collection auth field protection', () => {
     const res = makeMockRes()
     await handler!(req, res, {})
     // Should reject — role is a protected field on auth collections
+    expect(res.writeHead).toHaveBeenCalledWith(400, expect.any(Object))
+  })
+
+  it('rejects role field from POST with ?draft=true on auth-enabled collections', async () => {
+    const { pool, collections, globals } = setupWithAuth()
+    const routes = createRestRoutes(pool, collections, globals)
+    const handler = routes.get('/api/users')?.POST
+    expect(handler).toBeDefined()
+
+    const req = makeMockReq('POST', '/api/users?draft=true', JSON.stringify({
+      name: 'Hacker',
+      role: 'admin'
+    }))
+    const res = makeMockRes()
+    await handler!(req, res, {})
+    // Should reject — draft mode must not bypass auth field protection
     expect(res.writeHead).toHaveBeenCalledWith(400, expect.any(Object))
   })
 })

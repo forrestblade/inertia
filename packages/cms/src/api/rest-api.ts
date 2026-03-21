@@ -163,6 +163,9 @@ export function createRestRoutes (
       ? col.fields.filter(f => !protectedNames.has(f.name))
       : col.fields
     const safeZodSchema = isAuth ? generateZodSchema(safeFields).strict() : zodSchema
+    const safeDraftSchema = protectedNames !== undefined && draftSchema !== undefined
+      ? generateDraftSchema(safeFields).strict()
+      : draftSchema
     const safePatchSchema = isAuth
       ? generatePartialSchema(safeFields).strict()
       : generatePartialSchema(col.fields)
@@ -209,14 +212,14 @@ export function createRestRoutes (
         if (parseResult.isErr()) { sendErrorJson(res, parseResult.error.message, 400); return }
         const urlParams = parseUrlParams(url)
         const isDraft = urlParams.get('draft') === 'true'
-        const schema = isDraft && draftSchema !== undefined ? draftSchema : safeZodSchema
+        const schema = isDraft && safeDraftSchema !== undefined ? safeDraftSchema : safeZodSchema
         const validation = schema.safeParse(parseResult.value)
         if (!validation.success) {
           const issues = validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join('; ')
           sendErrorJson(res, `Validation failed: ${issues}`, 400)
           return
         }
-        const result = await api.create({ collection: slug, data: parseResult.value, draft: isDraft, locale })
+        const result = await api.create({ collection: slug, data: validation.data as DocumentData, draft: isDraft, locale })
         result.match(
           (doc) => sendJson(res, doc as DocumentData, 201),
           (err) => sendErrorJson(res, err.message, 400)
@@ -259,7 +262,7 @@ export function createRestRoutes (
         const result = await api.update({
           collection: slug,
           id,
-          data: parseResult.value,
+          data: validation.data as DocumentData,
           draft: isDraft,
           publish: isPublish,
           locale
