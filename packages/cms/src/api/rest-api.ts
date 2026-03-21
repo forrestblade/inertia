@@ -11,6 +11,7 @@ import type { PaginatedResult } from '../db/query-types.js'
 import type { DocumentRow } from '../db/query-builder.js'
 import type { CmsError } from '../schema/types.js'
 import { flattenFields } from '../schema/field-utils.js'
+import { isAuthEnabled, getAuthFields } from '../auth/auth-config.js'
 
 export type RestRouteHandler = (req: IncomingMessage, res: ServerResponse, ctx: Record<string, string>) => Promise<void>
 
@@ -154,6 +155,20 @@ export function createRestRoutes (
     const zodSchema = generateZodSchema(col.fields)
     const isVersioned = col.versions?.drafts === true
     const draftSchema = isVersioned ? generateDraftSchema(col.fields) : undefined
+    const isAuth = isAuthEnabled(col)
+    const protectedNames = isAuth
+      ? new Set([...getAuthFields().map(af => af.name), 'role'])
+      : undefined
+    const safeFields = protectedNames !== undefined
+      ? col.fields.filter(f => !protectedNames.has(f.name))
+      : col.fields
+    const safeZodSchema = isAuth ? generateZodSchema(safeFields).strict() : zodSchema
+    const safeDraftSchema = protectedNames !== undefined && draftSchema !== undefined
+      ? generateDraftSchema(safeFields).strict()
+      : draftSchema
+    const safePatchSchema = isAuth
+      ? generatePartialSchema(safeFields).strict()
+      : generatePartialSchema(col.fields)
 
     routes.set(`/api/${slug}`, {
       GET: async (req, res) => {
@@ -197,14 +212,14 @@ export function createRestRoutes (
         if (parseResult.isErr()) { sendErrorJson(res, parseResult.error.message, 400); return }
         const urlParams = parseUrlParams(url)
         const isDraft = urlParams.get('draft') === 'true'
-        const schema = isDraft && draftSchema !== undefined ? draftSchema : zodSchema
+        const schema = isDraft && safeDraftSchema !== undefined ? safeDraftSchema : safeZodSchema
         const validation = schema.safeParse(parseResult.value)
         if (!validation.success) {
           const issues = validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join('; ')
           sendErrorJson(res, `Validation failed: ${issues}`, 400)
           return
         }
-        const result = await api.create({ collection: slug, data: parseResult.value, draft: isDraft, locale })
+        const result = await api.create({ collection: slug, data: validation.data as DocumentData, draft: isDraft, locale })
         result.match(
           (doc) => sendJson(res, doc as DocumentData, 201),
           (err) => sendErrorJson(res, err.message, 400)
@@ -235,8 +250,7 @@ export function createRestRoutes (
         if (bodyResult.isErr()) { sendErrorJson(res, bodyResult.error.message, 400); return }
         const parseResult = await safeJsonParse(bodyResult.value)
         if (parseResult.isErr()) { sendErrorJson(res, parseResult.error.message, 400); return }
-        const partialSchema = generatePartialSchema(col.fields)
-        const validation = partialSchema.safeParse(parseResult.value)
+        const validation = safePatchSchema.safeParse(parseResult.value)
         if (!validation.success) {
           const issues = validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join('; ')
           sendErrorJson(res, `Validation failed: ${issues}`, 400)
@@ -248,7 +262,7 @@ export function createRestRoutes (
         const result = await api.update({
           collection: slug,
           id,
-          data: parseResult.value,
+          data: validation.data as DocumentData,
           draft: isDraft,
           publish: isPublish,
           locale
