@@ -243,9 +243,10 @@ function buildEditViewParts (col: CollectionConfig, doc: DocRow | null, csrfToke
     ? `<val-autosave endpoint="/admin/${slug}/${id}/autosave" csrf-token="${escapeHtml(csrfToken)}"></val-autosave>`
     : ''
   const historySection = historyLink ? `<div class="edit-meta">${historyLink}</div>` : ''
-  const formSection = `${statusBadge}${autosaveIndicator}
+  const formSection = `${statusBadge}
     ${localeTabs}<form action="${action}" method="POST" class="admin-form"${htmxAttrs}>
       ${csrfField}
+      ${autosaveIndicator}
       ${fieldContainer}
       ${actionButtons}
     </form>${historySection}${deleteSection}`
