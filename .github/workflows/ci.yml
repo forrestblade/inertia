@@ -325,7 +325,8 @@ jobs:
           PGPORT: 5432
           PGUSER: postgres
           LHCI_PORT: '3111'
-      - run: npx wait-on http://localhost:3111/admin/login --timeout 30000
+      - name: Wait for server
+        run: npx wait-on http://localhost:3111/admin/login --timeout 60000 || (echo '--- Server log ---' && cat /tmp/lhci-server.log && exit 1)
       - uses: treosh/lighthouse-ci-action@v12
         with:
           configPath: './lighthouserc.js'
