@@ -70,9 +70,19 @@ describe('createRestRoutes()', () => {
 })
 
 describe('GET /api/:collection', () => {
-  it('returns JSON array of documents', async () => {
-    const rows = [{ id: '1', title: 'Hello', slug: 'hello' }]
-    const { pool, collections, globals } = setup(rows)
+  it('returns paginated result of documents', async () => {
+    const dataRows = [{ id: '1', title: 'Hello', slug: 'hello' }]
+    const countRows = [{ count: '1' }]
+    const pool = makeSequentialPool([countRows, dataRows])
+    const collections = createCollectionRegistry()
+    const globals = createGlobalRegistry()
+    collections.register(collection({
+      slug: 'posts',
+      fields: [
+        field.text({ name: 'title', required: true }),
+        field.slug({ name: 'slug', required: true })
+      ]
+    }))
     const routes = createRestRoutes(pool, collections, globals)
     const handler = routes.get('/api/posts')?.GET
     expect(handler).toBeDefined()
@@ -81,6 +91,8 @@ describe('GET /api/:collection', () => {
     const res = makeMockRes()
     await handler!(req, res, {})
     expect(res.writeHead).toHaveBeenCalledWith(200, expect.any(Object))
+    const body = JSON.parse(res.body) as PaginatedResult<DocumentRow>
+    expect(body).toHaveProperty('docs')
   })
 })
 
@@ -101,8 +113,18 @@ describe('POST /api/:collection', () => {
 
 describe('GET /api/:collection query params', () => {
   it('passes search param to find()', async () => {
-    const rows = [{ id: '1', title: 'Hello World', slug: 'hello-world' }]
-    const { pool, collections, globals } = setup(rows)
+    const dataRows = [{ id: '1', title: 'Hello World', slug: 'hello-world' }]
+    const countRows = [{ count: '1' }]
+    const pool = makeSequentialPool([countRows, dataRows])
+    const collections = createCollectionRegistry()
+    const globals = createGlobalRegistry()
+    collections.register(collection({
+      slug: 'posts',
+      fields: [
+        field.text({ name: 'title', required: true }),
+        field.slug({ name: 'slug', required: true })
+      ]
+    }))
     const routes = createRestRoutes(pool, collections, globals)
     const handler = routes.get('/api/posts')?.GET
     expect(handler).toBeDefined()
@@ -111,13 +133,23 @@ describe('GET /api/:collection query params', () => {
     const res = makeMockRes()
     await handler!(req, res, {})
     expect(res.writeHead).toHaveBeenCalledWith(200, expect.any(Object))
-    const body = JSON.parse(res.body) as DocumentRow[]
-    expect(Array.isArray(body)).toBe(true)
+    const body = JSON.parse(res.body) as PaginatedResult<DocumentRow>
+    expect(body).toHaveProperty('docs')
   })
 
   it('passes sort and dir params as orderBy to find()', async () => {
-    const rows = [{ id: '1', title: 'A', slug: 'a' }, { id: '2', title: 'B', slug: 'b' }]
-    const { pool, collections, globals } = setup(rows)
+    const dataRows = [{ id: '1', title: 'A', slug: 'a' }, { id: '2', title: 'B', slug: 'b' }]
+    const countRows = [{ count: '2' }]
+    const pool = makeSequentialPool([countRows, dataRows])
+    const collections = createCollectionRegistry()
+    const globals = createGlobalRegistry()
+    collections.register(collection({
+      slug: 'posts',
+      fields: [
+        field.text({ name: 'title', required: true }),
+        field.slug({ name: 'slug', required: true })
+      ]
+    }))
     const routes = createRestRoutes(pool, collections, globals)
     const handler = routes.get('/api/posts')?.GET
     expect(handler).toBeDefined()
@@ -126,8 +158,8 @@ describe('GET /api/:collection query params', () => {
     const res = makeMockRes()
     await handler!(req, res, {})
     expect(res.writeHead).toHaveBeenCalledWith(200, expect.any(Object))
-    const body = JSON.parse(res.body) as DocumentRow[]
-    expect(Array.isArray(body)).toBe(true)
+    const body = JSON.parse(res.body) as PaginatedResult<DocumentRow>
+    expect(body).toHaveProperty('docs')
   })
 
   it('passes page and limit params to find() and returns PaginatedResult envelope', async () => {
@@ -159,8 +191,18 @@ describe('GET /api/:collection query params', () => {
   })
 
   it('passes field filter params as where clause to find()', async () => {
-    const rows = [{ id: '1', title: 'Hello', slug: 'hello' }]
-    const { pool, collections, globals } = setup(rows)
+    const dataRows = [{ id: '1', title: 'Hello', slug: 'hello' }]
+    const countRows = [{ count: '1' }]
+    const pool = makeSequentialPool([countRows, dataRows])
+    const collections = createCollectionRegistry()
+    const globals = createGlobalRegistry()
+    collections.register(collection({
+      slug: 'posts',
+      fields: [
+        field.text({ name: 'title', required: true }),
+        field.slug({ name: 'slug', required: true })
+      ]
+    }))
     const routes = createRestRoutes(pool, collections, globals)
     const handler = routes.get('/api/posts')?.GET
     expect(handler).toBeDefined()
@@ -169,24 +211,62 @@ describe('GET /api/:collection query params', () => {
     const res = makeMockRes()
     await handler!(req, res, {})
     expect(res.writeHead).toHaveBeenCalledWith(200, expect.any(Object))
-    const body = JSON.parse(res.body) as DocumentRow[]
-    expect(Array.isArray(body)).toBe(true)
+    const body = JSON.parse(res.body) as PaginatedResult<DocumentRow>
+    expect(body).toHaveProperty('docs')
   })
 
-  it('returns flat array when no ?page= present (backwards compatible)', async () => {
-    const rows = [{ id: '1', title: 'Hello', slug: 'hello' }]
-    const { pool, collections, globals } = setup(rows)
+  it('returns paginated result even without page/limit params', async () => {
+    const dataRows = [{ id: '1', title: 'Hello', slug: 'hello' }]
+    const countRows = [{ count: '1' }]
+    const pool = makeSequentialPool([countRows, dataRows])
+    const collections = createCollectionRegistry()
+    const globals = createGlobalRegistry()
+    collections.register(collection({
+      slug: 'posts',
+      fields: [
+        field.text({ name: 'title', required: true }),
+        field.slug({ name: 'slug', required: true })
+      ]
+    }))
     const routes = createRestRoutes(pool, collections, globals)
     const handler = routes.get('/api/posts')?.GET
     expect(handler).toBeDefined()
 
-    const req = makeMockReq('GET', '/api/posts?search=hello')
+    const req = makeMockReq('GET', '/api/posts')
     const res = makeMockRes()
     await handler!(req, res, {})
     expect(res.writeHead).toHaveBeenCalledWith(200, expect.any(Object))
-    const body = JSON.parse(res.body)
-    expect(Array.isArray(body)).toBe(true)
-    expect(body).not.toHaveProperty('docs')
+    const body = JSON.parse(res.body) as PaginatedResult<DocumentRow>
+    expect(body).toHaveProperty('docs')
+    expect(body).toHaveProperty('totalDocs')
+    expect(body).toHaveProperty('page')
+    expect(body).toHaveProperty('totalPages')
+  })
+
+  it('caps limit at 100 when higher value is requested', async () => {
+    const dataRows = [{ id: '1', title: 'Hello', slug: 'hello' }]
+    const countRows = [{ count: '1' }]
+    const pool = makeSequentialPool([countRows, dataRows])
+    const collections = createCollectionRegistry()
+    const globals = createGlobalRegistry()
+    collections.register(collection({
+      slug: 'posts',
+      fields: [
+        field.text({ name: 'title', required: true }),
+        field.slug({ name: 'slug', required: true })
+      ]
+    }))
+    const routes = createRestRoutes(pool, collections, globals)
+    const handler = routes.get('/api/posts')?.GET
+    expect(handler).toBeDefined()
+
+    const req = makeMockReq('GET', '/api/posts?limit=200')
+    const res = makeMockRes()
+    await handler!(req, res, {})
+    expect(res.writeHead).toHaveBeenCalledWith(200, expect.any(Object))
+    const body = JSON.parse(res.body) as PaginatedResult<DocumentRow>
+    expect(body).toHaveProperty('docs')
+    expect(body).toHaveProperty('totalPages')
   })
 
   it('rejects invalid sort field name (not in collection schema)', async () => {
@@ -214,8 +294,18 @@ describe('GET /api/:collection query params', () => {
   })
 
   it('allows system column sort fields (id, created_at, updated_at)', async () => {
-    const rows = [{ id: '1', title: 'Hello', slug: 'hello' }]
-    const { pool, collections, globals } = setup(rows)
+    const dataRows = [{ id: '1', title: 'Hello', slug: 'hello' }]
+    const countRows = [{ count: '1' }]
+    const pool = makeSequentialPool([countRows, dataRows])
+    const collections = createCollectionRegistry()
+    const globals = createGlobalRegistry()
+    collections.register(collection({
+      slug: 'posts',
+      fields: [
+        field.text({ name: 'title', required: true }),
+        field.slug({ name: 'slug', required: true })
+      ]
+    }))
     const routes = createRestRoutes(pool, collections, globals)
     const handler = routes.get('/api/posts')?.GET
     expect(handler).toBeDefined()
