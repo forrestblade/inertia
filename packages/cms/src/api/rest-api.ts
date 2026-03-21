@@ -179,7 +179,7 @@ async function checkAccess (
     return true
   }
 
-  const result = await resolveAccess(accessFn, { req: undefined })
+  const result = await resolveAccess(accessFn, {})
   if (result.isErr()) {
     sendErrorJson(res, 'Access check failed', 500)
     return false
@@ -395,8 +395,7 @@ export function createRestRoutes (
           unpublish: (id) => api.unpublish({ collection: slug, id })
         }
 
-        const handler = ACTIONS[action]
-        if (!handler) { sendErrorJson(res, `Unknown action: ${action}`, 400); return }
+        const handler = ACTIONS[action]!
 
         const resultPromises = ids.map(async (id) => {
           const opResult = await handler(id)
