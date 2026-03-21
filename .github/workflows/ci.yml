@@ -433,6 +433,9 @@ jobs:
         with:
           install-playwright: 'true'
           playwright-browser: ${{ matrix.browser }}
+      - name: Install chromium for auth setup
+        if: matrix.browser != 'chromium'
+        run: npx playwright install --with-deps chromium
       - run: pnpm build
       - run: npx playwright test --grep-invert Visual --shard=${{ matrix.shard }}/4
         env:
@@ -461,6 +464,7 @@ jobs:
           path: .stryker-tmp/
           key: stryker-${{ runner.os }}-${{ github.sha }}
           restore-keys: stryker-${{ runner.os }}-
+      - run: pnpm build
       - run: pnpm test:mutate
 
   publish:
