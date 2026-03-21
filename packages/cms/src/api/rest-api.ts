@@ -11,6 +11,7 @@ import type { PaginatedResult } from '../db/query-types.js'
 import type { DocumentRow } from '../db/query-builder.js'
 import type { CmsError } from '../schema/types.js'
 import { flattenFields } from '../schema/field-utils.js'
+import { isAuthEnabled, getAuthFields } from '../auth/auth-config.js'
 
 export type RestRouteHandler = (req: IncomingMessage, res: ServerResponse, ctx: Record<string, string>) => Promise<void>
 
@@ -154,6 +155,13 @@ export function createRestRoutes (
     const zodSchema = generateZodSchema(col.fields)
     const isVersioned = col.versions?.drafts === true
     const draftSchema = isVersioned ? generateDraftSchema(col.fields) : undefined
+    const authFieldNames = isAuthEnabled(col)
+      ? new Set([...getAuthFields().map(f => f.name), 'role'])
+      : new Set<string>()
+    const safeFields = authFieldNames.size > 0
+      ? col.fields.filter(f => !authFieldNames.has(f.name))
+      : col.fields
+    const safeZodSchema = authFieldNames.size > 0 ? generateZodSchema(safeFields) : zodSchema
 
     routes.set(`/api/${slug}`, {
       GET: async (req, res) => {
@@ -197,8 +205,9 @@ export function createRestRoutes (
         if (parseResult.isErr()) { sendErrorJson(res, parseResult.error.message, 400); return }
         const urlParams = parseUrlParams(url)
         const isDraft = urlParams.get('draft') === 'true'
-        const schema = isDraft && draftSchema !== undefined ? draftSchema : zodSchema
-        const validation = schema.safeParse(parseResult.value)
+        const schema = isDraft && draftSchema !== undefined ? draftSchema : safeZodSchema
+        const strictSchema = authFieldNames.size > 0 ? schema.strict() : schema
+        const validation = strictSchema.safeParse(parseResult.value)
         if (!validation.success) {
           const issues = validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join('; ')
           sendErrorJson(res, `Validation failed: ${issues}`, 400)
@@ -235,8 +244,12 @@ export function createRestRoutes (
         if (bodyResult.isErr()) { sendErrorJson(res, bodyResult.error.message, 400); return }
         const parseResult = await safeJsonParse(bodyResult.value)
         if (parseResult.isErr()) { sendErrorJson(res, parseResult.error.message, 400); return }
-        const partialSchema = generatePartialSchema(col.fields)
-        const validation = partialSchema.safeParse(parseResult.value)
+        const patchFields = authFieldNames.size > 0
+          ? col.fields.filter(f => !authFieldNames.has(f.name))
+          : col.fields
+        const partialSchema = generatePartialSchema(patchFields)
+        const strictPatchSchema = authFieldNames.size > 0 ? partialSchema.strict() : partialSchema
+        const validation = strictPatchSchema.safeParse(parseResult.value)
         if (!validation.success) {
           const issues = validation.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join('; ')
           sendErrorJson(res, `Validation failed: ${issues}`, 400)
