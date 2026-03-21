@@ -133,7 +133,7 @@ jobs:
           install-playwright: 'true'
           playwright-browser: chromium
       - run: pnpm build
-      - run: pnpm test:e2e -- --grep-invert Visual --shard=${{ matrix.shard }}/2
+      - run: npx playwright test --grep-invert Visual --shard=${{ matrix.shard }}/2
         env:
           PGHOST: localhost
           PGPORT: 5432
@@ -411,7 +411,7 @@ jobs:
           install-playwright: 'true'
           playwright-browser: ${{ matrix.browser }}
       - run: pnpm build
-      - run: pnpm test:e2e -- --grep-invert Visual --shard=${{ matrix.shard }}/4
+      - run: npx playwright test --grep-invert Visual --shard=${{ matrix.shard }}/4
         env:
           PGHOST: localhost
           PGPORT: 5432
