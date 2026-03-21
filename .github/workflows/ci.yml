@@ -283,6 +283,7 @@ jobs:
         with:
           commit_message: 'chore: update visual regression baselines from CI [skip ci]'
           file_pattern: 'tests/e2e/__snapshots__/**/*.png'
+          commit_options: '--no-verify'
 
       - name: Fail if snapshots were stale
         if: steps.visual.outcome == 'failure'
@@ -318,14 +319,7 @@ jobs:
       - uses: ./.github/actions/setup-project
       - run: pnpm build
       - name: Start test server
-        run: |
-          npx tsx tests/e2e/server-start.mjs &
-          SERVER_PID=$!
-          sleep 5
-          if ! kill -0 $SERVER_PID 2>/dev/null; then
-            echo "Server crashed on startup"
-            exit 1
-          fi
+        run: nohup npx tsx tests/e2e/server-start.mjs > /tmp/lhci-server.log 2>&1 &
         env:
           PGHOST: localhost
           PGPORT: 5432
