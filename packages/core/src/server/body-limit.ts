@@ -1,4 +1,4 @@
-import type { IncomingMessage } from 'node:http'
+import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Middleware } from './middleware-types.js'
 
 export const ContentCategory = {
@@ -60,6 +60,15 @@ export function resolveContentCategory (contentType: string | undefined): Conten
   return CONTENT_TYPE_MAP[base] ?? ContentCategory.RAW
 }
 
+function send413 (res: ServerResponse): void {
+  const body = JSON.stringify({ error: 'Request entity too large' })
+  res.writeHead(413, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Content-Length': Buffer.byteLength(body)
+  })
+  res.end(body)
+}
+
 function enforceStreamingLimit (req: IncomingMessage, limit: number): Promise<boolean> {
   return new Promise((resolve) => {
     let received = 0
@@ -118,12 +127,7 @@ export function createBodyLimitMiddleware (config?: BodyLimitConfig): Middleware
       }
 
       if (length > limit) {
-        const body = JSON.stringify({ error: 'Request entity too large' })
-        res.writeHead(413, {
-          'Content-Type': 'application/json; charset=utf-8',
-          'Content-Length': Buffer.byteLength(body)
-        })
-        res.end(body)
+        send413(res)
         return
       }
 
@@ -134,12 +138,7 @@ export function createBodyLimitMiddleware (config?: BodyLimitConfig): Middleware
     // No Content-Length header — enforce limit via streaming byte counter
     const withinLimit = await enforceStreamingLimit(req, limit)
     if (!withinLimit) {
-      const body = JSON.stringify({ error: 'Request entity too large' })
-      res.writeHead(413, {
-        'Content-Type': 'application/json; charset=utf-8',
-        'Content-Length': Buffer.byteLength(body)
-      })
-      res.end(body)
+      send413(res)
       return
     }
 
