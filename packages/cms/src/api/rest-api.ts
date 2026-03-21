@@ -79,7 +79,7 @@ function parseUrlParams (url: string): URLSearchParams {
 interface ParsedQueryArgs {
   readonly search: string | undefined
   readonly orderBy: { field: string; direction: 'asc' | 'desc' } | undefined
-  readonly page: number | undefined
+  readonly page: number
   readonly perPage: number
   readonly filters: Record<string, string> | undefined
   readonly includeDrafts: boolean
@@ -101,10 +101,12 @@ function parseQueryParams (
   const dirRaw = params.get('dir') ?? 'asc'
   const direction = dirRaw === 'desc' ? 'desc' : 'asc'
 
+  const MAX_LIMIT = 100
   const pageRaw = params.get('page')
-  const page = pageRaw !== null ? parseInt(pageRaw, 10) : undefined
+  const page = pageRaw !== null ? Math.max(1, parseInt(pageRaw, 10) || 1) : 1
   const limitRaw = params.get('limit')
-  const perPage = limitRaw !== null ? parseInt(limitRaw, 10) : 25
+  const rawPerPage = limitRaw !== null ? parseInt(limitRaw, 10) || 25 : 25
+  const perPage = Math.min(Math.max(1, rawPerPage), MAX_LIMIT)
 
   const searchVal = params.get('search') ?? undefined
   const includeDrafts = params.get('draft') === 'true'
@@ -248,17 +250,13 @@ export function createRestRoutes (
           search,
           orderBy,
           page,
-          perPage: page !== undefined ? perPage : undefined,
+          perPage,
           filters,
           includeDrafts
         })
         result.match(
           (docs) => {
-            if (page !== undefined) {
-              sendPaginatedJson(res, docs as PaginatedResult<DocumentRow>)
-            } else {
-              sendJson(res, docs as DocumentData[])
-            }
+            sendPaginatedJson(res, docs as PaginatedResult<DocumentRow>)
           },
           (err) => sendErrorJson(res, err.message, 500)
         )
