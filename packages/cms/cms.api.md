@@ -925,7 +925,7 @@ export function renderEditView(col: CollectionConfig, doc: DocRow | null, csrfTo
 // Warning: (ae-forgotten-export) The symbol "UploadContext" needs to be exported by the entry point index.d.ts
 //
 // @public (undocumented)
-export function renderFieldInput(f: FieldConfig, value: string, context?: RelationContext, uploadContext?: UploadContext): string;
+export function renderFieldInput(f: FieldConfig, value: string, context?: RelationContext, uploadContext?: UploadContext, formData?: Record<string, string>): string;
 
 // Warning: (ae-forgotten-export) The symbol "LayoutArgs" needs to be exported by the entry point index.d.ts
 //
