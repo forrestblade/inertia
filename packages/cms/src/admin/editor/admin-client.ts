@@ -1,6 +1,7 @@
 import { registerAll, themeManager, ThemeMode, createTokenSheet } from '@valencets/ui'
 import overrideCss from '../styles/km-overrides.css'
 import { initBlocksFields } from './blocks-client.js'
+import { initLoginForm } from './login-reactive.js'
 
 // Kinetic Monolith: set dark theme + overrides BEFORE registering components
 // so elements adopt the correct sheet on first connect
@@ -19,6 +20,10 @@ if (document.querySelector('.richtext-editor')) {
   loadAndInitEditors().catch(() => { /* dynamic import failed */ })
 }
 initBlocksFields()
+
+// Login form reactive bindings — hydrate if login form is present
+const loginForm = document.querySelector<HTMLFormElement>('form[action="/admin/login"]')
+if (loginForm) initLoginForm(loginForm)
 
 // Wire up conditional field partial re-render (htmx-compatible data attributes)
 const conditionalForm = document.querySelector<HTMLFormElement>('form[hx-post][hx-trigger][hx-target]')

@@ -1,54 +1,56 @@
 // Login form reactive bindings — powered by @valencets/reactive
 // Hydrates server-rendered login form with client-side validation and state.
+// Works with both <input> and <val-input> elements (duck-typed .value access).
 
 import { signal, computed, effect } from '@valencets/reactive'
 import type { Signal } from '@valencets/reactive'
 
-// Test-only access to the last created signals
-let lastSignals: { email: Signal<string>, password: Signal<string> } | null = null
-
-/** @internal test helper — returns the signals from the last initLoginForm call */
-export function _testGetSignals (): { email: Signal<string>, password: Signal<string> } {
-  if (lastSignals === null) {
-    const err = new Error('initLoginForm has not been called')
-    throw err // eslint-disable-line no-restricted-syntax
-  }
-  return lastSignals
+/** Element with a string value property — matches HTMLInputElement and ValInput */
+interface ValueElement extends HTMLElement {
+  value: string
 }
 
-/** Initialize reactive bindings on the login form. Returns dispose function. */
-export function initLoginForm (form: HTMLFormElement): () => void {
-  const emailInput = form.querySelector<HTMLInputElement>('input[name="email"]')
-  const passwordInput = form.querySelector<HTMLInputElement>('input[name="password"]')
+function hasValue (el: Element): el is ValueElement {
+  return 'value' in el
+}
+
+export interface LoginFormBindings {
+  readonly dispose: () => void
+  readonly signals: { email: Signal<string>, password: Signal<string> }
+}
+
+/** Initialize reactive bindings on the login form. Returns bindings with dispose + signals. */
+export function initLoginForm (form: HTMLFormElement): LoginFormBindings | null {
+  const emailEl = form.querySelector('[name="email"]')
+  const passwordEl = form.querySelector('[name="password"]')
   const submitBtn = form.querySelector<HTMLButtonElement>('button[type="submit"]')
 
-  if (!emailInput || !passwordInput || !submitBtn) return () => {}
+  if (!emailEl || !passwordEl || !submitBtn || !hasValue(emailEl) || !hasValue(passwordEl)) return null
 
-  const email = signal(emailInput.value)
-  const password = signal(passwordInput.value)
+  const email = signal(emailEl.value)
+  const password = signal(passwordEl.value)
   const canSubmit = computed(() => email.value.length > 0 && password.value.length > 0)
-
-  lastSignals = { email, password }
 
   const disposers: Array<() => void> = []
 
-  // Two-way: input events → signals
-  const onEmail = (): void => { email.value = emailInput.value }
-  const onPassword = (): void => { password.value = passwordInput.value }
-  emailInput.addEventListener('input', onEmail)
-  passwordInput.addEventListener('input', onPassword)
-  disposers.push(() => { emailInput.removeEventListener('input', onEmail) })
-  disposers.push(() => { passwordInput.removeEventListener('input', onPassword) })
+  // Two-way: input events → signals (native input events cross shadow DOM boundary)
+  const onEmail = (): void => { email.value = emailEl.value }
+  const onPassword = (): void => { password.value = passwordEl.value }
+  emailEl.addEventListener('input', onEmail)
+  passwordEl.addEventListener('input', onPassword)
+  disposers.push(() => { emailEl.removeEventListener('input', onEmail) })
+  disposers.push(() => { passwordEl.removeEventListener('input', onPassword) })
 
   // One-way: canSubmit signal → button disabled
   disposers.push(effect(() => {
     submitBtn.disabled = !canSubmit.value
   }))
 
-  return () => {
-    for (const dispose of disposers) {
-      dispose()
+  const dispose = (): void => {
+    for (const d of disposers) {
+      d()
     }
-    lastSignals = null
   }
+
+  return { dispose, signals: { email, password } }
 }

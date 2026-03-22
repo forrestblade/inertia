@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, afterEach } from 'vitest'
-import { initLoginForm, _testGetSignals } from '../admin/editor/login-reactive.js'
+import { initLoginForm } from '../admin/editor/login-reactive.js'
 
 describe('login-reactive', () => {
   afterEach(() => {
@@ -21,50 +21,54 @@ describe('login-reactive', () => {
 
   it('disables submit button when fields are empty', () => {
     const form = createLoginForm()
-    const dispose = initLoginForm(form)
+    const bindings = initLoginForm(form)
+    expect(bindings).not.toBeNull()
     const btn = form.querySelector<HTMLButtonElement>('button')!
     expect(btn.disabled).toBe(true)
-    dispose()
+    bindings!.dispose()
   })
 
   it('enables submit button when both signals have values', () => {
     const form = createLoginForm()
-    const dispose = initLoginForm(form)
+    const bindings = initLoginForm(form)!
     const btn = form.querySelector<HTMLButtonElement>('button')!
-    const signals = _testGetSignals()
 
-    signals.email.value = 'test@test.com'
-    signals.password.value = 'secret'
+    bindings.signals.email.value = 'test@test.com'
+    bindings.signals.password.value = 'secret'
 
     expect(btn.disabled).toBe(false)
-    dispose()
+    bindings.dispose()
   })
 
   it('disables button again when a signal is cleared', () => {
     const form = createLoginForm()
-    const dispose = initLoginForm(form)
+    const bindings = initLoginForm(form)!
     const btn = form.querySelector<HTMLButtonElement>('button')!
-    const signals = _testGetSignals()
 
-    signals.email.value = 'a@b.c'
-    signals.password.value = 'x'
+    bindings.signals.email.value = 'a@b.c'
+    bindings.signals.password.value = 'x'
     expect(btn.disabled).toBe(false)
 
-    signals.email.value = ''
+    bindings.signals.email.value = ''
     expect(btn.disabled).toBe(true)
-    dispose()
+    bindings.dispose()
   })
 
   it('returns a dispose function that cleans up all bindings', () => {
     const form = createLoginForm()
-    const dispose = initLoginForm(form)
+    const bindings = initLoginForm(form)!
     const btn = form.querySelector<HTMLButtonElement>('button')!
-    const signals = _testGetSignals()
 
-    dispose()
+    bindings.dispose()
 
-    signals.email.value = 'after@dispose.com'
-    signals.password.value = 'x'
+    bindings.signals.email.value = 'after@dispose.com'
+    bindings.signals.password.value = 'x'
     expect(btn.disabled).toBe(true)
+  })
+
+  it('returns null when required elements are missing', () => {
+    document.body.innerHTML = '<form><button type="submit">Go</button></form>'
+    const form = document.querySelector('form')!
+    expect(initLoginForm(form)).toBeNull()
   })
 })
