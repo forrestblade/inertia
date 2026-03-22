@@ -1,6 +1,7 @@
 // @valencets/reactive — CMS field sinks and condition bridge.
 
 import type { Signal, ReadonlySignal } from './core.js'
+import { signal, computed } from './core.js'
 
 export interface FieldSink<T> {
   readonly value: Signal<T>
@@ -8,15 +9,23 @@ export interface FieldSink<T> {
   readonly error: Signal<string | null>
 }
 
-// Placeholder
-export function fieldSink<T> (_initial: T): FieldSink<T> {
-  return undefined as unknown as FieldSink<T>
+/** Create a field sink with value, visible, and error signals. */
+export function fieldSink<T> (initial: T): FieldSink<T> {
+  return {
+    value: signal(initial),
+    visible: signal(true),
+    error: signal<string | null>(null)
+  }
 }
 
-// Placeholder
+/** Bridge a condition config to a computed boolean signal.
+ *  Reads all deps inside a computed — auto-tracks them. */
 export function condition<T extends readonly Signal<unknown>[]> (
-  _deps: [...T],
-  _fn: (...vals: { [K in keyof T]: T[K] extends Signal<infer V> ? V : never }) => boolean
+  deps: [...T],
+  fn: (...vals: { [K in keyof T]: T[K] extends Signal<infer V> ? V : never }) => boolean
 ): ReadonlySignal<boolean> {
-  return undefined as unknown as ReadonlySignal<boolean>
+  return computed(() => {
+    const vals = deps.map(d => d.value) as { [K in keyof T]: T[K] extends Signal<infer V> ? V : never }
+    return fn(...vals)
+  })
 }
