@@ -32,6 +32,7 @@
     "@valencets/core": "workspace:*",
     "@valencets/db": "workspace:*",
     "@valencets/telemetry": "workspace:*",
+    "@valencets/reactive": "workspace:*",
     "@valencets/ui": "workspace:*",
     "argon2": "^0.44.0",
     "neverthrow": "^8.2.0",
