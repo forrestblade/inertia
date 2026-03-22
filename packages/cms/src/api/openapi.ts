@@ -3,12 +3,16 @@ import type { CollectionConfig } from '../schema/collection.js'
 import type { FieldConfig } from '../schema/field-types.js'
 import { flattenFields } from '../schema/field-utils.js'
 
+interface SchemaRef {
+  readonly $ref: string
+}
+
 interface JsonSchemaProperty {
   readonly type?: string
   readonly format?: string
   readonly description?: string
-  readonly items?: JsonSchemaProperty
-  readonly properties?: Record<string, JsonSchemaProperty>
+  readonly items?: JsonSchemaProperty | SchemaRef
+  readonly properties?: Record<string, JsonSchemaProperty | SchemaRef>
   readonly enum?: readonly string[]
   readonly additionalProperties?: boolean
   readonly nullable?: boolean
@@ -16,10 +20,10 @@ interface JsonSchemaProperty {
 
 interface OpenApiSchema {
   readonly type?: string
-  readonly properties?: Record<string, JsonSchemaProperty>
+  readonly properties?: Record<string, JsonSchemaProperty | SchemaRef>
   readonly required?: readonly string[]
   readonly allOf?: readonly OpenApiSchema[]
-  readonly items?: JsonSchemaProperty
+  readonly items?: JsonSchemaProperty | SchemaRef
 }
 
 interface OpenApiResponse {
@@ -35,7 +39,7 @@ interface OpenApiRequestBody {
   readonly required: boolean
   readonly content: {
     readonly 'application/json': {
-      readonly schema: OpenApiSchema
+      readonly schema: OpenApiSchema | SchemaRef
     }
   }
 }
@@ -222,7 +226,7 @@ function buildPaginatedSchema (slug: string): OpenApiSchema {
   return {
     type: 'object',
     properties: {
-      docs: { type: 'array', items: schemaRef(slug) as unknown as JsonSchemaProperty },
+      docs: { type: 'array', items: schemaRef(slug) },
       totalDocs: { type: 'number' },
       page: { type: 'number' },
       totalPages: { type: 'number' },
@@ -252,7 +256,7 @@ function buildCollectionPaths (config: CollectionConfig): Record<string, OpenApi
     responses: {
       200: {
         description: `Paginated list of ${label}`,
-        content: { 'application/json': { schema: schemaRef(`${config.slug}Paginated`) as unknown as OpenApiSchema } }
+        content: { 'application/json': { schema: schemaRef(`${config.slug}Paginated`) } }
       },
       401: { description: 'Unauthorized' }
     }
@@ -264,12 +268,12 @@ function buildCollectionPaths (config: CollectionConfig): Record<string, OpenApi
     security,
     requestBody: {
       required: true,
-      content: { 'application/json': { schema: schemaRef(`${config.slug}Input`) as unknown as OpenApiSchema } }
+      content: { 'application/json': { schema: schemaRef(`${config.slug}Input`) } }
     },
     responses: {
       201: {
         description: `Created ${config.labels?.singular ?? config.slug}`,
-        content: { 'application/json': { schema: schemaRef(config.slug) as unknown as OpenApiSchema } }
+        content: { 'application/json': { schema: schemaRef(config.slug) } }
       },
       400: { description: 'Validation error' },
       401: { description: 'Unauthorized' }
@@ -286,7 +290,7 @@ function buildCollectionPaths (config: CollectionConfig): Record<string, OpenApi
     responses: {
       200: {
         description: `Single ${config.labels?.singular ?? config.slug}`,
-        content: { 'application/json': { schema: schemaRef(config.slug) as unknown as OpenApiSchema } }
+        content: { 'application/json': { schema: schemaRef(config.slug) } }
       },
       401: { description: 'Unauthorized' },
       404: { description: 'Not found' }
@@ -302,12 +306,12 @@ function buildCollectionPaths (config: CollectionConfig): Record<string, OpenApi
     ],
     requestBody: {
       required: true,
-      content: { 'application/json': { schema: schemaRef(`${config.slug}Input`) as unknown as OpenApiSchema } }
+      content: { 'application/json': { schema: schemaRef(`${config.slug}Input`) } }
     },
     responses: {
       200: {
         description: `Updated ${config.labels?.singular ?? config.slug}`,
-        content: { 'application/json': { schema: schemaRef(config.slug) as unknown as OpenApiSchema } }
+        content: { 'application/json': { schema: schemaRef(config.slug) } }
       },
       400: { description: 'Validation error' },
       401: { description: 'Unauthorized' },
