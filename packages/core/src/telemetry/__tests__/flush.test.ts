@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { flushTelemetry, scheduleAutoFlush } from '../flush.js'
 import { TelemetryRingBuffer } from '../ring-buffer.js'
-import { IntentType } from '../intent-types.js'
+import { IntentType, TelemetryErrorCode } from '../intent-types.js'
 import type { FlushHandle } from '../flush.js'
 
 describe('flushTelemetry', () => {
@@ -225,5 +225,135 @@ describe('scheduleAutoFlush', () => {
       writable: true,
       configurable: true
     })
+  })
+})
+
+describe('flushTelemetry with Do Not Track', () => {
+  let buffer: TelemetryRingBuffer
+
+  beforeEach(() => {
+    const result = TelemetryRingBuffer.create(64)
+    if (result.isErr()) throw new Error('Failed to create buffer')
+    buffer = result.value
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    delete (globalThis as Record<string, unknown>).__valence_telemetry_consent
+  })
+
+  it('returns Err(TRACKING_DENIED) when navigator.doNotTrack is "1"', () => {
+    vi.stubGlobal('navigator', {
+      doNotTrack: '1',
+      sendBeacon: vi.fn().mockReturnValue(true)
+    })
+
+    buffer.write(IntentType.CLICK, 'a', 0, 0, 1)
+    const result = flushTelemetry(buffer, '/api/t')
+    expect(result.isErr()).toBe(true)
+    if (result.isErr()) {
+      expect(result.error.code).toBe(TelemetryErrorCode.TRACKING_DENIED)
+    }
+  })
+
+  it('does not call sendBeacon when tracking is denied', () => {
+    const sendBeacon = vi.fn().mockReturnValue(true)
+    vi.stubGlobal('navigator', {
+      doNotTrack: '1',
+      sendBeacon
+    })
+
+    buffer.write(IntentType.CLICK, 'a', 0, 0, 1)
+    flushTelemetry(buffer, '/api/t')
+    expect(sendBeacon).not.toHaveBeenCalled()
+  })
+
+  it('returns Err(TRACKING_DENIED) when globalPrivacyControl is true', () => {
+    vi.stubGlobal('navigator', {
+      globalPrivacyControl: true,
+      sendBeacon: vi.fn().mockReturnValue(true)
+    })
+
+    buffer.write(IntentType.CLICK, 'a', 0, 0, 1)
+    const result = flushTelemetry(buffer, '/api/t')
+    expect(result.isErr()).toBe(true)
+    if (result.isErr()) {
+      expect(result.error.code).toBe(TelemetryErrorCode.TRACKING_DENIED)
+    }
+  })
+
+  it('returns Err(TRACKING_DENIED) when consent flag is false', () => {
+    vi.stubGlobal('navigator', {
+      sendBeacon: vi.fn().mockReturnValue(true)
+    });
+    (globalThis as Record<string, unknown>).__valence_telemetry_consent = false
+
+    buffer.write(IntentType.CLICK, 'a', 0, 0, 1)
+    const result = flushTelemetry(buffer, '/api/t')
+    expect(result.isErr()).toBe(true)
+    if (result.isErr()) {
+      expect(result.error.code).toBe(TelemetryErrorCode.TRACKING_DENIED)
+    }
+  })
+
+  it('flushes normally when consent flag is true', () => {
+    vi.stubGlobal('navigator', {
+      sendBeacon: vi.fn().mockReturnValue(true)
+    });
+    (globalThis as Record<string, unknown>).__valence_telemetry_consent = true
+
+    buffer.write(IntentType.CLICK, 'a', 0, 0, 1)
+    const result = flushTelemetry(buffer, '/api/t')
+    expect(result.isOk()).toBe(true)
+  })
+})
+
+describe('scheduleAutoFlush with Do Not Track', () => {
+  let buffer: TelemetryRingBuffer
+  let flushHandle: FlushHandle | null
+
+  beforeEach(() => {
+    const result = TelemetryRingBuffer.create(64)
+    if (result.isErr()) throw new Error('Failed to create buffer')
+    buffer = result.value
+    flushHandle = null
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    if (flushHandle) flushHandle.stop()
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+    delete (globalThis as Record<string, unknown>).__valence_telemetry_consent
+  })
+
+  it('does not call onFlush when tracking is denied', () => {
+    vi.stubGlobal('navigator', {
+      doNotTrack: '1',
+      sendBeacon: vi.fn().mockReturnValue(true)
+    })
+
+    const onFlush = vi.fn()
+    buffer.write(IntentType.CLICK, 'a', 0, 0, 1)
+    flushHandle = scheduleAutoFlush(buffer, '/api/t', 5000, onFlush)
+
+    vi.advanceTimersByTime(5000)
+    expect(onFlush).not.toHaveBeenCalled()
+  })
+
+  it('flushNow returns Err(TRACKING_DENIED) when DNT is set', () => {
+    vi.stubGlobal('navigator', {
+      doNotTrack: '1',
+      sendBeacon: vi.fn().mockReturnValue(true)
+    })
+
+    buffer.write(IntentType.CLICK, 'a', 0, 0, 1)
+    flushHandle = scheduleAutoFlush(buffer, '/api/t', 30000)
+
+    const result = flushHandle.flushNow()
+    expect(result.isErr()).toBe(true)
+    if (result.isErr()) {
+      expect(result.error.code).toBe(TelemetryErrorCode.TRACKING_DENIED)
+    }
   })
 })

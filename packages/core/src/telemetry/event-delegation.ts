@@ -3,6 +3,7 @@ import type { Result } from 'neverthrow'
 import { IntentType } from './intent-types.js'
 import type { TelemetryError } from './intent-types.js'
 import type { TelemetryRingBuffer } from './ring-buffer.js'
+import { shouldTrack } from './consent.js'
 
 export interface EventDelegationHandle {
   destroy (): void
@@ -44,6 +45,8 @@ export function initEventDelegation (
   }
 
   function writeIntent (intentType: IntentType, targetDOMNode: string, mouseEvent: MouseEvent): void {
+    if (!shouldTrack()) return
+
     const writeResult = buffer.write(
       intentType,
       targetDOMNode,

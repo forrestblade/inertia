@@ -223,4 +223,65 @@ describe('initEventDelegation', () => {
     expect(dirty).toHaveLength(1)
     expect(dirty[0]!.type).toBe(IntentType.LEAD_EMAIL)
   })
+
+  it('does not write to buffer when navigator.doNotTrack is "1"', () => {
+    vi.stubGlobal('navigator', { doNotTrack: '1' })
+
+    const result = initEventDelegation(buffer)
+    if (result.isOk()) handle = result.value
+
+    const el = createTrackedElement('CLICK', 'button.cta')
+    clickElement(el, 100, 200)
+
+    expect(buffer.count).toBe(0)
+
+    vi.unstubAllGlobals()
+  })
+
+  it('does not write to buffer when globalPrivacyControl is true', () => {
+    vi.stubGlobal('navigator', { globalPrivacyControl: true })
+
+    const result = initEventDelegation(buffer)
+    if (result.isOk()) handle = result.value
+
+    const el = createTrackedElement('CLICK', 'button.cta')
+    clickElement(el, 100, 200)
+
+    expect(buffer.count).toBe(0)
+
+    vi.unstubAllGlobals()
+  })
+
+  it('does not write to buffer when __valence_telemetry_consent is false', () => {
+    vi.stubGlobal('navigator', {});
+    (globalThis as Record<string, unknown>).__valence_telemetry_consent = false
+
+    const result = initEventDelegation(buffer)
+    if (result.isOk()) handle = result.value
+
+    const el = createTrackedElement('CLICK', 'button.cta')
+    clickElement(el, 100, 200)
+
+    expect(buffer.count).toBe(0)
+
+    delete (globalThis as Record<string, unknown>).__valence_telemetry_consent
+    vi.unstubAllGlobals()
+  })
+
+  it('does not write lead actions when tracking is denied', () => {
+    vi.stubGlobal('navigator', { doNotTrack: '1' })
+
+    const result = initEventDelegation(buffer)
+    if (result.isOk()) handle = result.value
+
+    const link = document.createElement('a')
+    link.href = 'tel:+15551234567'
+    link.textContent = 'Call us'
+    document.body.appendChild(link)
+    clickElement(link)
+
+    expect(buffer.count).toBe(0)
+
+    vi.unstubAllGlobals()
+  })
 })
