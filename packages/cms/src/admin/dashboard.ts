@@ -22,7 +22,7 @@ export function renderDashboard (data: DashboardData): string {
   const cards = visible.map(s => {
     const label = escapeHtml(s.label)
     const slug = escapeHtml(s.slug)
-    return `<div class="card"><a href="/admin/${slug}"><h3>${label}</h3><p class="stat-count">${s.count}</p></a></div>`
+    return `<div class="stat-card"><a href="/admin/${slug}"><h3>${label}</h3><p class="stat-count">${s.count}</p></a></div>`
   }).join('\n')
 
   const allRecent: Array<{ collection: string; slug: string; label: string; created: string }> = []
@@ -36,7 +36,7 @@ export function renderDashboard (data: DashboardData): string {
   }
 
   const recentSection = allRecent.length > 0
-    ? `<h2 style="margin-top: 2rem; margin-bottom: 0.5rem; font-size: var(--val-text-xl); font-weight: var(--val-weight-semibold);">Recent Activity</h2>
+    ? `<h2 style="margin-top: 2rem; margin-bottom: 0.5rem; font-size: var(--km-text-xl, 1.25rem); font-weight: var(--km-weight-semibold, 600); color: var(--km-on-surface, #e8e6e3);">Recent Activity</h2>
 <table>
   <thead><tr><th>Collection</th><th>Item</th><th>Created</th></tr></thead>
   <tbody>

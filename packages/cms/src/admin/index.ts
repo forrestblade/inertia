@@ -1,5 +1,6 @@
 export { renderAdminLayout } from './layout.js'
 export { renderDashboard } from './dashboard.js'
+export { getAdminStyles } from './admin-styles.js'
 export { renderListView } from './list-view.js'
 export { renderEditView } from './edit-view.js'
 export { renderFieldInput } from './field-renderers.js'
