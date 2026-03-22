@@ -44,9 +44,8 @@ describe('admin-styles (Kinetic Monolith)', () => {
   })
 
   describe('val-input overrides', () => {
-    it('overrides val-input colors via custom properties', () => {
-      expect(ADMIN_THEME_CSS).toContain('val-input')
-      expect(ADMIN_THEME_CSS).toMatch(/val-input\s*\{[^}]*--val-color-bg-elevated/)
+    it('does NOT contain val-input token overrides (belongs in token sheet)', () => {
+      expect(ADMIN_THEME_CSS).not.toMatch(/val-input\s*\{[^}]*--val-color-bg-elevated/)
     })
   })
 

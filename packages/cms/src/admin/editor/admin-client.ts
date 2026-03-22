@@ -1,22 +1,11 @@
 import { registerAll, themeManager, ThemeMode, createTokenSheet } from '@valencets/ui'
+import { getKmTokenOverrides } from '../km-theme.js'
 import { initBlocksFields } from './blocks-client.js'
 
 // Kinetic Monolith: set dark theme + overrides BEFORE registering components
 // so elements adopt the correct sheet on first connect
 themeManager.setTheme(ThemeMode.Dark)
-themeManager.applyOverrides(createTokenSheet(`:host, :root {
-  --val-color-primary: linear-gradient(135deg, oklch(0.90 0.19 159.5), oklch(0.80 0.19 159.5));
-  --val-color-primary-hover: linear-gradient(135deg, oklch(0.92 0.17 159.5), oklch(0.83 0.19 159.5));
-  --val-color-primary-text: #00391d;
-  --val-color-bg: #131313;
-  --val-color-bg-elevated: #353534;
-  --val-color-bg-muted: #201f1f;
-  --val-color-text: #e5e2e1;
-  --val-color-text-muted: #bacbbc;
-  --val-color-border: transparent;
-  --val-color-border-focus: oklch(0.90 0.19 159.5);
-  --val-focus-ring: inset 0 0 0 1px oklch(0.90 0.19 159.5 / 0.1);
-}`))
+themeManager.applyOverrides(createTokenSheet(getKmTokenOverrides()))
 registerAll()
 
 // Lazy-load Tiptap only when richtext editors exist on the page
