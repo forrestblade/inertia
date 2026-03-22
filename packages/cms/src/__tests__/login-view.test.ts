@@ -97,8 +97,9 @@ describe('renderLoginPage (Kinetic Monolith)', () => {
       expect(html).toMatch(/sign\s*in/i)
     })
 
-    it('has a Forgot? link next to the password label', () => {
-      expect(html).toMatch(/forgot/i)
+    it('has password label in val-input slot', () => {
+      expect(html).toContain('slot="label"')
+      expect(html).toContain('Password')
     })
   })
 

@@ -106,25 +106,6 @@ val-textarea:not(:defined) {
   color: var(--km-on-surface-variant);
 }
 
-/* --- Field Header (label + forgot link) --- */
-.login-field-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.km-forgot-link {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: oklch(0.90 0.19 159.5);
-  text-decoration: none;
-}
-
-.km-forgot-link:hover {
-  text-decoration: underline;
-}
-
 /* --- Error --- */
 .km-error {
   margin-bottom: 1.5rem;
