@@ -3,8 +3,8 @@ import { getKmPageStyles, getKmTokenOverrides, getCriticalCss, getDeferredCss } 
 
 describe('km-theme (Kinetic Monolith)', () => {
   describe('CSS files are pure CSS (no template literals)', () => {
-    it('page styles contain KM surface palette values', () => {
-      const css = getKmPageStyles()
+    it('critical CSS contains KM surface palette values (single source)', () => {
+      const css = getCriticalCss()
       expect(css).toContain('#131313')
       expect(css).toContain('#1c1b1b')
       expect(css).toContain('#e5e2e1')
@@ -31,9 +31,9 @@ describe('km-theme (Kinetic Monolith)', () => {
       expect(css.length).toBeGreaterThan(0)
     })
 
-    it('defines KM surface custom properties', () => {
-      expect(css).toContain('--km-surface')
-      expect(css).toContain('--km-on-surface')
+    it('does NOT duplicate KM token definitions (single source in critical CSS)', () => {
+      expect(css).not.toContain('--km-surface:')
+      expect(css).not.toContain('--km-on-surface:')
     })
 
     it('includes kinetic background and card styles', () => {

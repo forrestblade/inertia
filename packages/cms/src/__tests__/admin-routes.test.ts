@@ -7,7 +7,7 @@ describe('admin-routes asset serving', () => {
   it('serves .css files from /admin/_assets/ with text/css content type', async () => {
     const pool = makeMockPool([])
     const registry = createCollectionRegistry([])
-    const routes = createAdminRoutes(pool, registry, 'test-secret')
+    const routes = createAdminRoutes(pool, registry)
     const assetRoute = routes.get('/admin/_assets/:file')
     expect(assetRoute).toBeDefined()
     // The route handler exists and accepts both .js and .css files

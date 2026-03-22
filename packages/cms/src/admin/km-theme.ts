@@ -23,22 +23,28 @@ function readStyle (filename: string): string {
   return result.value
 }
 
+// Cache CSS at module load — avoids synchronous I/O on every request
+const overridesCache = readStyle('km-overrides.css')
+const pageCache = readStyle('km-page.css')
+const criticalCache = readStyle('km-critical.css')
+const deferredCache = readStyle('km-deferred.css')
+
 /** ValElement token overrides — adopted into shadow DOM via themeManager. */
 export function getKmTokenOverrides (): string {
-  return readStyle('km-overrides.css')
+  return overridesCache
 }
 
 /** Page-level KM CSS — injected into <style> on admin pages. */
 export function getKmPageStyles (): string {
-  return readStyle('km-page.css')
+  return pageCache
 }
 
 /** Critical CSS shell — inlined for first paint (<14KB budget). */
 export function getCriticalCss (): string {
-  return readStyle('km-critical.css')
+  return criticalCache
 }
 
 /** Deferred CSS — served as cacheable /admin/_assets/admin.css. */
 export function getDeferredCss (): string {
-  return readStyle('km-deferred.css')
+  return deferredCache
 }
