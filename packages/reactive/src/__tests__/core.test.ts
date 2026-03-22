@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { signal, computed, effect } from '../core.js'
+import { signal, computed, effect, batch } from '../core.js'
 
 describe('signal()', () => {
   it('returns initial value via .value', () => {
@@ -238,5 +238,54 @@ describe('effect()', () => {
     expect(spy).toHaveBeenCalledTimes(3) // not re-run
     b.value = 'B' // now tracked
     expect(spy).toHaveBeenLastCalledWith('B')
+  })
+})
+
+describe('batch()', () => {
+  it('defers effect execution until batch completes', () => {
+    const a = signal(0)
+    const b = signal(0)
+    const spy = vi.fn()
+    effect(() => { spy(a.value + b.value) })
+    spy.mockClear()
+    batch(() => {
+      a.value = 1
+      b.value = 2
+    })
+    expect(spy).toHaveBeenCalledOnce()
+    expect(spy).toHaveBeenCalledWith(3)
+  })
+
+  it('returns the callback return value', () => {
+    const result = batch(() => 42)
+    expect(result).toBe(42)
+  })
+
+  it('nested batches flush only on outermost exit', () => {
+    const count = signal(0)
+    const spy = vi.fn()
+    effect(() => { spy(count.value) })
+    spy.mockClear()
+    batch(() => {
+      count.value = 1
+      batch(() => {
+        count.value = 2
+      })
+      // inner batch exits but outer still open — no flush yet
+      expect(spy).not.toHaveBeenCalled()
+      count.value = 3
+    })
+    expect(spy).toHaveBeenCalledOnce()
+    expect(spy).toHaveBeenCalledWith(3)
+  })
+
+  it('without batch, each write triggers immediately', () => {
+    const count = signal(0)
+    const spy = vi.fn()
+    effect(() => { spy(count.value) })
+    spy.mockClear()
+    count.value = 1
+    count.value = 2
+    expect(spy).toHaveBeenCalledTimes(2)
   })
 })
