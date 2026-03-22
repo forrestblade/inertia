@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { KM_PALETTE, getKmPageStyles, getKmTokenOverrides } from '../admin/km-theme.js'
+import { KM_PALETTE, getKmPageStyles, getKmTokenOverrides, getCriticalCss, getDeferredCss } from '../admin/km-theme.js'
 
 describe('km-theme (Kinetic Monolith)', () => {
   describe('KM_PALETTE', () => {
@@ -67,6 +67,64 @@ describe('km-theme (Kinetic Monolith)', () => {
     it('does NOT contain page layout classes', () => {
       expect(css).not.toContain('.km-card')
       expect(css).not.toContain('.km-kinetic-bg')
+    })
+  })
+
+  describe('getCriticalCss', () => {
+    const css = getCriticalCss()
+
+    it('is under 14KB', () => {
+      expect(Buffer.byteLength(css)).toBeLessThan(14_000)
+    })
+
+    it('contains KM surface tokens', () => {
+      expect(css).toContain('--km-surface')
+      expect(css).toContain('--km-on-surface')
+    })
+
+    it('contains reset styles', () => {
+      expect(css).toContain('box-sizing: border-box')
+    })
+
+    it('contains layout skeleton (sidebar + main)', () => {
+      expect(css).toContain('.sidebar')
+      expect(css).toContain('.main')
+    })
+
+    it('contains FOUC prevention', () => {
+      expect(css).toContain(':not(:defined)')
+    })
+
+    it('does NOT contain form or editor styles', () => {
+      expect(css).not.toContain('.form-field')
+      expect(css).not.toContain('.richtext-toolbar')
+      expect(css).not.toContain('.blocks-field')
+    })
+  })
+
+  describe('getDeferredCss', () => {
+    const css = getDeferredCss()
+
+    it('contains component styles', () => {
+      expect(css).toContain('.dashboard')
+      expect(css).toContain('table')
+    })
+
+    it('contains form field styles', () => {
+      expect(css).toContain('.form-field')
+      expect(css).toContain('.form-input')
+    })
+
+    it('contains editor styles', () => {
+      expect(css).toContain('.richtext-toolbar')
+    })
+
+    it('does NOT contain layout skeleton', () => {
+      expect(css).not.toContain('.sidebar')
+    })
+
+    it('does NOT duplicate critical tokens', () => {
+      expect(css).not.toContain('--km-surface:')
     })
   })
 })
