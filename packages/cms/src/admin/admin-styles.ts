@@ -42,7 +42,7 @@ body {
 }
 
 ::selection {
-  background: oklch(0.80 0.18 151.71);
+  background: oklch(0.90 0.19 159.5);
   color: #00391d;
 }
 
@@ -67,13 +67,13 @@ body {
 .km-glow-primary {
   top: 5rem; right: 15%;
   width: 400px; height: 400px;
-  background: oklch(0.80 0.18 151.71 / 0.05);
+  background: oklch(0.90 0.19 159.5 / 0.05);
 }
 
 .km-glow-tertiary {
   bottom: 5rem; left: 10%;
   width: 300px; height: 300px;
-  background: oklch(0.81 0.10 251.81 / 0.05);
+  background: oklch(0.89 0.06 264.05 / 0.05);
 }
 
 /* --- Accent Line --- */
@@ -81,17 +81,17 @@ body {
   position: absolute;
   top: 0; left: 0;
   width: 100%; height: 2px;
-  background: linear-gradient(to right, transparent, oklch(0.80 0.18 151.71), transparent);
+  background: linear-gradient(to right, transparent, #1ce388, transparent);
   opacity: 0.5;
 }
 
-/* --- Card (Glassmorphism) --- */
+/* --- Card (Level 2 surface) --- */
 .km-card {
   position: relative;
-  background: var(--km-surface-low);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  box-shadow: 0 25px 50px -12px oklch(0 0 0 / 0.4);
+  background: var(--km-surface-container);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 20px 40px -5px oklch(0.93 0.01 74 / 0.04);
   overflow: hidden;
 }
 
@@ -105,11 +105,30 @@ body {
   color: var(--km-on-surface-variant);
 }
 
+/* --- Field Header (label + forgot link) --- */
+.login-field-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.km-forgot-link {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: oklch(0.90 0.19 159.5);
+  text-decoration: none;
+}
+
+.km-forgot-link:hover {
+  text-decoration: underline;
+}
+
 /* --- Error --- */
 .km-error {
   margin-bottom: 1.5rem;
   padding: 0.75rem 1rem;
-  background: oklch(0.40 0.13 25.72 / 0.2);
+  background: oklch(0.40 0.13 25.72 / 0.15);
   border-left: 2px solid oklch(0.64 0.21 25.33);
   color: oklch(0.81 0.10 19.57);
   font-size: 0.875rem;
@@ -119,19 +138,19 @@ body {
    CSS custom properties pierce shadow DOM, so we can restyle
    ValElements from the page level without touching their source. */
 val-input {
-  --val-color-bg-elevated: var(--km-surface-highest);
-  --val-color-border: var(--km-outline-variant);
-  --val-color-border-focus: oklch(0.80 0.18 151.71);
-  --val-color-text: var(--km-on-surface);
-  --val-color-text-muted: oklch(0.45 0.03 256.80);
-  --val-focus-ring: 0 0 0 1px oklch(0.80 0.18 151.71 / 0.4);
+  --val-color-bg-elevated: #353534;
+  --val-color-border: oklch(0.37 0.03 151 / 0.15);
+  --val-color-border-focus: oklch(0.90 0.19 159.5);
+  --val-color-text: #e5e2e1;
+  --val-color-text-muted: #bacbbc;
+  --val-focus-ring: inset 0 0 0 1px oklch(0.90 0.19 159.5 / 0.1);
 }
 
 val-button.km-gradient-btn {
   display: block;
   width: 100%;
-  --val-color-primary: linear-gradient(135deg, oklch(0.80 0.18 151.71), oklch(0.63 0.17 149.21));
-  --val-color-primary-hover: linear-gradient(135deg, oklch(0.85 0.20 151.71), oklch(0.70 0.19 149.21));
+  --val-color-primary: linear-gradient(135deg, oklch(0.90 0.19 159.5), oklch(0.80 0.19 159.5));
+  --val-color-primary-hover: linear-gradient(135deg, oklch(0.92 0.17 159.5), oklch(0.83 0.19 159.5));
   --val-color-primary-text: #00391d;
   --val-font-sans: var(--km-font-headline);
   --val-weight-medium: 800;
@@ -141,11 +160,17 @@ val-button.km-gradient-btn {
   --val-space-4: 1rem;
 }
 
+/* Layout-only: make inner button fill the host width */
+val-button.km-gradient-btn::part(button) {
+  width: 100%;
+  display: flex;
+}
+
 /* --- Status Dot --- */
 .km-status-dot {
   width: 6px; height: 6px;
   border-radius: 9999px;
-  background: oklch(0.80 0.18 151.71);
+  background: oklch(0.90 0.19 159.5);
   animation: km-pulse 2s ease-in-out infinite;
 }
 

@@ -96,6 +96,10 @@ describe('renderLoginPage (Kinetic Monolith)', () => {
       expect(html).toContain('type="submit"')
       expect(html).toMatch(/sign\s*in/i)
     })
+
+    it('has a Forgot? link next to the password label', () => {
+      expect(html).toMatch(/forgot/i)
+    })
   })
 
   describe('error handling', () => {
