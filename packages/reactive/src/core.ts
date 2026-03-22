@@ -36,6 +36,58 @@ export function _setCurrentScope (scope: (() => void) | null): void {
   currentScope = scope
 }
 
+// --- computed() ---
+
+const DIRTY = 1
+const CLEAN = 0
+
+export function computed<T> (fn: () => T, options?: SignalOptions<T>): ReadonlySignal<T> {
+  let value: T
+  let state: 0 | 1 = DIRTY
+  const equals = options?.equals ?? Object.is
+  const subscribers = new Set<() => void>()
+
+  function recompute (): void {
+    const prevScope = currentScope
+    currentScope = markDirty
+    const next = fn()
+    currentScope = prevScope
+    if (state === CLEAN && equals(value, next)) return
+    value = next
+    state = CLEAN
+  }
+
+  function markDirty (): void {
+    if (state === DIRTY) return
+    state = DIRTY
+    for (const sub of subscribers) {
+      sub()
+    }
+  }
+
+  const obj: ReadonlySignal<T> = {
+    get value (): T {
+      if (state === DIRTY) {
+        recompute()
+      }
+      if (currentScope !== null) {
+        subscribers.add(currentScope)
+      }
+      return value
+    },
+
+    peek (): T {
+      if (state === DIRTY) {
+        recompute()
+      }
+      return value
+    }
+  }
+
+  // Freeze to prevent .value assignment — strict mode throws TypeError automatically
+  return Object.freeze(obj)
+}
+
 // --- signal() ---
 
 export function signal<T> (initialValue: T, options?: SignalOptions<T>): Signal<T> {
