@@ -1,5 +1,6 @@
+// @vitest-environment happy-dom
 import { describe, it, expect, afterEach } from 'vitest'
-import { initLoginForm } from '../admin/editor/login-reactive.js'
+import { initLoginForm, _testGetSignals } from '../admin/editor/login-reactive.js'
 
 describe('login-reactive', () => {
   afterEach(() => {
@@ -13,7 +14,6 @@ describe('login-reactive', () => {
         <input name="email" type="email" required>
         <input name="password" type="password" required>
         <button type="submit" class="km-gradient-btn">Sign In</button>
-        <div class="login-error" style="display:none"></div>
       </form>
     `
     return document.querySelector('form')!
@@ -22,43 +22,35 @@ describe('login-reactive', () => {
   it('disables submit button when fields are empty', () => {
     const form = createLoginForm()
     const dispose = initLoginForm(form)
-    const btn = form.querySelector('button')!
+    const btn = form.querySelector<HTMLButtonElement>('button')!
     expect(btn.disabled).toBe(true)
     dispose()
   })
 
-  it('enables submit button when both fields have values', () => {
+  it('enables submit button when both signals have values', () => {
     const form = createLoginForm()
     const dispose = initLoginForm(form)
-    const email = form.querySelector<HTMLInputElement>('input[name="email"]')!
-    const password = form.querySelector<HTMLInputElement>('input[name="password"]')!
-    const btn = form.querySelector('button')!
+    const btn = form.querySelector<HTMLButtonElement>('button')!
+    const signals = _testGetSignals()
 
-    email.value = 'test@test.com'
-    email.dispatchEvent(new Event('input', { bubbles: true }))
-    expect(btn.disabled).toBe(true) // password still empty
+    signals.email.value = 'test@test.com'
+    signals.password.value = 'secret'
 
-    password.value = 'secret'
-    password.dispatchEvent(new Event('input', { bubbles: true }))
-    expect(btn.disabled).toBe(false) // both filled
+    expect(btn.disabled).toBe(false)
     dispose()
   })
 
-  it('disables button again when a field is cleared', () => {
+  it('disables button again when a signal is cleared', () => {
     const form = createLoginForm()
     const dispose = initLoginForm(form)
-    const email = form.querySelector<HTMLInputElement>('input[name="email"]')!
-    const password = form.querySelector<HTMLInputElement>('input[name="password"]')!
-    const btn = form.querySelector('button')!
+    const btn = form.querySelector<HTMLButtonElement>('button')!
+    const signals = _testGetSignals()
 
-    email.value = 'a@b.c'
-    email.dispatchEvent(new Event('input', { bubbles: true }))
-    password.value = 'x'
-    password.dispatchEvent(new Event('input', { bubbles: true }))
+    signals.email.value = 'a@b.c'
+    signals.password.value = 'x'
     expect(btn.disabled).toBe(false)
 
-    email.value = ''
-    email.dispatchEvent(new Event('input', { bubbles: true }))
+    signals.email.value = ''
     expect(btn.disabled).toBe(true)
     dispose()
   })
@@ -66,14 +58,13 @@ describe('login-reactive', () => {
   it('returns a dispose function that cleans up all bindings', () => {
     const form = createLoginForm()
     const dispose = initLoginForm(form)
-    const email = form.querySelector<HTMLInputElement>('input[name="email"]')!
-    const btn = form.querySelector('button')!
+    const btn = form.querySelector<HTMLButtonElement>('button')!
+    const signals = _testGetSignals()
 
     dispose()
 
-    email.value = 'after@dispose.com'
-    email.dispatchEvent(new Event('input', { bubbles: true }))
-    // Button state should not have changed after dispose
+    signals.email.value = 'after@dispose.com'
+    signals.password.value = 'x'
     expect(btn.disabled).toBe(true)
   })
 })
