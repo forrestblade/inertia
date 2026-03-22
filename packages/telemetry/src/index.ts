@@ -89,3 +89,6 @@ export type { CategoryCount, PageviewCount, EventCategorySummary, DailyEventCoun
 // Server-side event logger
 export { createServerEventLogger } from './server-events.js'
 export type { ServerEventLogger } from './server-events.js'
+
+// Data retention
+export { cleanupOldEvents, cleanupOldSessions } from './retention.js'
