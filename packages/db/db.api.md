@@ -7,6 +7,7 @@
 import type { Result } from 'neverthrow';
 import { ResultAsync } from 'neverthrow';
 import type { Sql } from 'postgres';
+import type { TransactionSql } from 'postgres';
 
 // @public (undocumented)
 export function closePool(pool: DbPool): ResultAsync<void, DbError>;
@@ -106,6 +107,9 @@ export function validateDbConfig(config: unknown): Result<DbConfig, DbError>;
 
 // @public (undocumented)
 export function validateMigrations(migrations: ReadonlyArray<MigrationFile>): Result<ReadonlyArray<MigrationFile>, DbError>;
+
+// @public (undocumented)
+export function withTransaction<T>(pool: DbPool, fn: (tx: TransactionSql) => Promise<T>): ResultAsync<T, DbError>;
 
 // (No @packageDocumentation comment for this package)
 
