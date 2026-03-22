@@ -1,9 +1,10 @@
 // @valencets/reactive — Core signal primitives.
 // TC39-aligned pull/push algorithm with Preact-style .value accessor.
 //
-// Convention: callbacks passed to effect(), computed(), batch(), untracked()
-// MUST NOT throw. Valence uses Result monads for error handling — thrown
-// exceptions in callbacks are caller bugs and result in undefined behavior.
+// INVARIANT: Callbacks passed to effect(), computed(), batch(), untracked()
+// MUST NOT throw. Valence uses Result monads for error handling — wrap
+// fallible operations in fromThrowable() or ResultAsync. A thrown exception
+// corrupts internal state (notify depth, pending sets) and is a caller bug.
 
 export interface SignalOptions<T> {
   readonly equals?: (prev: T, next: T) => boolean

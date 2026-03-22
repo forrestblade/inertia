@@ -57,7 +57,7 @@ export function renderAdminLayout (args: LayoutArgs): string {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${escapeHtml(args.title)} — Valence CMS</title>
-  ${(args.headTags ?? []).join('\n  ')}
+  ${/* headTags: trusted developer-only config from AdminOptions — NOT user input */ ''}${(args.headTags ?? []).join('\n  ')}
   <link rel="stylesheet" href="/admin/_assets/admin.css">
   <style nonce="${args.nonce ?? CSP_NONCE_PLACEHOLDER}">${getCriticalCss()}</style>
 </head>

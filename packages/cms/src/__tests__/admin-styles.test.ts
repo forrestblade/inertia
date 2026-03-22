@@ -8,22 +8,19 @@ describe('admin-styles (Kinetic Monolith)', () => {
     })
   })
 
-  describe('KM surface tokens', () => {
-    it('defines --km-surface custom properties', () => {
-      expect(ADMIN_THEME_CSS).toContain('--km-surface:')
-      expect(ADMIN_THEME_CSS).toContain('--km-surface-low:')
-      expect(ADMIN_THEME_CSS).toContain('--km-surface-highest:')
+  describe('KM surface tokens (single source in critical CSS)', () => {
+    it('does NOT define token values (defined once in km-critical.css)', () => {
+      expect(ADMIN_THEME_CSS).not.toContain('--km-surface:')
+      expect(ADMIN_THEME_CSS).not.toContain('--km-on-surface:')
     })
 
-    it('defines --km-on-surface text colors', () => {
-      expect(ADMIN_THEME_CSS).toContain('--km-on-surface:')
-      expect(ADMIN_THEME_CSS).toContain('--km-on-surface-variant:')
+    it('references KM token vars in component styles', () => {
+      expect(ADMIN_THEME_CSS).toContain('var(--km-surface')
+      expect(ADMIN_THEME_CSS).toContain('var(--km-on-surface')
     })
 
-    it('defines Manrope and Inter font stacks', () => {
-      expect(ADMIN_THEME_CSS).toContain('--km-font-headline:')
+    it('declares Manrope and Inter @font-face', () => {
       expect(ADMIN_THEME_CSS).toContain('Manrope')
-      expect(ADMIN_THEME_CSS).toContain('--km-font-body:')
       expect(ADMIN_THEME_CSS).toContain('Inter')
     })
   })
