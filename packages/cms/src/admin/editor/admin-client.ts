@@ -1,11 +1,23 @@
-import { ValAutosave, ValBulkBar, ValPreviewPane, ValDialog } from '@valencets/ui'
+import { registerAll, themeManager, ThemeMode, createTokenSheet } from '@valencets/ui'
 import { initBlocksFields } from './blocks-client.js'
 
-// Register only the Web Components used in admin HTML
-customElements.define('val-autosave', ValAutosave)
-customElements.define('val-bulk-bar', ValBulkBar)
-customElements.define('val-preview-pane', ValPreviewPane)
-customElements.define('val-dialog', ValDialog)
+// Kinetic Monolith: set dark theme + overrides BEFORE registering components
+// so elements adopt the correct sheet on first connect
+themeManager.setTheme(ThemeMode.Dark)
+themeManager.applyOverrides(createTokenSheet(`:host, :root {
+  --val-color-primary: var(--val-green-400);
+  --val-color-primary-hover: var(--val-green-500);
+  --val-color-primary-text: #00391d;
+  --val-color-bg: #131313;
+  --val-color-bg-elevated: #353534;
+  --val-color-bg-muted: #201f1f;
+  --val-color-border: #3c4a3f;
+  --val-color-border-focus: var(--val-green-400);
+  --val-color-text: #e5e2e1;
+  --val-color-text-muted: #bacbbc;
+  --val-focus-ring: 0 0 0 1px oklch(0.80 0.18 151.71 / 0.4);
+}`))
+registerAll()
 
 // Lazy-load Tiptap only when richtext editors exist on the page
 async function loadAndInitEditors (): Promise<void> {
