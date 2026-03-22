@@ -128,36 +128,17 @@ val-input {
 }
 
 val-button.km-gradient-btn {
-  --val-color-primary: transparent;
-  --val-color-primary-hover: transparent;
-}
-
-val-button.km-gradient-btn::part(button) {
-  all: unset;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
   width: 100%;
-  padding: 1rem;
-  background: linear-gradient(135deg, oklch(0.80 0.18 151.71), oklch(0.63 0.17 149.21));
-  color: #00391d;
-  font-family: var(--km-font-headline);
-  font-size: 0.875rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  border-radius: 0.125rem;
-  cursor: pointer;
-  transition: filter 100ms cubic-bezier(0.4, 0, 0.2, 1),
-              transform 100ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-val-button.km-gradient-btn::part(button):hover {
-  filter: brightness(1.1);
-}
-
-val-button.km-gradient-btn::part(button):active {
-  transform: scale(0.98);
+  --val-color-primary: linear-gradient(135deg, oklch(0.80 0.18 151.71), oklch(0.63 0.17 149.21));
+  --val-color-primary-hover: linear-gradient(135deg, oklch(0.85 0.20 151.71), oklch(0.70 0.19 149.21));
+  --val-color-primary-text: #00391d;
+  --val-font-sans: var(--km-font-headline);
+  --val-weight-medium: 800;
+  --val-text-sm: 0.875rem;
+  --val-radius-md: 0.125rem;
+  --val-space-2: 1rem;
+  --val-space-4: 1rem;
 }
 
 /* --- Status Dot --- */
