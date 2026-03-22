@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { signal, computed } from '../core.js'
+import { signal, computed, effect } from '../core.js'
 
 describe('signal()', () => {
   it('returns initial value via .value', () => {
@@ -148,5 +148,95 @@ describe('computed()', () => {
     const count = signal(1)
     const c = computed(() => count.value)
     expect(c.peek()).toBe(1)
+  })
+})
+
+describe('effect()', () => {
+  it('runs immediately on creation', () => {
+    const spy = vi.fn()
+    effect(spy)
+    expect(spy).toHaveBeenCalledOnce()
+  })
+
+  it('re-runs when a tracked signal changes', () => {
+    const count = signal(0)
+    const spy = vi.fn()
+    effect(() => {
+      spy(count.value)
+    })
+    expect(spy).toHaveBeenCalledWith(0)
+    count.value = 1
+    expect(spy).toHaveBeenCalledWith(1)
+    expect(spy).toHaveBeenCalledTimes(2)
+  })
+
+  it('tracks computed signals', () => {
+    const a = signal(2)
+    const b = computed(() => a.value * 10)
+    const spy = vi.fn()
+    effect(() => { spy(b.value) })
+    expect(spy).toHaveBeenCalledWith(20)
+    a.value = 3
+    expect(spy).toHaveBeenCalledWith(30)
+  })
+
+  it('runs cleanup function before re-execution', () => {
+    const count = signal(0)
+    const order: string[] = []
+    effect(() => {
+      const v = count.value
+      order.push(`run:${v}`)
+      return () => { order.push(`cleanup:${v}`) }
+    })
+    expect(order).toEqual(['run:0'])
+    count.value = 1
+    expect(order).toEqual(['run:0', 'cleanup:0', 'run:1'])
+  })
+
+  it('dispose function stops the effect and runs final cleanup', () => {
+    const count = signal(0)
+    const spy = vi.fn()
+    const cleanupSpy = vi.fn()
+    const dispose = effect(() => {
+      spy(count.value)
+      return cleanupSpy
+    })
+    expect(spy).toHaveBeenCalledTimes(1)
+    dispose()
+    expect(cleanupSpy).toHaveBeenCalledOnce()
+    count.value = 1
+    expect(spy).toHaveBeenCalledTimes(1) // not called again
+  })
+
+  it('does not re-run after dispose even with multiple signal changes', () => {
+    const a = signal(0)
+    const b = signal(0)
+    const spy = vi.fn()
+    const dispose = effect(() => {
+      spy(a.value + b.value)
+    })
+    dispose()
+    a.value = 1
+    b.value = 1
+    expect(spy).toHaveBeenCalledTimes(1) // only the initial run
+  })
+
+  it('re-tracks dependencies on each run', () => {
+    const toggle = signal(true)
+    const a = signal('a')
+    const b = signal('b')
+    const spy = vi.fn()
+    effect(() => {
+      spy(toggle.value ? a.value : b.value)
+    })
+    expect(spy).toHaveBeenLastCalledWith('a')
+    a.value = 'A'
+    expect(spy).toHaveBeenLastCalledWith('A')
+    toggle.value = false
+    expect(spy).toHaveBeenLastCalledWith('b')
+    a.value = 'AA' // no longer tracked
+    expect(spy).toHaveBeenCalledTimes(3) // not re-run
+    b.value = 'B' // now tracked
+    expect(spy).toHaveBeenLastCalledWith('B')
   })
 })
