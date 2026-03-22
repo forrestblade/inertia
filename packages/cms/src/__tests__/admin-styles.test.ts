@@ -33,13 +33,13 @@ describe('admin-styles (Kinetic Monolith)', () => {
       expect(ADMIN_THEME_CSS).toContain('val-button.km-gradient-btn')
     })
 
-    it('sets --val-color-primary to the gradient for shadow DOM button', () => {
-      expect(ADMIN_THEME_CSS).toMatch(/val-button\.km-gradient-btn\s*\{[^}]*--val-color-primary:\s*linear-gradient/)
+    it('overrides val-button typography and spacing tokens', () => {
+      expect(ADMIN_THEME_CSS).toMatch(/val-button\.km-gradient-btn\s*\{[^}]*--val-font-sans/)
+      expect(ADMIN_THEME_CSS).toMatch(/val-button\.km-gradient-btn\s*\{[^}]*--val-weight-medium/)
     })
 
-    it('does NOT use ::part(button) for background', () => {
-      // CSS custom properties pierce shadow DOM — no ::part needed for colors
-      expect(ADMIN_THEME_CSS).not.toMatch(/::part\(button\).*background:\s*linear-gradient/)
+    it('does NOT set --val-color-primary in page CSS (belongs in token sheet)', () => {
+      expect(ADMIN_THEME_CSS).not.toMatch(/val-button\.km-gradient-btn\s*\{[^}]*--val-color-primary/)
     })
   })
 
