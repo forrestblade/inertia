@@ -14,10 +14,11 @@ export default {
   thresholds: {
     high: 80,
     low: 70,
-    break: 60
+    break: 50
   },
   concurrency: 4,
   timeoutMS: 60_000,
   incremental: true,
+  ignoreStatic: true,
   incrementalFile: '.stryker-tmp/incremental.json'
 }

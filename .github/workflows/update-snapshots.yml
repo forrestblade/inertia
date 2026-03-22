@@ -74,3 +74,4 @@ jobs:
           commit_message: 'chore: update visual snapshots [skip ci]'
           file_pattern: 'tests/e2e/__snapshots__/**/*.png'
           branch: ${{ steps.pr.outputs.head_ref }}
+          push_options: ''
