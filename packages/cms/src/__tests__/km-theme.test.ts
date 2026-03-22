@@ -1,23 +1,26 @@
 import { describe, it, expect } from 'vitest'
-import { KM_PALETTE, getKmPageStyles, getKmTokenOverrides, getCriticalCss, getDeferredCss } from '../admin/km-theme.js'
+import { getKmPageStyles, getKmTokenOverrides, getCriticalCss, getDeferredCss } from '../admin/km-theme.js'
 
 describe('km-theme (Kinetic Monolith)', () => {
-  describe('KM_PALETTE', () => {
-    it('defines all surface hierarchy levels', () => {
-      expect(KM_PALETTE.surface).toBe('#131313')
-      expect(KM_PALETTE.surfaceLow).toBe('#1c1b1b')
-      expect(KM_PALETTE.surfaceContainer).toBe('#201f1f')
-      expect(KM_PALETTE.surfaceHigh).toBe('#2a2a2a')
-      expect(KM_PALETTE.surfaceHighest).toBe('#353534')
+  describe('CSS files are pure CSS (no template literals)', () => {
+    it('page styles contain KM surface palette values', () => {
+      const css = getKmPageStyles()
+      expect(css).toContain('#131313')
+      expect(css).toContain('#1c1b1b')
+      expect(css).toContain('#e5e2e1')
     })
 
-    it('defines on-surface text colors', () => {
-      expect(KM_PALETTE.onSurface).toBe('#e5e2e1')
-      expect(KM_PALETTE.onSurfaceVariant).toBe('#bacbbc')
+    it('token overrides contain oklch primary', () => {
+      const css = getKmTokenOverrides()
+      expect(css).toContain('oklch(0.90 0.19 159.5)')
     })
 
-    it('defines primary as oklch green', () => {
-      expect(KM_PALETTE.primary).toContain('oklch')
+    it('no template literal artifacts in any CSS', () => {
+      const all = [getKmPageStyles(), getKmTokenOverrides(), getCriticalCss(), getDeferredCss()]
+      for (const css of all) {
+        expect(css).not.toContain('${')
+        expect(css).not.toContain('KM_PALETTE')
+      }
     })
   })
 
