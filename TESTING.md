@@ -4,9 +4,9 @@
 
 ```bash
 pnpm build              # Required before first test run
-pnpm test               # All unit tests (~1,600 across 6 packages)
-pnpm test:integration   # Integration tests (requires PostgreSQL)
-pnpm test:e2e           # Playwright E2E tests (requires built app)
+pnpm test               # All workspace tests
+npx vitest run tests/integration/   # Integration tests (requires PostgreSQL)
+pnpm test:e2e           # Playwright E2E tests
 pnpm test:coverage      # Unit tests with coverage report
 pnpm test:mutate        # Stryker mutation testing
 pnpm test:watch         # Watch mode for local development
@@ -21,7 +21,7 @@ pnpm test:watch         # Watch mode for local development
 | **Unit** | Vitest | `packages/*/src/__tests__/*.test.ts` | No (mocked) | Fast (~5s) |
 | **Integration** | Vitest + Supertest | `tests/integration/*.test.ts` | Yes (PostgreSQL) | Medium (~10s) |
 | **E2E** | Playwright | `tests/e2e/*.spec.ts` | Yes (full app) | Slow (~30s) |
-| **Contract** | Vitest | `tests/integration/contracts.test.ts` | No | Fast (~1s) |
+| **Contract** | Vitest | `tests/contracts/*.test.ts` | No | Fast (~1s) |
 
 ### Directory Structure
 
@@ -34,8 +34,10 @@ tests/
 │   ├── auth.integration.test.ts
 │   ├── crud.integration.test.ts
 │   ├── schema.integration.test.ts
-│   ├── telemetry.integration.test.ts
-│   └── contracts.test.ts  # Package boundary contracts
+│   └── telemetry.integration.test.ts
+├── contracts/             # Package boundary + type-level contracts
+│   ├── contracts.test.ts
+│   └── contracts.test-d.ts
 ├── e2e/                   # Playwright E2E tests
 │   ├── auth.setup.ts      # Global auth (login + save state)
 │   ├── auth.spec.ts
@@ -140,11 +142,21 @@ GitHub Actions runs these jobs in order:
 ## Conventions
 
 - TDD workflow: RED → GREEN → REFACTOR with micro-commits
-- Result monads everywhere — no try/catch in test setup
+- Result monads everywhere in production code — avoid try/catch in shared logic
 - Integration tests create/drop their own test database
 - E2E tests use `storageState` for auth (login once, reuse)
-- Pre-commit: lint-staged (eslint --fix on staged files)
-- Pre-push: build + full test suite
+- Pre-commit: `lint-staged` on staged code and shell files
+- Commit messages: Conventional Commits, with required TDD suffixes for code commits
+- Pre-push: `pnpm validate`, `pnpm check:patterns`, and `pnpm test:smoke`
+
+## Known Caveats
+
+- `pnpm test:integration` is currently broken with Vitest 4.0.18. Use `npx vitest run tests/integration/` directly.
+- Visual baseline refreshes should be run selectively, for example:
+
+```bash
+pnpm exec playwright test tests/e2e/visual/admin-login.spec.ts --project=chromium --update-snapshots
+```
 
 ## Flaky Test Quarantine
 
