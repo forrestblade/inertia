@@ -110,7 +110,7 @@ async function runInit (args: ReadonlyArray<string>): Promise<void> {
   const projectName = useDefaults ? (nonFlagArgs[0] ?? 'my-valence-app') : await ask(rl!, 'Project name', nonFlagArgs[0] ?? 'my-valence-app')
   const dbName = useDefaults ? projectName.replace(/[^a-z0-9_]/g, '_') : await ask(rl!, 'Database name', projectName.replace(/[^a-z0-9_]/g, '_'))
   const dbUser = useDefaults ? 'postgres' : await ask(rl!, 'Database user', 'postgres')
-  const dbPassword = useDefaults ? '' : await ask(rl!, 'Database password', '')
+  const dbPassword = useDefaults ? 'postgres' : await ask(rl!, 'Database password', 'postgres')
   const serverPort = useDefaults ? '3000' : await ask(rl!, 'Server port', '3000')
 
   if (!useDefaults) {
