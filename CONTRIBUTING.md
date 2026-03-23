@@ -6,12 +6,14 @@
 git clone https://github.com/valencets/valence.git
 cd valence
 pnpm install
+pnpm db:up   # Start local PostgreSQL on localhost:5432
 pnpm build   # Build all packages (required before first test run)
 pnpm test    # 1,306 tests across all packages
 pnpm lint    # Neostandard lint
 ```
 
 Requires Node.js >= 22 and pnpm 10.x. The `packageManager` field in `package.json` enforces the exact pnpm version.
+Local CI, integration tests, E2E, and scaffold flows also require Docker Desktop or Docker Engine so `pnpm db:up` can provision PostgreSQL.
 
 New to the codebase? Create a test project with the interactive tutorial:
 
@@ -155,8 +157,28 @@ Merge feature/fix branches into `development` with `--no-ff`. Merge `development
 3. Ensure `pnpm test` and `pnpm lint` both pass.
 4. Ensure `pnpm build` (typecheck) passes.
 5. Run `pnpm ci:local` before opening the PR. This is the local mirror of the main CI workflow and is the required pre-PR gate.
-6. Confirm local prerequisites first: PostgreSQL reachable via `PGHOST`/`PGPORT`/`PGUSER`, Playwright browsers installed, and dependencies installed from the current lockfile.
+6. Confirm local prerequisites first: `pnpm db:up` has started PostgreSQL, Playwright browsers are installed, and dependencies are installed from the current lockfile.
 7. Open a PR against `development`. CI runs lint, typecheck, and tests.
+
+## Local PostgreSQL
+
+Use the repo-managed PostgreSQL instance for local development and CI parity:
+
+```bash
+pnpm db:up
+pnpm db:logs
+pnpm db:down
+pnpm db:reset
+```
+
+Defaults:
+
+- `PGHOST=localhost`
+- `PGPORT=5432`
+- `PGUSER=postgres`
+- `PGPASSWORD=postgres`
+
+The container uses `postgres:16-alpine` and creates the default `postgres` maintenance database expected by the integration, E2E, and scaffold test flows.
 
 ## Cross-Package Import Rules
 

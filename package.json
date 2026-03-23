@@ -28,7 +28,11 @@
     "test:flaky:deadlines": "bash scripts/check-flaky-deadlines.sh",
     "api:check": "bash scripts/api-check.sh",
     "api:update": "bash scripts/api-update.sh",
-    "ci:local": "bash scripts/run-local-ci.sh"
+    "ci:local": "bash scripts/run-local-ci.sh",
+    "db:up": "docker compose -f docker-compose.dev.yml up -d",
+    "db:down": "docker compose -f docker-compose.dev.yml down",
+    "db:reset": "docker compose -f docker-compose.dev.yml down -v",
+    "db:logs": "docker compose -f docker-compose.dev.yml logs -f postgres"
   },
   "devDependencies": {
     "@microsoft/api-extractor": "^7.57.7",

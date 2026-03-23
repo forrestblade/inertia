@@ -3,6 +3,7 @@
 ## Quick Start
 
 ```bash
+pnpm db:up              # Start local PostgreSQL
 pnpm build              # Required before first test run
 pnpm test               # All workspace tests
 npx vitest run tests/integration/   # Integration tests (requires PostgreSQL)
@@ -169,7 +170,7 @@ pnpm ci:local
 
 Local prerequisites:
 
-- PostgreSQL must be running and reachable via `PGHOST`, `PGPORT`, and `PGUSER`
+- PostgreSQL must be running. `pnpm db:up` is the standard local setup path.
 - Playwright browsers must already be installed
 - `pnpm install` must have been run against the current lockfile
 
@@ -185,6 +186,19 @@ This mirrors the main CI workflow locally in CI order:
 
 It assumes local PostgreSQL is reachable via `PGHOST`, `PGPORT`, and `PGUSER`. Defaults are `localhost`, `5432`, and `postgres`.
 Treat `pnpm ci:local` as the last gate before `git push` or `gh pr create`. GitHub CI should confirm a local pass, not discover missing manifest or typecheck drift first.
+
+For repo-standard local database setup:
+
+```bash
+pnpm db:up
+```
+
+This starts `postgres:16-alpine` via [`docker-compose.dev.yml`](/home/forrest/dev/valence/docker-compose.dev.yml) with:
+
+- `PGHOST=localhost`
+- `PGPORT=5432`
+- `PGUSER=postgres`
+- `PGPASSWORD=postgres`
 
 ## Flaky Test Quarantine
 
