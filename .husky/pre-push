@@ -1,1 +1,6 @@
-pnpm build && pnpm test:smoke
+#!/usr/bin/env sh
+set -eu
+
+pnpm validate
+pnpm check:patterns
+pnpm test:smoke

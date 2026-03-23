@@ -131,9 +131,13 @@ docs(scope): description        # Documentation
 chore(scope): description       # Dependencies, config, tooling
 ```
 
-**Scopes:** `core`, `db`, `ui`, `cms`, `telemetry`, `studio`
+**Common scopes:** `core`, `db`, `ui`, `cms`, `telemetry`, `graphql`, `valence`, `tooling`, `docs`, `plugin-cloud-storage`, `plugin-nested-docs`, `plugin-seo`
 
-Commits are enforced via Husky pre-commit hooks that run lint.
+Commits are enforced via Husky:
+- `pre-commit` runs `lint-staged` on staged code and shell files
+- `commit-msg` enforces Conventional Commit format and required TDD suffixes for code commits:
+  `test(...) -- RED`, `feat(...) -- GREEN`, `fix(...) -- GREEN`, `refactor(...) -- REFACTOR`
+- `pre-push` runs `pnpm validate`, `pnpm check:patterns`, and `pnpm test:smoke`
 
 ## Branching
 
@@ -156,12 +160,12 @@ Merge feature/fix branches into `development` with `--no-ff`. Merge `development
 
 | Package | Can Import From |
 |---------|----------------|
-| `@valencets/core` | `neverthrow` only |
-| `@valencets/db` | `neverthrow`, `postgres`, `zod` |
+| `@valencets/core` | `@valencets/resultkit` only |
+| `@valencets/db` | `@valencets/resultkit`, `postgres`, `zod` |
 | `@valencets/ui` | Nothing (zero deps) |
-| `@valencets/cms` | `@valencets/core`, `@valencets/db`, `@valencets/ui`, `zod`, `neverthrow`, `argon2` |
+| `@valencets/cms` | `@valencets/core`, `@valencets/db`, `@valencets/ui`, `zod`, `@valencets/resultkit`, `argon2` |
 | `@valencets/telemetry` | `@valencets/db`, `@valencets/core` |
-| `@valencets/valence` | `@valencets/cms`, `@valencets/core`, `@valencets/db`, `@valencets/telemetry`, `tsx`, `zod`, `neverthrow` |
+| `@valencets/valence` | `@valencets/cms`, `@valencets/core`, `@valencets/db`, `@valencets/telemetry`, `tsx`, `zod`, `@valencets/resultkit` |
 
 ## Working with the CMS Package
 
