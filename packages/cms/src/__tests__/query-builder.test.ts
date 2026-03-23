@@ -213,6 +213,29 @@ describe('.where()', () => {
     expect(sql).toContain('(("title" = $1) OR ("slug" = $2))')
     expect(params).toEqual(['Hello', 'hello'])
   })
+
+  it('applies later where conditions to every or branch', async () => {
+    const pool = makeMockPool([])
+    const registry = setupRegistry()
+    const qb = createQueryBuilder(pool, registry)
+
+    await qb.query('posts')
+      .whereClause({
+        or: [
+          { field: 'title', operator: 'equals', value: 'Hello' },
+          { field: 'slug', operator: 'equals', value: 'hello' }
+        ]
+      })
+      .where('published', true)
+      .all()
+
+    const call = (pool.sql.unsafe as ReturnType<typeof vi.fn>).mock.calls[0]
+    const sql = asSql(call?.[0] as MockSql)
+    const params = call?.[1] as unknown[]
+
+    expect(sql).toContain('(("title" = $1 AND "published" = $2) OR ("slug" = $3 AND "published" = $4))')
+    expect(params).toEqual(['Hello', true, 'hello', true])
+  })
 })
 
 describe('.withDeleted()', () => {
