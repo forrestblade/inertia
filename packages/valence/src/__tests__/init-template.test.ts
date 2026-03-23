@@ -132,6 +132,16 @@ describe('init migration SQL', () => {
     const sql = getWrittenFile('001-init.sql')
     expect(sql).toContain('CREATE TABLE IF NOT EXISTS "document_revisions"')
   })
+
+  it('.env and .env.example handle db password and secrets explicitly', async () => {
+    await run(['init', 'test-app', '-y'])
+    const env = getWrittenFile('.env')
+    const envExample = getWrittenFile('.env.example')
+    expect(env).toContain('DB_PASSWORD=postgres')
+    expect(envExample).toContain('DB_PASSWORD=')
+    expect(envExample).not.toContain('DB_PASSWORD=postgres')
+    expect(envExample).toContain('CMS_SECRET=change-me')
+  })
 })
 
 describe('init migration cms_sessions', () => {
