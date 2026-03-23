@@ -32,6 +32,8 @@ jobs:
             git fetch origin "${{ github.base_ref }}" --depth=1
             BASE="$(git merge-base HEAD "origin/${{ github.base_ref }}")"
             bash scripts/check-tdd-commit-sequence.sh range "$BASE..HEAD"
+          elif [ "${{ github.event.before }}" != "0000000000000000000000000000000000000000" ]; then
+            bash scripts/check-tdd-commit-sequence.sh range "${{ github.event.before }}..${{ github.sha }}"
           elif git rev-parse HEAD^ >/dev/null 2>&1; then
             bash scripts/check-tdd-commit-sequence.sh range "HEAD^..HEAD"
           fi

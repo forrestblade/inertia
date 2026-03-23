@@ -128,14 +128,34 @@ validate_current_commit() {
 resolve_branch_range() {
   local upstream
   upstream="$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)"
-  if [[ -z "$upstream" ]]; then
-    echo "No upstream configured; skipping TDD branch sequence check." >&2
-    exit 0
+  if [[ -n "$upstream" ]]; then
+    local base
+    base="$(git merge-base HEAD "$upstream")"
+    printf '%s..HEAD\n' "$base"
+    return 0
   fi
 
-  local base
-  base="$(git merge-base HEAD "$upstream")"
-  printf '%s..HEAD\n' "$base"
+  if git rev-parse --verify origin/development >/dev/null 2>&1; then
+    local development_base
+    development_base="$(git merge-base HEAD origin/development)"
+    printf '%s..HEAD\n' "$development_base"
+    return 0
+  fi
+
+  if git rev-parse --verify origin/master >/dev/null 2>&1; then
+    local master_base
+    master_base="$(git merge-base HEAD origin/master)"
+    printf '%s..HEAD\n' "$master_base"
+    return 0
+  fi
+
+  if git rev-parse --verify HEAD^ >/dev/null 2>&1; then
+    printf 'HEAD^..HEAD\n'
+    return 0
+  fi
+
+  echo "TDD sequence error: unable to resolve branch range. Configure an upstream or fetch origin/development." >&2
+  exit 1
 }
 
 case "$MODE" in
