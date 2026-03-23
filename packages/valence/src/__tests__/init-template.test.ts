@@ -56,8 +56,18 @@ describe('init template collections', () => {
     await run(['init', 'test-app', '-y'])
     const config = getWrittenFile('valence.config.ts')
     expect(config).toContain("password: process.env.DB_PASSWORD ?? 'postgres'")
-    expect(config).toContain('sslmode: process.env.DB_SSLMODE')
+    expect(config).toContain("process.env.DB_SSLMODE === 'disable'")
     expect(config).toContain('sslrootcert: process.env.DB_SSLROOTCERT')
+  })
+
+  it('scaffolded valence.config.ts typechecks with defineConfig sslmode literals', async () => {
+    await run(['init', 'test-app', '-y'])
+    const config = getWrittenFile('valence.config.ts')
+
+    expect(config).toContain("process.env.DB_SSLMODE === 'require'")
+    expect(config).toContain("process.env.DB_SSLMODE === 'verify-ca'")
+    expect(config).toContain("process.env.DB_SSLMODE === 'verify-full'")
+    expect(config).not.toContain('sslmode: process.env.DB_SSLMODE,')
   })
 
   it('valence.config.ts does NOT include categories, pages, or tags', async () => {

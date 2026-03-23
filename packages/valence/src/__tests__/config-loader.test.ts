@@ -62,4 +62,14 @@ describe('loadEnvConfig', () => {
 
     expect(loadEnvConfig()).toBeNull()
   })
+
+  it('returns null when DB_SSLMODE is invalid', async () => {
+    process.env.DB_HOST = 'localhost'
+    process.env.DB_NAME = 'valence'
+    process.env.DB_USER = 'app'
+    process.env.DB_PASSWORD = 'secret'
+    process.env.DB_SSLMODE = 'verify_ca'
+
+    expect(loadEnvConfig()).toBeNull()
+  })
 })
