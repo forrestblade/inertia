@@ -150,7 +150,8 @@ GitHub Actions runs these jobs in order:
 - E2E tests use `storageState` for auth (login once, reuse)
 - Pre-commit: `lint-staged` on staged code and shell files
 - Commit messages: Conventional Commits, with required TDD suffixes for code commits
-- Pre-push: `pnpm validate`, `pnpm check:patterns`, and `pnpm test:smoke`
+- Commit sequence: `GREEN` must immediately follow a same-scope `RED`; `REFACTOR` must immediately follow a same-scope `GREEN`
+- Pre-push: branch-local TDD sequence validation, then `pnpm validate`, `pnpm check:patterns`, and `pnpm test:smoke`
 - Full pre-push parity is opt-in: `VALENCE_PREPUSH_FULL=1 git push`
 
 ## Known Caveats

@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 set -eu
 
+bash scripts/check-tdd-commit-sequence.sh branch
 pnpm validate
 pnpm check:patterns
 pnpm test:smoke

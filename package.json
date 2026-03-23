@@ -19,6 +19,7 @@
     "test:quarantine": "vitest run --reporter=verbose --tags-filter=flaky",
     "test:watch": "vitest --watch",
     "check:patterns": "bash scripts/check-banned-patterns.sh",
+    "check:tdd-sequence": "bash scripts/check-tdd-commit-sequence.sh branch",
     "check:size": "bash scripts/check-bundle-size.sh",
     "test:visual": "playwright test tests/e2e/visual/",
     "test:visual:ci": "bash scripts/run-visual-ci.sh",

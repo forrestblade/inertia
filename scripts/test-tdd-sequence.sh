@@ -28,7 +28,7 @@ setup_repo() {
 assert_valid_range() {
   local repo_dir="$1"
   local range="$2"
-  bash "$CHECK_SCRIPT" range "$range" >/dev/null
+  (cd "$repo_dir" && bash "$CHECK_SCRIPT" range "$range" >/dev/null)
 }
 
 assert_invalid_range() {

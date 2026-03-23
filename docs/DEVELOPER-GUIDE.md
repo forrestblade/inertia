@@ -114,6 +114,13 @@ Commits during TDD are tagged in the message:
 - `feat(feature): implement behavior -- GREEN` (test passing)
 - `refactor(feature): extract helper -- REFACTOR` (same tests, cleaner code)
 
+The sequence is enforced:
+
+- `GREEN` must immediately follow a same-scope `RED`
+- `REFACTOR` must immediately follow a same-scope `GREEN`
+- local hooks enforce this at commit and push time
+- CI re-checks the entire PR commit range
+
 ## Banned Patterns
 
 These fail code review. The hook chain enforces staged linting, shell syntax checks, commit-message format, and push-time validation; manual review catches the rest.

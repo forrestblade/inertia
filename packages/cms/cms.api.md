@@ -317,6 +317,8 @@ export interface CollectionQueryBuilder {
     // (undocumented)
     where(field: string, operator: WhereOperator, value: SqlValue): CollectionQueryBuilder;
     // (undocumented)
+    whereClause(clause: WhereClause): CollectionQueryBuilder;
+    // (undocumented)
     withDeleted(): CollectionQueryBuilder;
 }
 

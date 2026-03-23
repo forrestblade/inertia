@@ -139,7 +139,8 @@ Commits are enforced via Husky:
 - `pre-commit` runs `lint-staged` on staged code and shell files
 - `commit-msg` enforces Conventional Commit format and required TDD suffixes for code commits:
   `test(...) -- RED`, `feat(...) -- GREEN`, `fix(...) -- GREEN`, `refactor(...) -- REFACTOR`
-- `pre-push` runs `pnpm validate`, `pnpm check:patterns`, and `pnpm test:smoke`
+- `commit-msg` also rejects `GREEN` commits that do not immediately follow a same-scope `RED`, and rejects `REFACTOR` commits that do not immediately follow a same-scope `GREEN`
+- `pre-push` validates the branch-local TDD sequence against its upstream, then runs `pnpm validate`, `pnpm check:patterns`, and `pnpm test:smoke`
 - `VALENCE_PREPUSH_FULL=1 git push` also runs `pnpm test:visual:ci`
 
 ## Branching
@@ -155,6 +156,7 @@ Merge feature/fix branches into `development` with `--no-ff`. Merge `development
 
 1. Create a feature branch from `development`.
 2. Follow TDD: RED, GREEN, REFACTOR commits.
+   `GREEN` must immediately follow a same-scope `RED`, and `REFACTOR` must immediately follow a same-scope `GREEN`.
 3. Ensure `pnpm test` and `pnpm lint` both pass.
 4. Ensure `pnpm build` (typecheck) passes.
 5. Run `pnpm ci:local` before opening the PR. This is the local mirror of the main CI workflow and is the required pre-PR gate.
@@ -175,6 +177,7 @@ Visual regression is not a `pre-commit` concern. It is too slow and too environm
 - `pre-push`: fast validation by default
 - `pnpm ci:local`: required before opening a PR
 - `pnpm test:visual:ci`: clean-worktree, Ubuntu-container visual regression parity with GitHub Actions
+- CI also validates the TDD commit sequence for the full PR range, so bypassing local hooks does not bypass the policy
 
 Refresh visual baselines from the containerized path, not from an arbitrary host render:
 
