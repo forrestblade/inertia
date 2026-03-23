@@ -28,7 +28,28 @@ require_cmd npx
 require_cmd curl
 
 if command -v pg_isready >/dev/null 2>&1; then
-  run_step "Checking PostgreSQL readiness" pg_isready -h "$PGHOST" -p "$PGPORT" -U "$PGUSER"
+  echo ""
+  echo "==> Checking PostgreSQL readiness"
+  if ! pg_isready -h "$PGHOST" -p "$PGPORT" -U "$PGUSER"; then
+    cat >&2 <<EOF
+Local CI requires PostgreSQL before integration, E2E, and Lighthouse steps can run.
+
+Expected connection:
+  PGHOST=$PGHOST
+  PGPORT=$PGPORT
+  PGUSER=$PGUSER
+
+Start PostgreSQL locally, or point these env vars at a running instance, then rerun:
+  pnpm ci:local
+EOF
+    exit 2
+  fi
+else
+  cat >&2 <<'EOF'
+Missing required command: pg_isready
+Install PostgreSQL client tools so local CI can verify the database prerequisite.
+EOF
+  exit 1
 fi
 
 run_step "Lint" pnpm lint

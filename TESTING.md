@@ -167,6 +167,12 @@ Before opening a PR, run:
 pnpm ci:local
 ```
 
+Local prerequisites:
+
+- PostgreSQL must be running and reachable via `PGHOST`, `PGPORT`, and `PGUSER`
+- Playwright browsers must already be installed
+- `pnpm install` must have been run against the current lockfile
+
 This mirrors the main CI workflow locally in CI order:
 
 - lint + banned patterns
@@ -178,6 +184,7 @@ This mirrors the main CI workflow locally in CI order:
 - Lighthouse smoke run
 
 It assumes local PostgreSQL is reachable via `PGHOST`, `PGPORT`, and `PGUSER`. Defaults are `localhost`, `5432`, and `postgres`.
+Treat `pnpm ci:local` as the last gate before `git push` or `gh pr create`. GitHub CI should confirm a local pass, not discover missing manifest or typecheck drift first.
 
 ## Flaky Test Quarantine
 

@@ -154,8 +154,9 @@ Merge feature/fix branches into `development` with `--no-ff`. Merge `development
 2. Follow TDD: RED, GREEN, REFACTOR commits.
 3. Ensure `pnpm test` and `pnpm lint` both pass.
 4. Ensure `pnpm build` (typecheck) passes.
-5. Run `pnpm ci:local` before opening the PR. This is the local mirror of the main CI workflow and should be treated as the pre-PR gate.
-6. Open a PR against `development`. CI runs lint, typecheck, and tests.
+5. Run `pnpm ci:local` before opening the PR. This is the local mirror of the main CI workflow and is the required pre-PR gate.
+6. Confirm local prerequisites first: PostgreSQL reachable via `PGHOST`/`PGPORT`/`PGUSER`, Playwright browsers installed, and dependencies installed from the current lockfile.
+7. Open a PR against `development`. CI runs lint, typecheck, and tests.
 
 ## Cross-Package Import Rules
 
