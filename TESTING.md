@@ -10,6 +10,7 @@ pnpm test:e2e           # Playwright E2E tests
 pnpm test:coverage      # Unit tests with coverage report
 pnpm test:mutate        # Stryker mutation testing
 pnpm test:watch         # Watch mode for local development
+pnpm ci:local           # Full local pre-PR gate (lint, build, tests, coverage, API check, Lighthouse)
 ```
 
 ## Test Architecture
@@ -157,6 +158,26 @@ GitHub Actions runs these jobs in order:
 ```bash
 pnpm exec playwright test tests/e2e/visual/admin-login.spec.ts --project=chromium --update-snapshots
 ```
+
+## Pre-PR Gate
+
+Before opening a PR, run:
+
+```bash
+pnpm ci:local
+```
+
+This mirrors the main CI workflow locally in CI order:
+
+- lint + banned patterns
+- typecheck/build + bundle size
+- security audit
+- API review
+- unit, contract, integration, visual, and sharded E2E tests
+- CMS coverage gate
+- Lighthouse smoke run
+
+It assumes local PostgreSQL is reachable via `PGHOST`, `PGPORT`, and `PGUSER`. Defaults are `localhost`, `5432`, and `postgres`.
 
 ## Flaky Test Quarantine
 
