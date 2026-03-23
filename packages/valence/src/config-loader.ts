@@ -70,6 +70,7 @@ export function loadEnvConfig (): DbConfig | null {
   const sslrootcert = readSslRootCert()
 
   if (!host || !database || !username || !password) return null
+  if (sslmode !== undefined && !isDbSslMode(sslmode)) return null
 
   return {
     host,
@@ -80,7 +81,7 @@ export function loadEnvConfig (): DbConfig | null {
     max: 5,
     idle_timeout: 10,
     connect_timeout: 10,
-    sslmode: isDbSslMode(sslmode) ? sslmode : undefined,
+    sslmode,
     sslrootcert
   }
 }
