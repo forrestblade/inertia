@@ -1,6 +1,7 @@
 import type { Middleware } from './middleware-types.js'
 import { generateCsrfToken, validateCsrfToken } from './csrf.js'
 import { sendJson, readBody } from './http-helpers.js'
+import { fromThrowable } from '@valencets/resultkit'
 
 const COOKIE_NAME = '__val_csrf'
 const HEADER_NAME = 'x-csrf-token'
@@ -11,6 +12,11 @@ const SAFE_METHODS: Readonly<Record<string, true>> = {
   HEAD: true,
   OPTIONS: true
 }
+
+const safeDecodeFormComponent = fromThrowable(
+  (value: string) => decodeURIComponent(value.replace(/\+/g, ' ')),
+  () => undefined
+)
 
 function parseCookieValue (cookieHeader: string | undefined, name: string): string | undefined {
   if (cookieHeader === undefined) return undefined
@@ -30,9 +36,12 @@ function extractBodyField (body: string, field: string): string | undefined {
   for (const pair of pairs) {
     const eqIndex = pair.indexOf('=')
     if (eqIndex === -1) continue
-    const key = decodeURIComponent(pair.slice(0, eqIndex))
+    const keyResult = safeDecodeFormComponent(pair.slice(0, eqIndex))
+    const key = keyResult.isOk() ? keyResult.value : undefined
+    if (key === undefined) continue
     if (key === field) {
-      return decodeURIComponent(pair.slice(eqIndex + 1))
+      const valueResult = safeDecodeFormComponent(pair.slice(eqIndex + 1))
+      return valueResult.isOk() ? valueResult.value : undefined
     }
   }
   return undefined
