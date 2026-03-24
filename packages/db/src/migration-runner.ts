@@ -88,69 +88,85 @@ export function loadMigrations (directory: string): ResultAsync<ReadonlyArray<Mi
 
 const MIGRATION_LOCK_ID = 839274628
 
-async function runMigrationsWithLock (pool: DbPool, migrations: ReadonlyArray<MigrationFile>): Promise<number> {
-  await pool.sql.unsafe('SELECT pg_advisory_lock($1)', [MIGRATION_LOCK_ID])
+function runMigrationsWithLock (pool: DbPool, migrations: ReadonlyArray<MigrationFile>): ResultAsync<number, DbError> {
+  return ResultAsync.fromPromise(
+    pool.sql.reserve(),
+    mapPostgresError
+  ).andThen((reservedSql) =>
+    ResultAsync.fromPromise(
+      (async () => {
+        await reservedSql.unsafe('SELECT pg_advisory_lock($1)', [MIGRATION_LOCK_ID])
 
-  const innerResult = await ResultAsync.fromPromise(
-    (async () => {
-      await pool.sql`
-        CREATE TABLE IF NOT EXISTS _migrations (
-          version INTEGER PRIMARY KEY,
-          name TEXT NOT NULL,
-          applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        const innerResult = await ResultAsync.fromPromise(
+          (async () => {
+            await reservedSql`
+              CREATE TABLE IF NOT EXISTS _migrations (
+                version INTEGER PRIMARY KEY,
+                name TEXT NOT NULL,
+                applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+              )
+            `
+
+            const applied = await reservedSql<Array<{ version: number }>>`
+              SELECT version FROM _migrations ORDER BY version
+            `
+            const appliedVersions = new Set(applied.map((r) => r.version))
+
+            let count = 0
+            for (const migration of migrations) {
+              if (appliedVersions.has(migration.version)) {
+                continue
+              }
+
+              await reservedSql.begin(async (tx) => {
+                await tx.unsafe(migration.sql)
+                await tx.unsafe(
+                  'INSERT INTO _migrations (version, name) VALUES ($1, $2)',
+                  [migration.version, migration.name]
+                )
+              })
+              count++
+            }
+
+            return count
+          })(),
+          (e: unknown): DbError => mapPostgresError(e)
         )
-      `
 
-      const applied = await pool.sql<Array<{ version: number }>>`
-        SELECT version FROM _migrations ORDER BY version
-      `
-      const appliedVersions = new Set(applied.map((r) => r.version))
+        await reservedSql.unsafe('SELECT pg_advisory_unlock($1)', [MIGRATION_LOCK_ID])
+        await reservedSql.release()
 
-      let count = 0
-      for (const migration of migrations) {
-        if (appliedVersions.has(migration.version)) {
-          continue
+        if (innerResult.isErr()) {
+          return err(innerResult.error)
         }
 
-        await pool.sql.begin(async (tx) => {
-          await tx.unsafe(migration.sql)
-          await tx.unsafe(
-            'INSERT INTO _migrations (version, name) VALUES ($1, $2)',
-            [migration.version, migration.name]
-          )
-        })
-        count++
-      }
-
-      return count
-    })(),
-    (e: unknown): DbError => mapPostgresError(e)
+        return ok(innerResult.value)
+      })(),
+      mapPostgresError
+    ).andThen((result) => result)
   )
-
-  // Always release the advisory lock, whether migrations succeeded or not
-  await pool.sql.unsafe('SELECT pg_advisory_unlock($1)', [MIGRATION_LOCK_ID])
-
-  if (innerResult.isErr()) {
-    return Promise.reject(innerResult.error)
-  }
-  return innerResult.value
 }
 
 export function runMigrations (pool: DbPool, migrations: ReadonlyArray<MigrationFile>): ResultAsync<number, DbError> {
-  return ResultAsync.fromPromise(
-    runMigrationsWithLock(pool, migrations),
-    mapPostgresError
-  )
+  return runMigrationsWithLock(pool, migrations)
 }
 
 export function getMigrationStatus (pool: DbPool): ResultAsync<ReadonlyArray<{ version: number; applied_at: Date }>, DbError> {
   return ResultAsync.fromPromise(
-    (async () => {
-      const rows = await pool.sql<Array<{ version: number; applied_at: Date }>>`
-        SELECT version, applied_at FROM _migrations ORDER BY version
-      `
-      return rows as ReadonlyArray<{ version: number; applied_at: Date }>
-    })(),
-    mapPostgresError
-  )
+    pool.sql<Array<{ version: number; applied_at: Date }>>`
+      SELECT version, applied_at FROM _migrations ORDER BY version
+    `,
+    (error: unknown) => error
+  ).orElse((error) => {
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      error.code === '42P01'
+    ) {
+      return ok<ReadonlyArray<{ version: number; applied_at: Date }>, DbError>([])
+    }
+
+    return err(mapPostgresError(error))
+  }).map((rows) => rows as ReadonlyArray<{ version: number; applied_at: Date }>)
 }
