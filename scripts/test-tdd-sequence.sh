@@ -6,6 +6,11 @@ CHECK_SCRIPT="$ROOT_DIR/scripts/check-tdd-commit-sequence.sh"
 TMP_ROOT="$(mktemp -d)"
 trap 'rm -rf "$TMP_ROOT"' EXIT
 
+if grep -Fq "printf '%s\\n' \"\$commits_output\" | head -n1" "$CHECK_SCRIPT"; then
+  echo "Expected check-tdd-commit-sequence.sh to avoid printf|head first-line extraction." >&2
+  exit 1
+fi
+
 run_git() {
   local repo_dir="$1"
   shift
