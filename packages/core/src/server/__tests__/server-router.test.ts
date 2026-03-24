@@ -147,6 +147,49 @@ describe('createServerRouter', () => {
     expect(res._body).toBe('custom 404')
   })
 
+  it('runs global middleware for 404 fallback handlers', async () => {
+    const router = createServerRouter()
+    const order: string[] = []
+
+    router.use(async (_req, _res, _ctx, next) => {
+      order.push('mw')
+      await next()
+    })
+
+    router.register('/404', {
+      GET: async (_req, res) => {
+        order.push('404')
+        res.writeHead(404)
+        res.end('custom 404')
+      }
+    })
+
+    await router.handle(mockReq('/missing'), mockRes())
+
+    expect(order).toEqual(['mw', '404'])
+  })
+
+  it('uses router.onError for 404 fallback failures', async () => {
+    const router = createServerRouter()
+    const errorHandler = vi.fn(async (error: Error, _req: IncomingMessage, res: ServerResponse) => {
+      res.writeHead(500)
+      res.end(`custom 404 error: ${error.message}`)
+    })
+
+    router.onError(errorHandler)
+    router.register('/404', {
+      GET: async () => {
+        throw new Error('missing template')
+      }
+    })
+
+    const res = mockRes()
+    await router.handle(mockReq('/missing'), res)
+
+    expect(errorHandler).toHaveBeenCalledOnce()
+    expect(res._body).toBe('custom 404 error: missing template')
+  })
+
   it('error boundary: handler that rejects returns 500, server stays alive', async () => {
     const router = createServerRouter()
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
