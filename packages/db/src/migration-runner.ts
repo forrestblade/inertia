@@ -1,4 +1,5 @@
 import { readdir, readFile } from 'node:fs/promises'
+import type { Dirent } from 'node:fs'
 import { join } from 'node:path'
 import { ok, err, ResultAsync } from '@valencets/resultkit'
 import type { Result } from '@valencets/resultkit'
@@ -50,16 +51,24 @@ export function validateMigrations (migrations: ReadonlyArray<MigrationFile>): R
 
 export function loadMigrations (directory: string): ResultAsync<ReadonlyArray<MigrationFile>, DbError> {
   return ResultAsync.fromPromise(
-    readdir(directory),
+    readdir(directory, { withFileTypes: true }),
     (e: unknown): DbError => ({
       code: DbErrorCode.MIGRATION_FAILED,
       message: e instanceof Error ? e.message : 'Failed to read migrations directory'
     })
-  ).andThen((filenames: string[]) => {
-    const sqlFiles = filenames.filter((f) => f.endsWith('.sql'))
+  ).andThen((entries: Dirent[]) => {
+    const sqlEntries = entries.filter((entry) => entry.name.endsWith('.sql'))
     const parsed: Array<{ version: number; name: string; filename: string }> = []
 
-    for (const filename of sqlFiles) {
+    for (const entry of sqlEntries) {
+      if (!entry.isFile()) {
+        return err({
+          code: DbErrorCode.MIGRATION_FAILED,
+          message: `Invalid migration entry: ${entry.name}. Migrations must be regular files.`
+        })
+      }
+
+      const filename = entry.name
       const result = parseMigrationFilename(filename)
       if (result.isErr()) {
         return err(result.error)
