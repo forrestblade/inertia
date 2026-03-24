@@ -16,7 +16,7 @@ export function makeErrorPool (error: DbError): DbPool {
   const unsafe = (): Promise<never> => Promise.reject(error)
   const sql = Object.assign(
     (): Promise<never> => Promise.reject(error),
-    { unsafe, begin: (): Promise<never> => Promise.reject(error) }
+    { unsafe, begin: (): Promise<never> => Promise.reject(error), array: (v: readonly string[]) => v }
   ) as unknown as DbPool['sql']
   return { sql }
 }
@@ -30,7 +30,7 @@ export function makeSequentialPool (returns: ReadonlyArray<ReadonlyArray<MockRow
   }
   const sql = Object.assign(
     (): Promise<ReadonlyArray<MockRow>> => next(),
-    { unsafe: (): Promise<ReadonlyArray<MockRow>> => next(), begin: (): Promise<void> => Promise.resolve() }
+    { unsafe: (): Promise<ReadonlyArray<MockRow>> => next(), begin: (): Promise<void> => Promise.resolve(), array: (v: readonly string[]) => v }
   ) as unknown as DbPool['sql']
   return { sql }
 }
