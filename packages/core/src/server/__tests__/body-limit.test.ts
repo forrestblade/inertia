@@ -3,6 +3,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import { createBodyLimitMiddleware } from '../body-limit.js'
 import type { RequestContext } from '../middleware-types.js'
 import { EventEmitter } from 'node:events'
+import { readBody } from '../http-helpers.js'
 
 function stubReq (options?: { method?: string, contentType?: string, contentLength?: number }): IncomingMessage {
   const headers: Record<string, string> = {}
@@ -328,6 +329,39 @@ describe('createBodyLimitMiddleware', () => {
     })
 
     await middleware(req, res, stubCtx(), next)
+
+    expect(res.statusCode).toBe(413)
+    expect(next).not.toHaveBeenCalled()
+  })
+
+  it('keeps validated request bodies readable for downstream handlers', async () => {
+    const middleware = createBodyLimitMiddleware({ json: 200 })
+    const body = '{"ok":true}'
+    const req = stubReqWithDishonestLength({
+      method: 'POST',
+      contentType: 'application/json',
+      contentLength: body.length,
+      chunks: [Buffer.from(body)]
+    })
+    const res = stubRes()
+    const next = vi.fn(async () => {
+      await expect(readBody(req)).resolves.toBe(body)
+    })
+
+    await middleware(req, res, stubCtx(), next)
+
+    expect(next).toHaveBeenCalledOnce()
+  })
+
+  it('rejects oversized DELETE request bodies', async () => {
+    const middleware = createBodyLimitMiddleware({ json: 100 })
+    const next = vi.fn(async () => {})
+    const res = stubRes()
+
+    await middleware(
+      stubReq({ method: 'DELETE', contentType: 'application/json', contentLength: 101 }),
+      res, stubCtx(), next
+    )
 
     expect(res.statusCode).toBe(413)
     expect(next).not.toHaveBeenCalled()
