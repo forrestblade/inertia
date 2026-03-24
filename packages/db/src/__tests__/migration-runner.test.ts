@@ -429,4 +429,37 @@ describe('runMigrations advisory lock', () => {
     expect(result.unwrapErr().message).toContain('migration failed')
     expect(releaseCalls).toBe(1)
   })
+
+  it('includes both unlock and release failures when cleanup fails twice', async () => {
+    const reservedSql = Object.assign(
+      async (): Promise<ReadonlyArray<Record<string, number>>> => [],
+      {
+        unsafe: async (query: string): Promise<ReadonlyArray<Record<string, number>>> => {
+          if (query.includes('pg_advisory_unlock')) {
+            throw new Error('unlock failed')
+          }
+          return []
+        },
+        begin: async (): Promise<void> => {},
+        release: async (): Promise<void> => {
+          throw new Error('release failed')
+        }
+      }
+    )
+
+    const sql = Object.assign(
+      async (): Promise<ReadonlyArray<Record<string, number>>> => [],
+      {
+        unsafe: async (): Promise<ReadonlyArray<Record<string, number>>> => [],
+        begin: async (): Promise<void> => {},
+        reserve: async () => reservedSql
+      }
+    ) as unknown as import('../connection.js').DbPool['sql']
+
+    const result = await runMigrations({ sql }, [])
+
+    expect(result.isErr()).toBe(true)
+    expect(result.unwrapErr().message).toContain('unlock failed')
+    expect(result.unwrapErr().message).toContain('release failed')
+  })
 })
