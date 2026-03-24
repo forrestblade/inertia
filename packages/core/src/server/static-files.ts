@@ -1,6 +1,6 @@
 import { resolve as resolvePath, normalize, extname } from 'node:path'
 import { statSync, createReadStream } from 'node:fs'
-import { ok, err } from '@valencets/resultkit'
+import { ok, err, fromThrowable } from '@valencets/resultkit'
 import type { Result } from '@valencets/resultkit'
 import type { ServerResponse } from 'node:http'
 import type { ServerError } from './server-types.js'
@@ -40,6 +40,8 @@ export function resolveMimeType (filename: string): string {
   return MIME_TYPES[ext] ?? 'application/octet-stream'
 }
 
+const safeDecodeURIComponent = fromThrowable(decodeURIComponent, () => null)
+
 export function resolveStaticPath (requestPath: string, rootDir: string): Result<string, ServerError> {
   // Reject null bytes
   if (requestPath.includes('\0')) {
@@ -60,7 +62,11 @@ export function resolveStaticPath (requestPath: string, rootDir: string): Result
   }
 
   // Decode and normalize
-  const decoded = decodeURIComponent(requestPath)
+  const decodeResult = safeDecodeURIComponent(requestPath)
+  const decoded = decodeResult.isOk() ? decodeResult.value : null
+  if (decoded === null) {
+    return err({ code: ServerErrorCode.NOT_FOUND, message: 'Invalid path', statusCode: 404 })
+  }
   const normalized = normalize(decoded)
   const fullPath = resolvePath(rootDir, '.' + normalized)
 
