@@ -1,7 +1,10 @@
 import type { DbPool } from './connection.js'
-import type { DbError } from './types.js'
 
 type MockRow = Record<string, string | number | boolean | null>
+type RejectedBoundaryPayload = Error | {
+  readonly message: string
+  readonly code?: string
+}
 
 // Shared DB helpers intentionally cover stateless query-path tests only.
 // Session-affine behaviors such as reserve()/release() should use local inline mocks.
@@ -15,7 +18,7 @@ export function makeMockPool (rows: ReadonlyArray<MockRow> = []): DbPool {
   return { sql }
 }
 
-export function makeRejectingPool (error: DbError): DbPool {
+export function makeRejectingPool (error: RejectedBoundaryPayload): DbPool {
   const unsafe = (): Promise<never> => Promise.reject(error)
   const sql = Object.assign(
     (): Promise<never> => Promise.reject(error),
