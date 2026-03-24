@@ -124,7 +124,7 @@ describe('validateMigrations', () => {
 import { loadMigrations, runMigrations, getMigrationStatus } from '../migration-runner.js'
 import { makeMockPool, makeRejectingPool } from '../test-helpers.js'
 import { DbErrorCode } from '../types.js'
-import { mkdtemp, writeFile, rm } from 'node:fs/promises'
+import { mkdtemp, writeFile, rm, mkdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -188,6 +188,18 @@ describe('loadMigrations', () => {
     expect(result.isOk()).toBe(true)
     expect(result.unwrap().map((migration) => migration.version)).toEqual([1, 2])
     expect(result.unwrap().map((migration) => migration.sql)).toEqual(['SELECT 1;', 'SELECT 2;'])
+    await rm(dir, { recursive: true })
+  })
+
+  it('returns Err when a .sql entry is not a regular file', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'val-db-test-'))
+    await mkdir(join(dir, '001-evil.sql'))
+
+    const result = await loadMigrations(dir)
+
+    expect(result.isErr()).toBe(true)
+    expect(result.unwrapErr().code).toBe(DbErrorCode.MIGRATION_FAILED)
+    expect(result.unwrapErr().message).toContain('regular file')
     await rm(dir, { recursive: true })
   })
 })
