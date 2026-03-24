@@ -174,7 +174,16 @@ export function serveStaticFile (
   res: ServerResponse
 ): Promise<void> {
   return new Promise((resolve: () => void) => {
-    const stat = statSync(filePath)
+    const safeStat = fromThrowable(statSync, () => null)
+    const statResult = safeStat(filePath)
+    if (statResult.isErr()) {
+      res.writeHead(404, { 'Content-Length': 0 })
+      res.end()
+      resolve()
+      return
+    }
+
+    const stat = statResult.value
     const fileSize = stat.size
 
     const rangeResult = parseRangeHeader(rangeHeader, fileSize)
@@ -200,7 +209,13 @@ export function serveStaticFile (
       })
       const stream = createReadStream(filePath)
       stream.on('end', resolve)
-      stream.on('error', () => { res.end(); resolve() })
+      stream.on('error', () => {
+        if (!res.headersSent) {
+          res.writeHead(404, { 'Content-Length': 0 })
+        }
+        res.end()
+        resolve()
+      })
       stream.pipe(res)
       return
     }
@@ -215,7 +230,13 @@ export function serveStaticFile (
     })
     const stream = createReadStream(filePath, { start: range.start, end: range.end })
     stream.on('end', resolve)
-    stream.on('error', () => { res.end(); resolve() })
+    stream.on('error', () => {
+      if (!res.headersSent) {
+        res.writeHead(404, { 'Content-Length': 0 })
+      }
+      res.end()
+      resolve()
+    })
     stream.pipe(res)
   })
 }
