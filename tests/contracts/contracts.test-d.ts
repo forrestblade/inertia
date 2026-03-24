@@ -1,7 +1,7 @@
 import { describe, it, expectTypeOf } from 'vitest'
 import type { Result, ResultAsync } from '@valencets/resultkit'
 import { createPool, closePool } from '@valencets/db'
-import { makeMockPool } from '@valencets/db/test'
+import { makeMockPool, makeRejectingPool } from '@valencets/db/test'
 import type { DbPool, DbConfig, DbError, DbSslMode } from '@valencets/db'
 import {
   collection,
@@ -41,6 +41,11 @@ describe('db type contracts', () => {
 
   it('DbSslMode is exported from the db package entrypoint', () => {
     expectTypeOf<DbConfig['sslmode']>().toEqualTypeOf<DbSslMode | undefined>()
+  })
+
+  it('makeRejectingPool accepts raw database-like rejected payloads', () => {
+    const pool = makeRejectingPool({ code: '42P01', message: 'relation does not exist' })
+    expectTypeOf(pool).toEqualTypeOf<DbPool>()
   })
 })
 
