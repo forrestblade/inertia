@@ -27,6 +27,11 @@ interface ResolvedLimits {
   readonly raw: number
 }
 
+interface StreamCapableRequest extends IncomingMessage {
+  on(event: 'data', listener: (chunk: Buffer) => void): this
+  on(event: 'end' | 'error' | 'close', listener: () => void): this
+}
+
 const DEFAULT_LIMITS: ResolvedLimits = {
   json: 102_400,
   form: 102_400,
@@ -69,7 +74,7 @@ function send413 (res: ServerResponse): void {
   res.end(body)
 }
 
-function enforceStreamingLimit (req: IncomingMessage, limit: number): Promise<boolean> {
+function enforceStreamingLimit (req: StreamCapableRequest, limit: number): Promise<boolean> {
   return new Promise((resolve) => {
     let received = 0
     let aborted = false
@@ -105,7 +110,7 @@ function enforceStreamingLimit (req: IncomingMessage, limit: number): Promise<bo
   })
 }
 
-function canTrackStream (req: IncomingMessage): req is IncomingMessage & { on: (event: string, listener: (...args: unknown[]) => void) => IncomingMessage } {
+function canTrackStream (req: IncomingMessage): req is StreamCapableRequest {
   return typeof req.on === 'function'
 }
 
