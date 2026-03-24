@@ -165,6 +165,31 @@ describe('loadMigrations', () => {
     expect(migrations[0]!.sql).toBe('CREATE TABLE foo (id INT);')
     await rm(dir, { recursive: true })
   })
+
+  it('returns Err when a sql filename is invalid', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'val-db-test-'))
+    await writeFile(join(dir, '001-init.sql'), 'CREATE TABLE foo (id INT);')
+    await writeFile(join(dir, 'bad-name.sql'), 'SELECT 1;')
+
+    const result = await loadMigrations(dir)
+
+    expect(result.isErr()).toBe(true)
+    expect(result.unwrapErr().code).toBe(DbErrorCode.MIGRATION_FAILED)
+    await rm(dir, { recursive: true })
+  })
+
+  it('reads and sorts migrations deterministically', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'val-db-test-'))
+    await writeFile(join(dir, '002-second.sql'), 'SELECT 2;')
+    await writeFile(join(dir, '001-first.sql'), 'SELECT 1;')
+
+    const result = await loadMigrations(dir)
+
+    expect(result.isOk()).toBe(true)
+    expect(result.unwrap().map((migration) => migration.version)).toEqual([1, 2])
+    expect(result.unwrap().map((migration) => migration.sql)).toEqual(['SELECT 1;', 'SELECT 2;'])
+    await rm(dir, { recursive: true })
+  })
 })
 
 describe('getMigrationStatus', () => {
