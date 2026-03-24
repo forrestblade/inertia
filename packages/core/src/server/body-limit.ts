@@ -1,5 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Middleware } from './middleware-types.js'
+import { readBody } from './http-helpers.js'
+import { ResultAsync } from '@valencets/resultkit'
 
 export const ContentCategory = {
   JSON: 'json',
@@ -27,7 +29,7 @@ interface ResolvedLimits {
   readonly raw: number
 }
 
-interface StreamCapableRequest extends IncomingMessage {
+interface ReadableBodyRequest extends IncomingMessage {
   on(event: 'data', listener: (chunk: Buffer) => void): this
   on(event: 'end' | 'error' | 'close', listener: () => void): this
 }
@@ -43,7 +45,8 @@ const DEFAULT_LIMITS: ResolvedLimits = {
 const BODY_METHODS: Record<string, true> = {
   POST: true,
   PUT: true,
-  PATCH: true
+  PATCH: true,
+  DELETE: true
 }
 
 const CONTENT_TYPE_MAP: Record<string, ContentCategory> = {
@@ -74,44 +77,15 @@ function send413 (res: ServerResponse): void {
   res.end(body)
 }
 
-function enforceStreamingLimit (req: StreamCapableRequest, limit: number): Promise<boolean> {
-  return new Promise((resolve) => {
-    let received = 0
-    let aborted = false
-    let settled = false
-
-    const finish = (result: boolean): void => {
-      if (settled) return
-      settled = true
-      resolve(result)
-    }
-
-    req.on('data', (chunk: Buffer) => {
-      if (aborted) return
-      received += chunk.length
-      if (received > limit) {
-        aborted = true
-        req.destroy()
-        finish(false)
-      }
-    })
-
-    req.on('end', () => {
-      if (!aborted) finish(true)
-    })
-
-    req.on('error', () => {
-      if (!aborted) finish(false)
-    })
-
-    req.on('close', () => {
-      if (!aborted) finish(true)
-    })
-  })
+function canTrackStream (req: IncomingMessage): req is ReadableBodyRequest {
+  return typeof req.on === 'function'
 }
 
-function canTrackStream (req: IncomingMessage): req is StreamCapableRequest {
-  return typeof req.on === 'function'
+function validateReadableBody (req: ReadableBodyRequest, limit: number): ResultAsync<void, Error> {
+  return ResultAsync.fromPromise(
+    readBody(req, limit).then(() => undefined),
+    (error) => error instanceof Error ? error : new Error(String(error))
+  )
 }
 
 export function createBodyLimitMiddleware (config?: BodyLimitConfig): Middleware {
@@ -138,8 +112,8 @@ export function createBodyLimitMiddleware (config?: BodyLimitConfig): Middleware
     if (contentLength !== undefined) {
       const length = parseInt(contentLength, 10)
       if (Number.isNaN(length)) {
-        const withinLimit = await enforceStreamingLimit(req, limit)
-        if (!withinLimit) {
+        const result = await validateReadableBody(req, limit)
+        if (result.isErr()) {
           send413(res)
           return
         }
@@ -157,8 +131,8 @@ export function createBodyLimitMiddleware (config?: BodyLimitConfig): Middleware
         return
       }
 
-      const withinLimit = await enforceStreamingLimit(req, limit)
-      if (!withinLimit) {
+      const result = await validateReadableBody(req, limit)
+      if (result.isErr()) {
         send413(res)
         return
       }
@@ -173,8 +147,8 @@ export function createBodyLimitMiddleware (config?: BodyLimitConfig): Middleware
       return
     }
 
-    const withinLimit = await enforceStreamingLimit(req, limit)
-    if (!withinLimit) {
+    const result = await validateReadableBody(req, limit)
+    if (result.isErr()) {
       send413(res)
       return
     }
