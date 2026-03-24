@@ -174,6 +174,13 @@ describe('getMigrationStatus', () => {
     expect(result.isOk()).toBe(true)
   })
 
+  it('returns Ok([]) when migrations table does not exist yet', async () => {
+    const pool = makeErrorPool({ code: '42P01', message: 'relation "_migrations" does not exist' })
+    const result = await getMigrationStatus(pool)
+    expect(result.isOk()).toBe(true)
+    expect(result.unwrap()).toEqual([])
+  })
+
   it('returns Err on query failure', async () => {
     const pool = makeErrorPool({ code: DbErrorCode.QUERY_FAILED, message: 'boom' })
     const result = await getMigrationStatus(pool)
@@ -183,7 +190,23 @@ describe('getMigrationStatus', () => {
 
 describe('runMigrations edge cases', () => {
   it('returns Ok(0) for empty migrations array', async () => {
-    const pool = makeMockPool([])
+    const reservedSql = Object.assign(
+      async (): Promise<ReadonlyArray<Record<string, number>>> => [],
+      {
+        unsafe: async (): Promise<ReadonlyArray<Record<string, number>>> => [],
+        begin: async (): Promise<void> => {},
+        release: async (): Promise<void> => {}
+      }
+    )
+    const sql = Object.assign(
+      async (): Promise<ReadonlyArray<Record<string, number>>> => [],
+      {
+        unsafe: async (): Promise<ReadonlyArray<Record<string, number>>> => [],
+        begin: async (): Promise<void> => {},
+        reserve: async () => reservedSql
+      }
+    ) as unknown as import('../connection.js').DbPool['sql']
+    const pool = { sql }
     const result = await runMigrations(pool, [])
     expect(result.isOk()).toBe(true)
     expect(result.unwrap()).toBe(0)
@@ -191,30 +214,98 @@ describe('runMigrations edge cases', () => {
 })
 
 describe('runMigrations advisory lock', () => {
-  it('acquires and releases advisory lock around migration execution', async () => {
-    const calls: string[] = []
-    const unsafe = (query: string): Promise<ReadonlyArray<Record<string, number>>> => {
-      calls.push(query)
-      return Promise.resolve([])
+  it('uses one reserved connection for lock, migration execution, and unlock', async () => {
+    const rootCalls: string[] = []
+    const reservedCalls: string[] = []
+    const txCalls: string[] = []
+
+    const reservedUnsafe = async (query: string): Promise<ReadonlyArray<Record<string, number>>> => {
+      reservedCalls.push(query)
+      return []
     }
-    const sql = Object.assign(
-      (): Promise<ReadonlyArray<Record<string, number>>> => Promise.resolve([]),
+
+    const reservedSql = Object.assign(
+      async (): Promise<ReadonlyArray<Record<string, number>>> => [],
       {
-        unsafe,
-        begin: async (fn: (tx: { unsafe: typeof unsafe }) => Promise<void>): Promise<void> => {
-          await fn({ unsafe })
-        }
+        unsafe: reservedUnsafe,
+        begin: async (fn: (tx: { unsafe: typeof reservedUnsafe }) => Promise<void>): Promise<void> => {
+          await fn({
+            unsafe: async (query: string): Promise<ReadonlyArray<Record<string, number>>> => {
+              txCalls.push(query)
+              return []
+            }
+          })
+        },
+        release: async (): Promise<void> => {}
+      }
+    )
+
+    const sql = Object.assign(
+      async (): Promise<ReadonlyArray<Record<string, number>>> => [],
+      {
+        unsafe: async (query: string): Promise<ReadonlyArray<Record<string, number>>> => {
+          rootCalls.push(query)
+          return []
+        },
+        begin: async (): Promise<void> => {},
+        reserve: async () => reservedSql
       }
     ) as unknown as import('../connection.js').DbPool['sql']
-    const pool = { sql }
 
-    await runMigrations(pool, [
+    const pool = { sql }
+    const result = await runMigrations(pool, [
       { version: 1, name: 'init', sql: 'CREATE TABLE test (id INT);' }
     ])
 
-    const lockCall = calls.find((c) => c.includes('pg_advisory_lock'))
-    const unlockCall = calls.find((c) => c.includes('pg_advisory_unlock'))
-    expect(lockCall).toBeDefined()
-    expect(unlockCall).toBeDefined()
+    expect(result.isOk()).toBe(true)
+    expect(rootCalls).toEqual([])
+    expect(reservedCalls.some((query) => query.includes('pg_advisory_lock'))).toBe(true)
+    expect(reservedCalls.some((query) => query.includes('pg_advisory_unlock'))).toBe(true)
+    expect(txCalls).toContain('CREATE TABLE test (id INT);')
+  })
+
+  it('releases the advisory lock on the reserved connection when a migration fails', async () => {
+    const reservedCalls: string[] = []
+    const txCalls: string[] = []
+
+    const reservedUnsafe = async (query: string): Promise<ReadonlyArray<Record<string, number>>> => {
+      reservedCalls.push(query)
+      return []
+    }
+
+    const reservedSql = Object.assign(
+      async (): Promise<ReadonlyArray<Record<string, number>>> => [],
+      {
+        unsafe: reservedUnsafe,
+        begin: async (fn: (tx: { unsafe: typeof reservedUnsafe }) => Promise<void>): Promise<void> => {
+          await fn({
+            unsafe: async (query: string): Promise<ReadonlyArray<Record<string, number>>> => {
+              txCalls.push(query)
+              throw new Error('boom')
+            }
+          })
+        },
+        release: async (): Promise<void> => {}
+      }
+    )
+
+    const sql = Object.assign(
+      async (): Promise<ReadonlyArray<Record<string, number>>> => [],
+      {
+        unsafe: async (): Promise<ReadonlyArray<Record<string, number>>> => [],
+        begin: async (): Promise<void> => {},
+        reserve: async () => reservedSql
+      }
+    ) as unknown as import('../connection.js').DbPool['sql']
+
+    const pool = { sql }
+    const result = await runMigrations(pool, [
+      { version: 1, name: 'init', sql: 'CREATE TABLE test (id INT);' }
+    ])
+
+    expect(result.isErr()).toBe(true)
+    expect(txCalls).toContain('CREATE TABLE test (id INT);')
+    expect(reservedCalls.some((query) => query.includes('pg_advisory_lock'))).toBe(true)
+    expect(reservedCalls.some((query) => query.includes('pg_advisory_unlock'))).toBe(true)
   })
 })
