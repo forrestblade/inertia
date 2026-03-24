@@ -80,8 +80,7 @@ validate_branch_range() {
     exit 0
   fi
 
-  local first_commit
-  first_commit="$(printf '%s\n' "$commits_output" | head -n1)"
+  local first_commit="${commits_output%%$'\n'*}"
 
   local previous_line=""
   if git rev-parse --verify "${first_commit}^" >/dev/null 2>&1; then
