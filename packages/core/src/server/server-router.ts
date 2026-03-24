@@ -95,12 +95,15 @@ export function createServerRouter (): ServerRouter {
     // OPTIONS auto-response runs before middleware intentionally —
     // CORS preflight requests are sent without credentials per spec
     if (method === 'OPTIONS' && !handler) {
-      const methodKeys: ReadonlyArray<keyof RouteEntry> = ['GET', 'POST', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']
-      const defined = methodKeys.filter(m => stored.entry[m] !== undefined)
-      if (!defined.includes('HEAD') && stored.entry.GET) defined.push('HEAD')
-      if (!defined.includes('OPTIONS')) defined.push('OPTIONS')
-      res.writeHead(204, { Allow: defined.join(', ') })
-      res.end()
+      const autoOptionsHandler: RouteHandler = async (_req, res) => {
+        const methodKeys: ReadonlyArray<keyof RouteEntry> = ['GET', 'POST', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']
+        const defined = methodKeys.filter(m => stored.entry[m] !== undefined)
+        if (!defined.includes('HEAD') && stored.entry.GET) defined.push('HEAD')
+        if (!defined.includes('OPTIONS')) defined.push('OPTIONS')
+        res.writeHead(204, { Allow: defined.join(', ') })
+        res.end()
+      }
+      await runHandler(stored, autoOptionsHandler, req, res, ctx, pathname)
       return
     }
 
