@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Middleware } from './middleware-types.js'
 import { readBody } from './http-helpers.js'
-import { ResultAsync } from '@valencets/resultkit'
+import { ResultAsync, ok } from '@valencets/resultkit'
 
 export const ContentCategory = {
   JSON: 'json',
@@ -82,10 +82,7 @@ function canTrackStream (req: IncomingMessage): req is ReadableBodyRequest {
 }
 
 function validateReadableBody (req: ReadableBodyRequest, limit: number): ResultAsync<void, Error> {
-  return ResultAsync.fromPromise(
-    readBody(req, limit).then(() => undefined),
-    (error) => error instanceof Error ? error : new Error(String(error))
-  )
+  return readBody(req, limit).andThen(() => ok(undefined))
 }
 
 export function createBodyLimitMiddleware (config?: BodyLimitConfig): Middleware {
@@ -127,7 +124,7 @@ export function createBodyLimitMiddleware (config?: BodyLimitConfig): Middleware
       }
 
       if (!canTrackStream(req)) {
-        await next()
+        send413(res)
         return
       }
 
@@ -143,7 +140,7 @@ export function createBodyLimitMiddleware (config?: BodyLimitConfig): Middleware
 
     // No Content-Length header — enforce limit via streaming byte counter
     if (!canTrackStream(req)) {
-      await next()
+      send413(res)
       return
     }
 

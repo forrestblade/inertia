@@ -53,6 +53,11 @@ describe('resolvePageRoute', () => {
     expect(result).toBeNull()
   })
 
+  it('rejects lowercase encoded slash at the root', () => {
+    const result = resolvePageRoute('/%2f', '/tmp/project/src')
+    expect(result).toBeNull()
+  })
+
   it('rejects encoded slash in detail param position', () => {
     const result = resolvePageRoute('/posts/%2F', '/tmp/project/src')
     expect(result).toBeNull()

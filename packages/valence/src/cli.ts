@@ -51,6 +51,10 @@ const commandMap: Record<Command, (args: ReadonlyArray<string>) => Promise<void>
   'telemetry:aggregate': runTelemetryAggregate
 }
 
+export function normalizeRequestPathname (pathname: string): string {
+  return stripTrailingSlash(pathname) ?? pathname
+}
+
 export async function run (argv: ReadonlyArray<string>): Promise<void> {
   const command = argv[0] as Command | undefined
 
@@ -601,6 +605,7 @@ async function runDev (): Promise<void> {
   // eslint-disable-next-line complexity
   const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
     const url = new URL(req.url ?? '/', `http://${req.headers.host}`)
+    const pathname = normalizeRequestPathname(url.pathname)
     const method = (req.method ?? 'GET') as 'GET' | 'POST' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS'
 
     // Global security headers — baseline for all responses
@@ -608,7 +613,7 @@ async function runDev (): Promise<void> {
     setSecurityHeaders(res)
 
     // Health check — before all other processing
-    if (url.pathname === '/health' && (method === 'GET' || method === 'HEAD')) {
+    if (pathname === '/health' && (method === 'GET' || method === 'HEAD')) {
       res.setHeader('Cache-Control', 'no-store')
       const body = JSON.stringify({ status: 'ok', uptime: process.uptime() })
       res.writeHead(200, { 'Content-Type': 'application/json', 'Content-Length': String(Buffer.byteLength(body)) })
@@ -629,17 +634,9 @@ async function runDev (): Promise<void> {
       }
     }
 
-    // Trailing-slash redirect (301) — before any route matching
-    const redirectTarget = stripTrailingSlash(req.url ?? '/')
-    if (redirectTarget !== null && redirectTarget.startsWith('/') && !redirectTarget.startsWith('//')) {
-      res.writeHead(301, { Location: redirectTarget })
-      res.end()
-      return
-    }
-
     // Learn mode routes (before everything else)
     if (learnActive && learnSignals && currentLearnProgress) {
-      if (url.pathname === '/_learn' && method === 'GET') {
+      if (pathname === '/_learn' && method === 'GET') {
         const { checkAllSteps, renderLearnPage } = await import('./learn/index.js')
         const deps = { pool, signals: learnSignals, configSlugs: currentConfigSlugs, projectDir }
         currentLearnProgress = await checkAllSteps(currentLearnProgress, deps)
@@ -649,7 +646,7 @@ async function runDev (): Promise<void> {
         return
       }
 
-      if (url.pathname === '/_learn/api/progress' && method === 'GET') {
+      if (pathname === '/_learn/api/progress' && method === 'GET') {
         const { checkAllSteps } = await import('./learn/index.js')
         const deps = { pool, signals: learnSignals, configSlugs: currentConfigSlugs, projectDir }
         currentLearnProgress = await checkAllSteps(currentLearnProgress, deps)
@@ -661,28 +658,28 @@ async function runDev (): Promise<void> {
     }
 
     // Try custom registered routes (from onServer registerRoute calls)
-    const customMatch = resolveCustomRoute(customRoutes, method, url.pathname)
+    const customMatch = resolveCustomRoute(customRoutes, method, pathname)
     if (customMatch) {
       await customMatch.handler(req, res, customMatch.params)
       return
     }
 
     // Try user-defined routes with loaders/actions (from loadedConfig.routes)
-    const userMatch = resolveCustomRoute(userRouteMap, method, url.pathname)
+    const userMatch = resolveCustomRoute(userRouteMap, method, pathname)
     if (userMatch) {
       await userMatch.handler(req, res, userMatch.params)
       return
     }
 
     // Try schema-generated collection routes (after custom, before admin)
-    const generatedMatch = resolveCustomRoute(generatedRouteMap, method, url.pathname)
+    const generatedMatch = resolveCustomRoute(generatedRouteMap, method, pathname)
     if (generatedMatch) {
       await generatedMatch.handler(req, res, generatedMatch.params)
       return
     }
 
     // Try admin routes first
-    const adminMatch = matchRoute(url.pathname, cms.adminRoutes)
+    const adminMatch = matchRoute(pathname, cms.adminRoutes)
     if (adminMatch) {
       if (learnActive && learnSignals) {
         const { incrementAdminViews } = await import('./learn/index.js')
@@ -696,7 +693,7 @@ async function runDev (): Promise<void> {
     }
 
     // Try REST API routes
-    const restMatch = matchRoute(url.pathname, cms.restRoutes)
+    const restMatch = matchRoute(pathname, cms.restRoutes)
     if (restMatch) {
       if (learnActive && learnSignals && method === 'GET' && !req.headers['x-valence-learn']) {
         const { incrementApiGets } = await import('./learn/index.js')
@@ -714,7 +711,7 @@ async function runDev (): Promise<void> {
 
     // Static files from public/
     const publicDir = join(projectDir, 'public')
-    const staticResult = resolveStaticPath(url.pathname, publicDir)
+    const staticResult = resolveStaticPath(pathname, publicDir)
     if (staticResult.isOk()) {
       const filePath = staticResult.value
       if (existsSync(filePath) && statSync(filePath).isFile()) {
@@ -727,7 +724,7 @@ async function runDev (): Promise<void> {
 
     // User pages from src/pages/
     const srcDir = join(projectDir, 'src')
-    const pageHtmlPath = resolvePageRoute(url.pathname, srcDir)
+    const pageHtmlPath = resolvePageRoute(pathname, srcDir)
     if (pageHtmlPath !== null && existsSync(pageHtmlPath)) {
       const pageContent = readFileSync(pageHtmlPath, 'utf-8')
       sendHtml(res, pageContent)
@@ -735,14 +732,14 @@ async function runDev (): Promise<void> {
     }
 
     // Splash page (available at /_splash always, or / when learn mode is off)
-    if (url.pathname === '/_splash' || (url.pathname === '/' && !learnActive)) {
+    if (pathname === '/_splash' || (pathname === '/' && !learnActive)) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
       res.end(landingPage(port))
       return
     }
 
     // Redirect / to /_learn when learn mode active
-    if (url.pathname === '/' && learnActive) {
+    if (pathname === '/' && learnActive) {
       res.writeHead(302, { Location: '/_learn' })
       res.end()
       return
@@ -874,6 +871,7 @@ export async function runStart (): Promise<void> {
   // eslint-disable-next-line complexity
   const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
     const url = new URL(req.url ?? '/', `http://${req.headers.host}`)
+    const pathname = normalizeRequestPathname(url.pathname)
     const method = (req.method ?? 'GET') as 'GET' | 'POST' | 'PATCH' | 'DELETE' | 'HEAD' | 'OPTIONS'
 
     // Global security headers — baseline for all responses
@@ -881,7 +879,7 @@ export async function runStart (): Promise<void> {
     setSecurityHeaders(res)
 
     // Health check — before all other processing
-    if (url.pathname === '/health' && (method === 'GET' || method === 'HEAD')) {
+    if (pathname === '/health' && (method === 'GET' || method === 'HEAD')) {
       res.setHeader('Cache-Control', 'no-store')
       const body = JSON.stringify({ status: 'ok', uptime: process.uptime() })
       res.writeHead(200, { 'Content-Type': 'application/json', 'Content-Length': String(Buffer.byteLength(body)) })
@@ -902,37 +900,29 @@ export async function runStart (): Promise<void> {
       }
     }
 
-    // Trailing-slash redirect (301) — before any route matching
-    const redirectTarget = stripTrailingSlash(req.url ?? '/')
-    if (redirectTarget !== null && redirectTarget.startsWith('/') && !redirectTarget.startsWith('//')) {
-      res.writeHead(301, { Location: redirectTarget })
-      res.end()
-      return
-    }
-
     // Try custom registered routes (from onServer registerRoute calls)
-    const customMatch = resolveCustomRoute(customRoutes, method, url.pathname)
+    const customMatch = resolveCustomRoute(customRoutes, method, pathname)
     if (customMatch) {
       await customMatch.handler(req, res, customMatch.params)
       return
     }
 
     // Try user-defined routes with loaders/actions (from loadedConfig.routes)
-    const userMatch = resolveCustomRoute(userRouteMap, method, url.pathname)
+    const userMatch = resolveCustomRoute(userRouteMap, method, pathname)
     if (userMatch) {
       await userMatch.handler(req, res, userMatch.params)
       return
     }
 
     // Try schema-generated collection routes (after custom, before admin)
-    const generatedMatch = resolveCustomRoute(generatedRouteMap, method, url.pathname)
+    const generatedMatch = resolveCustomRoute(generatedRouteMap, method, pathname)
     if (generatedMatch) {
       await generatedMatch.handler(req, res, generatedMatch.params)
       return
     }
 
     // Try admin routes first
-    const adminMatch = matchRoute(url.pathname, cms.adminRoutes)
+    const adminMatch = matchRoute(pathname, cms.adminRoutes)
     if (adminMatch) {
       const handler = adminMatch.entry[method]
       if (handler) {
@@ -942,7 +932,7 @@ export async function runStart (): Promise<void> {
     }
 
     // Try REST API routes
-    const restMatch = matchRoute(url.pathname, cms.restRoutes)
+    const restMatch = matchRoute(pathname, cms.restRoutes)
     if (restMatch) {
       const handler = restMatch.entry[method]
       if (handler) {
@@ -956,7 +946,7 @@ export async function runStart (): Promise<void> {
 
     // Static files from public/
     const publicDir = join(projectDir, 'public')
-    const staticResult = resolveStaticPath(url.pathname, publicDir)
+    const staticResult = resolveStaticPath(pathname, publicDir)
     if (staticResult.isOk()) {
       const filePath = staticResult.value
       if (existsSync(filePath) && statSync(filePath).isFile()) {
@@ -969,7 +959,7 @@ export async function runStart (): Promise<void> {
 
     // User pages from src/pages/
     const srcDir = join(projectDir, 'src')
-    const pageHtmlPath = resolvePageRoute(url.pathname, srcDir)
+    const pageHtmlPath = resolvePageRoute(pathname, srcDir)
     if (pageHtmlPath !== null && existsSync(pageHtmlPath)) {
       const pageContent = readFileSync(pageHtmlPath, 'utf-8')
       sendHtml(res, pageContent)

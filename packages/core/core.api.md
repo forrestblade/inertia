@@ -157,7 +157,7 @@ export function createOriginCheck(config: OriginCheckConfig): Middleware;
 export function createRateLimitMiddleware(config: RateLimitMiddlewareConfig): RateLimitMiddlewareHandle;
 
 // @public (undocumented)
-export function createRequestContext(req: IncomingMessage, params?: Readonly<Record<string, string>>): RequestContext;
+export function createRequestContext(req: IncomingMessage, url: URL, params?: Readonly<Record<string, string>>): RequestContext;
 
 // @public (undocumented)
 export function createServerRouter(): ServerRouter;
@@ -272,6 +272,16 @@ export interface GlobalTelemetryIntent {
 export function hasRole(userRole: string, requiredRole: string, hierarchy: RoleHierarchy): boolean;
 
 // @public (undocumented)
+export interface HistoryStateShape {
+    // (undocumented)
+    readonly scrollX?: number | undefined;
+    // (undocumented)
+    readonly scrollY?: number | undefined;
+    // (undocumented)
+    readonly url?: string | undefined;
+}
+
+// @public (undocumented)
 export function html(strings: TemplateStringsArray, ...values: ReadonlyArray<string | number | null | undefined>): string;
 
 // @public
@@ -344,6 +354,18 @@ export interface IslandHtmlOptions {
 }
 
 // @public (undocumented)
+export type JsonArray = ReadonlyArray<JsonValue>;
+
+// @public (undocumented)
+export interface JsonObject {
+    // (undocumented)
+    readonly [key: string]: JsonValue | undefined;
+}
+
+// @public (undocumented)
+export type JsonValue = string | number | boolean | null | JsonObject | JsonArray;
+
+// @public (undocumented)
 export interface LayoutConfig {
     // (undocumented)
     readonly content: string;
@@ -370,9 +392,9 @@ export type Middleware = (req: IncomingMessage, res: ServerResponse, ctx: Reques
 // @public (undocumented)
 export interface NavigateOptions {
     // (undocumented)
-    readonly replace?: boolean;
+    readonly handle?: RouterHandle;
     // (undocumented)
-    readonly scroll?: 'top' | 'preserve';
+    readonly replace?: boolean;
 }
 
 // @public
@@ -489,7 +511,7 @@ export interface RateLimitResult {
 }
 
 // @public (undocumented)
-export function readBody(req: IncomingMessage, maxBytes?: number): Promise<string>;
+export function readBody(req: IncomingMessage, maxBytes?: number): ResultAsync<string, Error>;
 
 // @public (undocumented)
 export function renderLayout(config: LayoutConfig): string;
@@ -680,7 +702,7 @@ export interface ScrollRestoreHandle {
     // (undocumented)
     readonly destroy: () => void;
     // (undocumented)
-    readonly restorePosition: (state?: unknown) => void;
+    readonly restorePosition: (state?: HistoryStateShape | null) => void;
     // (undocumented)
     readonly saveCurrentPosition: () => void;
     // (undocumented)
@@ -706,7 +728,7 @@ export function sendHtml(res: ServerResponse, html: string, statusCode?: number,
 export function sendIslandHtml(res: ServerResponse, html: string, options?: IslandHtmlOptions): void;
 
 // @public (undocumented)
-export function sendJson(res: ServerResponse, data: unknown, statusCode?: number): void;
+export function sendJson(res: ServerResponse, data: JsonValue, statusCode?: number): void;
 
 // @public (undocumented)
 export function serializeForm(form: HTMLFormElement): URLSearchParams;

@@ -77,8 +77,9 @@ export function createCsrfMiddleware (): Middleware {
 
     const contentType = req.headers['content-type'] ?? ''
     if (contentType.includes('application/x-www-form-urlencoded')) {
-      const body = await readBody(req)
-      const bodyToken = extractBodyField(body, BODY_FIELD)
+      const bodyResult = await readBody(req)
+      const body = bodyResult.isOk() ? bodyResult.value : undefined
+      const bodyToken = body !== undefined ? extractBodyField(body, BODY_FIELD) : undefined
       if (bodyToken !== undefined && validateCsrfToken(bodyToken, cookieToken)) {
         await next()
         return

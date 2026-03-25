@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { dirname, resolve } from 'node:path'
 
-const workflow = readFileSync('.github/workflows/ci.yml', 'utf-8')
+const testDir = dirname(fileURLToPath(import.meta.url))
+const workflow = readFileSync(resolve(testDir, '../../.github/workflows/ci.yml'), 'utf-8')
 
 describe('CI workflow contract', () => {
   const e2eEnvBinding = 'E2E: $' + '{{ needs.e2e.result }}'
