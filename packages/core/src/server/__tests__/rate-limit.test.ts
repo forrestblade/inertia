@@ -307,6 +307,25 @@ describe('createRateLimitMiddleware', () => {
     destroy()
   })
 
+  it('uses the first X-Forwarded-For value when multiple proxies are present', async () => {
+    const { middleware, destroy } = createRateLimitMiddleware({ maxRequests: 1, windowMs: 60_000, trustProxy: true })
+
+    await middleware(
+      stubReq({ remoteAddress: '127.0.0.1', xForwardedFor: '10.0.0.1, 192.168.1.1, 172.16.0.5' }),
+      stubRes(), stubCtx(), vi.fn(async () => {})
+    )
+
+    const next = vi.fn(async () => {})
+    await middleware(
+      stubReq({ remoteAddress: '127.0.0.2', xForwardedFor: '10.0.0.1, 203.0.113.9' }),
+      stubRes(), stubCtx(), next
+    )
+
+    expect(next).not.toHaveBeenCalled()
+
+    destroy()
+  })
+
   it('ignores X-Forwarded-For when trustProxy is false', async () => {
     const { middleware, destroy } = createRateLimitMiddleware({ maxRequests: 1, windowMs: 60_000 })
 

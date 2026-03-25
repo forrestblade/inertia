@@ -349,6 +349,28 @@ describe('initRouter', () => {
     expect(mockFetch).toHaveBeenCalled()
   })
 
+  it('popstate error path does not dispatch valence:navigated', async () => {
+    const mockFetch = vi.fn<typeof fetch>().mockRejectedValue(new Error('network down'))
+    const navigatedHandler = vi.fn()
+
+    document.addEventListener('valence:navigated', navigatedHandler)
+    const result = initRouter({}, mockFetch)
+    if (result.isOk()) handle = result.value
+
+    const main = document.createElement('main')
+    main.innerHTML = '<p>Current</p>'
+    document.body.appendChild(main)
+
+    window.dispatchEvent(new PopStateEvent('popstate', {
+      state: { url: '/broken' }
+    }))
+
+    await new Promise(resolve => { setTimeout(resolve, 50) })
+
+    expect(navigatedHandler).not.toHaveBeenCalled()
+    document.removeEventListener('valence:navigated', navigatedHandler)
+  })
+
   it('navigate() performs programmatic navigation', async () => {
     const mockFetch = createMockFetch('<html><head><title>Programmatic</title></head><body><main><p>Programmatic</p></main></body></html>')
     const pushStateSpy = vi.spyOn(window.history, 'pushState')

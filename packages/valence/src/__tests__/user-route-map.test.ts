@@ -213,6 +213,7 @@ describe('buildUserRouteMap', () => {
 
   it('sends 500 when loader fails', async () => {
     const loader = async (_ctx: LoaderContext): Promise<LoaderResult> => {
+      // Intentional test-only throw to verify server error handling on loader failure.
       throw new Error('DB down')
     }
     const routes: readonly RouteConfig[] = [
