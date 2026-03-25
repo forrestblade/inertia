@@ -184,32 +184,7 @@ function performNavigation (
     : fetchFn(url)
 
   return ResultAsync.fromPromise(
-    fetchPromise.then((response) => {
-      if (response.status === 401) {
-        const redirectUrl = response.headers.get('X-Valence-Redirect')
-        if (redirectUrl !== null) {
-          window.location.href = redirectUrl
-          const authError = new Error(`Auth redirect to ${redirectUrl}`)
-          Object.assign(authError, { code: RouterErrorCode.AUTH_REDIRECT })
-          return Promise.reject(authError)
-        }
-      }
-      if (!response.ok) {
-        return Promise.reject(new Error(`Fetch returned status ${String(response.status)}`))
-      }
-      if (config.enableFragmentProtocol) {
-        const validation = validateFragmentResponse(response)
-        if (validation.isErr()) {
-          const protocolError = new Error(validation.error.message)
-          Object.assign(protocolError, { code: validation.error.code })
-          return Promise.reject(protocolError)
-        }
-      }
-      const version = response.headers.get('X-Valence-Version')
-      const titleHeader = response.headers.get('X-Valence-Title')
-      const outletName = response.headers.get('X-Valence-Outlet') ?? undefined
-      return response.text().then((html) => ({ html, version, titleHeader, outletName }))
-    }),
+    fetchPromise,
     (reason): RouterError => {
       if (reason instanceof Error && isCodedRouterError(reason)) {
         return { code: reason.code, message: reason.message }
@@ -219,7 +194,49 @@ function performNavigation (
         message: `Navigation fetch failed for ${url}`
       }
     }
-  ).andThen(({ html, version, titleHeader, outletName }) => {
+  ).andThen((response) => {
+    if (response.status === 401) {
+      const redirectUrl = response.headers.get('X-Valence-Redirect')
+      if (redirectUrl !== null) {
+        window.location.href = redirectUrl
+        return ResultAsync.fromSafePromise(Promise.resolve(undefined)).andThen(() =>
+          err({
+            code: RouterErrorCode.AUTH_REDIRECT,
+            message: `Auth redirect to ${redirectUrl}`
+          })
+        )
+      }
+    }
+    if (!response.ok) {
+      return ResultAsync.fromSafePromise(Promise.resolve(undefined)).andThen(() =>
+        err({
+          code: RouterErrorCode.FETCH_FAILED,
+          message: `Fetch returned status ${String(response.status)}`
+        })
+      )
+    }
+    if (config.enableFragmentProtocol) {
+      const validation = validateFragmentResponse(response)
+      if (validation.isErr()) {
+        return ResultAsync.fromSafePromise(Promise.resolve(undefined)).andThen(() =>
+          err({
+            code: validation.error.code,
+            message: validation.error.message
+          })
+        )
+      }
+    }
+    const version = response.headers.get('X-Valence-Version')
+    const titleHeader = response.headers.get('X-Valence-Title')
+    const outletName = response.headers.get('X-Valence-Outlet') ?? undefined
+    return ResultAsync.fromPromise(
+      response.text(),
+      () => ({
+        code: RouterErrorCode.FETCH_FAILED,
+        message: `Failed to read navigation response for ${url}`
+      })
+    ).andThen((html) => ok({ html, version, titleHeader, outletName }))
+  }).andThen(({ html, version, titleHeader, outletName }) => {
     const result = processHtml(html, config.contentSelector, config.enableViewTransitions, outletName)
     if (result.isErr()) return err(result.error)
 
