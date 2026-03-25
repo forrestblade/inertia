@@ -57,6 +57,43 @@ function csrfHeaders (): Record<string, string> {
   return { 'X-CSRF-Token': token }
 }
 
+async function runBackgroundRevalidation (
+  url: string,
+  config: ResolvedRouterConfig,
+  fetchFn: typeof fetch,
+  pageCacheHandle: PageCacheHandle,
+  cachedHtml: string
+): Promise<void> {
+  const response = config.enableFragmentProtocol
+    ? await fetchFn(url, { headers: { 'X-Valence-Fragment': '1', ...csrfHeaders() } })
+    : await fetchFn(url)
+
+  if (!response.ok) return
+
+  const version = response.headers.get('X-Valence-Version')
+  const html = await response.text()
+
+  if (version !== null) {
+    pageCacheHandle.setVersion(version)
+  }
+
+  if (html === cachedHtml) return
+
+  const currentPath = window.location.pathname
+  const urlPath = url.startsWith('/') ? url : new URL(url, window.location.origin).pathname
+  if (currentPath !== urlPath) return
+
+  pageCacheHandle.set(url, {
+    url,
+    html,
+    timestamp: Date.now(),
+    version,
+    title: null
+  })
+
+  processHtml(html, config.contentSelector)
+}
+
 function revalidateInBackground (
   url: string,
   config: ResolvedRouterConfig,
@@ -64,47 +101,13 @@ function revalidateInBackground (
   pageCacheHandle: PageCacheHandle,
   cachedHtml: string
 ): void {
-  const fetchPromise = config.enableFragmentProtocol
-    ? fetchFn(url, { headers: { 'X-Valence-Fragment': '1', ...csrfHeaders() } })
-    : fetchFn(url)
-
-  fetchPromise
-    .then((response) => {
-      if (!response.ok) return
-      const version = response.headers.get('X-Valence-Version')
-      return response.text().then((html) => ({ html, version }))
-    })
-    .then((result) => {
-      if (result === undefined) return
-
-      // Update version tracking
-      if (result.version !== null) {
-        pageCacheHandle.setVersion(result.version)
-      }
-
-      // Same content -- no re-swap needed
-      if (result.html === cachedHtml) return
-
-      // User navigated away -- don't re-swap
-      const currentPath = window.location.pathname
-      const urlPath = url.startsWith('/') ? url : new URL(url, window.location.origin).pathname
-      if (currentPath !== urlPath) return
-
-      // Content changed -- update cache and re-swap
-      const titleHeader = null
-      pageCacheHandle.set(url, {
-        url,
-        html: result.html,
-        timestamp: Date.now(),
-        version: result.version,
-        title: titleHeader
-      })
-
-      processHtml(result.html, config.contentSelector)
-    })
-    .catch(() => {
-      // Background revalidation is fire-and-forget -- log but don't propagate
-    })
+  ResultAsync.fromPromise(
+    runBackgroundRevalidation(url, config, fetchFn, pageCacheHandle, cachedHtml),
+    () => null
+  ).match(
+    () => undefined,
+    () => undefined
+  )
 }
 
 function isNoCachePath (url: string, noCachePaths: ReadonlyArray<string>): boolean {
