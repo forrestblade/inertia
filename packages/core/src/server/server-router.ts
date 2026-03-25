@@ -50,7 +50,7 @@ export function createServerRouter (): ServerRouter {
     const patterns = Array.from(routes.keys())
     const match = matchRoute(pathname, patterns)
 
-    const ctx: RequestContext = createRequestContext(req, match?.params, url)
+    const ctx: RequestContext = createRequestContext(req, url, match?.params)
     res.setHeader('X-Request-Id', ctx.requestId)
 
     if (!match) {

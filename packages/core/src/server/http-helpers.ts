@@ -2,11 +2,11 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { ServerError } from './server-types.js'
 import { cacheControl } from './cache-control.js'
 
-type JsonValue = string | number | boolean | null | JsonObject | JsonArray
-interface JsonObject {
+export type JsonValue = string | number | boolean | null | JsonObject | JsonArray
+export interface JsonObject {
   readonly [key: string]: JsonValue | undefined
 }
-type JsonArray = ReadonlyArray<JsonValue>
+export type JsonArray = ReadonlyArray<JsonValue>
 
 function escapeHtml (value: string): string {
   return value
