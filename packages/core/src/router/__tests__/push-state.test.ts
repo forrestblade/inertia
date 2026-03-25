@@ -9,7 +9,7 @@ function createMockFetch (html: string, extraHeaders?: Record<string, string>): 
   return vi.fn<typeof fetch>().mockImplementation(() =>
     Promise.resolve(new Response(html, {
       status: 200,
-      headers: { 'Content-Type': 'text/html', ...extraHeaders }
+      headers: { 'Content-Type': 'text/html', 'X-Valence-Fragment': '1', ...extraHeaders }
     }))
   )
 }
@@ -496,6 +496,46 @@ describe('initRouter', () => {
     expect(mockFetch).toHaveBeenCalledWith('/full', expect.objectContaining({ signal: expect.any(AbortSignal) }))
   })
 
+  it('rejects missing fragment header when fragment protocol is enabled', async () => {
+    const mockFetch = vi.fn<typeof fetch>().mockImplementation(() =>
+      Promise.resolve(new Response(
+        '<html><head><title>About</title></head><body><main><p>About page</p></main></body></html>',
+        {
+          status: 200,
+          headers: { 'Content-Type': 'text/html' }
+        }
+      ))
+    )
+
+    const result = initRouter({ enableFragmentProtocol: true }, mockFetch)
+    if (result.isOk()) handle = result.value
+
+    const main = document.createElement('main')
+    main.innerHTML = '<p>Home</p>'
+    document.body.appendChild(main)
+
+    const navResult = await handle!.navigate('/about')
+
+    expect(navResult.isErr()).toBe(true)
+    expect(main.querySelector('p')?.textContent).toBe('Home')
+  })
+
+  it('accepts plain html without fragment header when fragment protocol is disabled', async () => {
+    const mockFetch = createMockFetch('<html><head><title>About</title></head><body><main><p>About page</p></main></body></html>')
+
+    const result = initRouter({ enableFragmentProtocol: false }, mockFetch)
+    if (result.isOk()) handle = result.value
+
+    const main = document.createElement('main')
+    main.innerHTML = '<p>Home</p>'
+    document.body.appendChild(main)
+
+    const navResult = await handle!.navigate('/about')
+
+    expect(navResult.isOk()).toBe(true)
+    expect(main.querySelector('p')?.textContent).toBe('About page')
+  })
+
   it('valence:navigated event includes performance metadata', async () => {
     const mockFetch = createMockFetch('<html><head><title>Perf</title></head><body><main><p>Perf</p></main></body></html>')
     let eventDetail: unknown = null
@@ -586,7 +626,7 @@ describe('initRouter', () => {
       fetchCount++
       return Promise.resolve(new Response('<html><head><title>BG</title></head><body><main><p>BG</p></main></body></html>', {
         status: 200,
-        headers: { 'Content-Type': 'text/html' }
+        headers: { 'Content-Type': 'text/html', 'X-Valence-Fragment': '1' }
       }))
     })
 
@@ -617,7 +657,7 @@ describe('initRouter', () => {
         : '<html><head><title>V2</title></head><body><main><p>Version 2</p></main></body></html>'
       return Promise.resolve(new Response(html, {
         status: 200,
-        headers: { 'Content-Type': 'text/html' }
+        headers: { 'Content-Type': 'text/html', 'X-Valence-Fragment': '1' }
       }))
     })
 
@@ -792,7 +832,7 @@ describe('initRouter', () => {
       if (callCount === 1) {
         return Promise.resolve(new Response('<html><head><title>OK</title></head><body><main><p>OK</p></main></body></html>', {
           status: 200,
-          headers: { 'Content-Type': 'text/html' }
+          headers: { 'Content-Type': 'text/html', 'X-Valence-Fragment': '1' }
         }))
       }
       // Background revalidation fetch fails
