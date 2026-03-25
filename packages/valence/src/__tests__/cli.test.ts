@@ -51,6 +51,23 @@ describe('start command', () => {
   })
 })
 
+describe('CLI redirect safety', () => {
+  it('keeps safe local trailing-slash redirects', async () => {
+    const { resolveSafeLocalRedirectTarget } = await import('../cli.js')
+    expect(resolveSafeLocalRedirectTarget('/admin')).toBe('/admin')
+    expect(resolveSafeLocalRedirectTarget('/posts?page=2')).toBe('/posts?page=2')
+  })
+
+  it('rejects external and malformed redirect targets', async () => {
+    const { resolveSafeLocalRedirectTarget } = await import('../cli.js')
+    expect(resolveSafeLocalRedirectTarget('//evil.com')).toBeNull()
+    expect(resolveSafeLocalRedirectTarget('https://evil.com')).toBeNull()
+    expect(resolveSafeLocalRedirectTarget('/\\evil.com')).toBeNull()
+    expect(resolveSafeLocalRedirectTarget('javascript:alert(1)')).toBeNull()
+    expect(resolveSafeLocalRedirectTarget('')).toBeNull()
+  })
+})
+
 describe('CLI security', () => {
   it('does not use execSync with string concatenation for tsx script execution', async () => {
     const { readFileSync } = await import('node:fs')
