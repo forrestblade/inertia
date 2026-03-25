@@ -1148,4 +1148,11 @@ describe('auth redirect handling', () => {
       expect(navResult.error.code).toBe('FETCH_FAILED')
     }
   })
+
+  it('does not use a raw promise catch in background revalidation', async () => {
+    const { readFileSync } = await import('node:fs')
+    const source = readFileSync('src/router/push-state.ts', 'utf-8')
+    expect(source).not.toMatch(/function revalidateInBackground[\s\S]*?\.catch\(/)
+    expect(source).toContain('ResultAsync.fromPromise(\n    runBackgroundRevalidation')
+  })
 })
