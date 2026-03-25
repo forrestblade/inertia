@@ -368,6 +368,40 @@ describe('Server Islands', () => {
       handle.destroy()
     })
 
+    it('rejects external island src values and preserves fallback', async () => {
+      container.innerHTML = `
+        <div server:defer src="https://example.com/island">
+          <span class="fallback">Fallback</span>
+        </div>
+      `
+
+      const mockFetch = vi.fn<typeof fetch>().mockResolvedValue(
+        new Response('<p>External</p>', {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/html',
+            'X-Valence-Fragment': '1'
+          }
+        })
+      )
+
+      const errorListener = vi.fn()
+      document.addEventListener('valence:island-error', errorListener)
+
+      const handle = initServerIslands({ fetchFn: mockFetch })
+
+      await vi.waitFor(() => {
+        expect(errorListener).toHaveBeenCalledOnce()
+      })
+
+      expect(mockFetch).not.toHaveBeenCalled()
+      expect(container.querySelector('.fallback')).not.toBeNull()
+      expect(container.querySelector('p')).toBeNull()
+
+      document.removeEventListener('valence:island-error', errorListener)
+      handle.destroy()
+    })
+
     it('does not use raw promise catches in island loading', async () => {
       const source = await import('node:fs/promises').then(fs =>
         fs.readFile(`${process.cwd()}/src/router/server-islands.ts`, 'utf8')
