@@ -54,9 +54,6 @@ async function attemptFetch (
       return { done: false, error: new DOMException('The operation was aborted.', 'AbortError') } as FetchAttemptResult
     }
     if (isRetryableResponse(response) && attempt < MAX_ATTEMPTS) {
-      if (attempt >= 2) {
-        await delay(RETRY_DELAY_MS, signal)
-      }
       return { done: false, error: null } as FetchAttemptResult
     }
     return { done: true, response } as FetchAttemptResult
