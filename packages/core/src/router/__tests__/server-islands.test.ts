@@ -192,6 +192,31 @@ describe('Server Islands', () => {
       handle.destroy()
     })
 
+    it('normalizes non-Error island load rejections into event error text', async () => {
+      container.innerHTML = `
+        <div server:defer src="/api/islands/broken-type">
+          <span class="fallback">Fallback</span>
+        </div>
+      `
+
+      const mockFetch = vi.fn().mockRejectedValue('network down')
+      const errorListener = vi.fn()
+      document.addEventListener('valence:island-error', errorListener)
+
+      const handle = initServerIslands({ fetchFn: mockFetch })
+
+      await vi.waitFor(() => {
+        expect(errorListener).toHaveBeenCalledOnce()
+      })
+
+      expect(errorListener.mock.calls[0]?.[0]).toBeInstanceOf(CustomEvent)
+      const event = errorListener.mock.calls[0]?.[0] as CustomEvent<{ error?: string }>
+      expect(event.detail.error).toBe('network down')
+
+      document.removeEventListener('valence:island-error', errorListener)
+      handle.destroy()
+    })
+
     it('dispatches island-loaded on success', async () => {
       container.innerHTML = `
         <div server:defer src="/api/islands/good">
