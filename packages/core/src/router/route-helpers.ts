@@ -10,6 +10,15 @@ export interface NavigateOptions {
   readonly replace?: boolean
 }
 
+function getNavigatedUrl (event: Event): string | null {
+  if (!('detail' in event)) return null
+  const detail = Reflect.get(event, 'detail')
+  if (typeof detail !== 'object' || detail === null) return null
+
+  const toUrl = Reflect.get(detail, 'toUrl')
+  return typeof toUrl === 'string' ? toUrl : null
+}
+
 // Matches :paramName segments (colon followed by word chars, bounded by / . ? # or end)
 const PARAM_PATTERN = /:([A-Za-z_][A-Za-z0-9_]*)(?=\/|\.|\?|#|$)/g
 
@@ -60,8 +69,7 @@ export function navigateTo (
 
   const unlistenNav = (e: Event) => {
     if (navigationSettled || opts?.replace !== true) return
-    const detail = (e as CustomEvent).detail as { toUrl: string } | undefined
-    if (detail?.toUrl === url) {
+    if (getNavigatedUrl(e) === url) {
       window.history.replaceState({ url }, '', url)
       document.removeEventListener('valence:navigated', unlistenNav)
     }
