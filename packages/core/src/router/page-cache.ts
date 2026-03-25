@@ -20,6 +20,28 @@ function hasSessionStorage (): boolean {
   return typeof sessionStorage !== 'undefined'
 }
 
+interface UnknownPageCacheEntryShape {
+  readonly url?: unknown
+  readonly html?: unknown
+  readonly timestamp?: unknown
+  readonly version?: unknown
+  readonly title?: unknown
+}
+
+function isPageCacheEntry (value: unknown): value is PageCacheEntry {
+  if (value === null || typeof value !== 'object') return false
+  const entry = value as UnknownPageCacheEntryShape
+  const versionValid = entry.version === null || typeof entry.version === 'string'
+  const titleValid = entry.title === null || typeof entry.title === 'string'
+
+  return typeof entry.url === 'string' &&
+    typeof entry.html === 'string' &&
+    typeof entry.timestamp === 'number' &&
+    Number.isFinite(entry.timestamp) &&
+    versionValid &&
+    titleValid
+}
+
 export interface PageCacheHandle {
   readonly get: (url: string) => Result<PageCacheEntry, RouterError>
   readonly set: (url: string, entry: PageCacheEntry) => void
@@ -54,8 +76,14 @@ export function initPageCache (config: ResolvedRouterConfig): PageCacheHandle {
 
     if (!Array.isArray(data.entries)) return
     currentVersion = data.version ?? null
-    for (const [key, entry] of data.entries) {
+    for (const restored of data.entries) {
       if (cache.size >= config.pageCacheCapacity) break
+      if (!Array.isArray(restored) || restored.length !== 2) continue
+
+      const [key, entry] = restored
+      if (typeof key !== 'string') continue
+      if (!isPageCacheEntry(entry)) continue
+
       cache.set(key, entry)
     }
   }
