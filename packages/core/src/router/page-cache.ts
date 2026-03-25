@@ -26,51 +26,26 @@ function hasSessionStorage (): boolean {
   return typeof sessionStorage !== 'undefined'
 }
 
-interface RestoredPageCacheEntryShape {
-  readonly url?: string | undefined
-  readonly html?: string | undefined
-  readonly timestamp?: number | undefined
-  readonly version?: string | null | undefined
-  readonly title?: string | null | undefined
-}
-
 function isJsonObject (value: JsonValue): value is JsonObject {
   return value !== null && !Array.isArray(value) && typeof value === 'object'
 }
 
-function toRestoredPageCacheEntryShape (value: JsonValue): RestoredPageCacheEntryShape | null {
+function toPageCacheEntry (value: JsonValue): PageCacheEntry | null {
   if (!isJsonObject(value)) return null
 
-  return {
-    url: typeof value.url === 'string' ? value.url : undefined,
-    html: typeof value.html === 'string' ? value.html : undefined,
-    timestamp: typeof value.timestamp === 'number' ? value.timestamp : undefined,
-    version: value.version === null || typeof value.version === 'string' ? value.version : undefined,
-    title: value.title === null || typeof value.title === 'string' ? value.title : undefined
-  }
-}
-
-function toPageCacheEntry (value: JsonValue): PageCacheEntry | null {
-  const entry = toRestoredPageCacheEntryShape(value)
-  if (entry === null) return null
-  const versionValid = entry.version === null || typeof entry.version === 'string'
-  const titleValid = entry.title === null || typeof entry.title === 'string'
-
-  const valid = typeof entry.url === 'string' &&
-    typeof entry.html === 'string' &&
-    typeof entry.timestamp === 'number' &&
-    Number.isFinite(entry.timestamp) &&
-    versionValid &&
-    titleValid
-
-  if (!valid) return null
+  const { url, html, timestamp, version, title } = value
+  if (typeof url !== 'string') return null
+  if (typeof html !== 'string') return null
+  if (typeof timestamp !== 'number' || !Number.isFinite(timestamp)) return null
+  if (version !== null && typeof version !== 'string') return null
+  if (title !== null && typeof title !== 'string') return null
 
   return {
-    url: entry.url,
-    html: entry.html,
-    timestamp: entry.timestamp,
-    version: entry.version ?? null,
-    title: entry.title ?? null
+    url,
+    html,
+    timestamp,
+    version: version ?? null,
+    title: title ?? null
   }
 }
 

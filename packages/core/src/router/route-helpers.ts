@@ -4,10 +4,12 @@
 
 import { ResultAsync } from '@valencets/resultkit'
 import { initRouter } from './push-state.js'
+import type { RouterHandle } from './push-state.js'
 import { resolveConfig } from './router-types.js'
 
 export interface NavigateOptions {
   readonly replace?: boolean
+  readonly handle?: RouterHandle
 }
 
 function getNavigatedUrl (event: Event): string | null {
@@ -46,13 +48,13 @@ export function navigateTo (
   const url = routeUrl(path, params)
   const config = resolveConfig()
 
-  // We delegate to the router's click-based navigation event system.
-  // Dispatch valence:before-navigate so any existing router handles it,
-  // and initialise a minimal router handle to drive navigation.
-  const routerResult = initRouter(undefined, fetchFn)
-  if (routerResult.isErr()) return
+  const handle = opts?.handle ?? (() => {
+    const routerResult = initRouter(undefined, fetchFn)
+    return routerResult.isOk() ? routerResult.value : null
+  })()
+  if (handle === null) return
 
-  const handle = routerResult.value
+  const ownsHandle = opts?.handle === undefined
   let navigationSettled = false
   let cleanupTimeoutId: ReturnType<typeof setTimeout> | null = null
 
@@ -64,7 +66,9 @@ export function navigateTo (
       clearTimeout(cleanupTimeoutId)
       cleanupTimeoutId = null
     }
-    handle.destroy()
+    if (ownsHandle) {
+      handle.destroy()
+    }
   }
 
   const unlistenNav = (e: Event) => {
