@@ -5,7 +5,7 @@ import { ServerErrorCode } from './server-types.js'
 import type { RouteHandler, RouteEntry, ServerRouter, RouteOptions } from './server-types.js'
 import type { Middleware, ErrorHandler, RequestContext } from './middleware-types.js'
 import { sendError } from './http-helpers.js'
-import { createRequestContext } from './request-context.js'
+import { createRequestContext, parseRequestUrl } from './request-context.js'
 import { matchRoute } from './route-matcher.js'
 import { composeMiddleware } from './middleware-pipeline.js'
 
@@ -37,14 +37,20 @@ export function createServerRouter (): ServerRouter {
     const nonce = generateNonce()
     setSecurityHeaders(res, { nonce })
 
-    const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`)
+    const parsedUrl = parseRequestUrl(req)
+    if (parsedUrl.isErr()) {
+      sendError(res, parsedUrl.error)
+      return
+    }
+
+    const url = parsedUrl.value
     const pathname = url.pathname
     const method = req.method ?? 'GET'
 
     const patterns = Array.from(routes.keys())
     const match = matchRoute(pathname, patterns)
 
-    const ctx: RequestContext = createRequestContext(req, match?.params)
+    const ctx: RequestContext = createRequestContext(req, match?.params, url)
     res.setHeader('X-Request-Id', ctx.requestId)
 
     if (!match) {
