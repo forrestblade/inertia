@@ -11,6 +11,7 @@ import { initPageCache } from './page-cache.js'
 import { wrapInTransition, supportsViewTransitions } from './view-transitions.js'
 import type { PageCacheHandle } from './page-cache.js'
 import { swapOutletContent } from './outlet-swap.js'
+import { findOutlet } from './val-outlet.js'
 
 export interface RouterHandle {
   readonly destroy: () => void
@@ -238,10 +239,42 @@ function processHtml (
   enableViewTransitions: boolean = false,
   outletName?: string
 ): Result<string | null, RouterError> {
+  function runSwap (container: Element, doSwap: () => Result<void, RouterError>): Result<void, RouterError> {
+    document.dispatchEvent(new CustomEvent('valence:before-swap'))
+
+    let swapResult: Result<void, RouterError> | null = null
+
+    if (enableViewTransitions && supportsViewTransitions()) {
+      wrapInTransition(() => {
+        swapResult = doSwap()
+        if (swapResult.isOk()) {
+          document.dispatchEvent(new CustomEvent('valence:after-swap'))
+        }
+      }, container)
+    } else {
+      swapResult = doSwap()
+      if (swapResult.isOk()) {
+        document.dispatchEvent(new CustomEvent('valence:after-swap'))
+      }
+    }
+
+    return swapResult ?? err({
+      code: RouterErrorCode.FETCH_FAILED,
+      message: 'Swap did not complete'
+    })
+  }
+
   // Outlet-targeted swap: route content to a named val-outlet instead of full swap
   if (outletName !== undefined) {
     const liveRoot = document.querySelector(contentSelector) ?? document.body
-    const outletSwapResult = swapOutletContent(liveRoot, outletName, html)
+    const liveOutlet = findOutlet(liveRoot, outletName)
+
+    const outletSwapResult = liveOutlet === null
+      ? err({
+        code: RouterErrorCode.SELECTOR_MISS,
+        message: `Outlet not found in live DOM: ${outletName}`
+      })
+      : runSwap(liveOutlet, () => swapOutletContent(liveRoot, outletName, html))
 
     // If outlet not found in live DOM, fall back to full content swap below
     if (outletSwapResult.isOk()) {
@@ -276,18 +309,8 @@ function processHtml (
     })
   }
 
-  document.dispatchEvent(new CustomEvent('valence:before-swap'))
-
-  if (enableViewTransitions && supportsViewTransitions()) {
-    wrapInTransition(() => {
-      swapContent(liveContainer, fragment)
-      document.dispatchEvent(new CustomEvent('valence:after-swap'))
-    }, liveContainer)
-  } else {
-    const swapResult = swapContent(liveContainer, fragment)
-    if (swapResult.isErr()) return err(swapResult.error)
-    document.dispatchEvent(new CustomEvent('valence:after-swap'))
-  }
+  const swapResult = runSwap(liveContainer, () => swapContent(liveContainer, fragment))
+  if (swapResult.isErr()) return err(swapResult.error)
 
   const title = extractTitle(doc)
   if (title !== null) {

@@ -197,12 +197,12 @@ describe('cache behavior', () => {
     }
   })
 
-  it('getCached returns Err(CACHE_MISS) for unknown URL', () => {
+  it('getCached returns Err(CACHE_MISS) for missing URL', () => {
     const config = resolveConfig()
     const result = initPrefetch(config)
     if (result.isOk()) handle = result.value
 
-    const cached = handle!.getCached('/unknown')
+    const cached = handle!.getCached('/missing')
     expect(cached.isErr()).toBe(true)
     if (cached.isErr()) {
       expect(cached.error.code).toBe(RouterErrorCode.CACHE_MISS)
