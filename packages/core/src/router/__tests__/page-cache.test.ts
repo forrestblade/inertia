@@ -242,4 +242,22 @@ describe('page-cache sessionStorage persistence', () => {
     const data = JSON.parse(sessionStorage.getItem('valence:page-cache')!)
     expect(data.version).toBe('v2')
   })
+
+  it('skips malformed restored cache entries', () => {
+    sessionStorage.setItem('valence:page-cache', JSON.stringify({
+      version: 'v1',
+      entries: [
+        ['/good', { url: '/good', html: '<p>Good</p>', timestamp: Date.now(), version: 'v1', title: 'Good' }],
+        ['/bad-timestamp', { url: '/bad-timestamp', html: '<p>Bad</p>', timestamp: 'oops', version: 'v1', title: 'Bad' }],
+        ['/bad-html', { url: '/bad-html', html: 42, timestamp: Date.now(), version: 'v1', title: 'Bad' }]
+      ]
+    }))
+
+    const h = initPageCache(resolveConfig())
+
+    expect(h.size()).toBe(1)
+    expect(h.get('/good').isOk()).toBe(true)
+    expect(h.get('/bad-timestamp').isErr()).toBe(true)
+    expect(h.get('/bad-html').isErr()).toBe(true)
+  })
 })
