@@ -51,7 +51,19 @@ export function createServerRouter (): ServerRouter {
 
     if (result.isErr()) {
       if (errorHandler) {
-        await errorHandler(result.error, req, res, ctx)
+        const errorHandlerResult = await ResultAsync.fromPromise(
+          errorHandler(result.error, req, res, ctx),
+          (err) => err instanceof Error ? err : new Error(String(err))
+        )
+
+        if (errorHandlerResult.isOk()) {
+          return
+        }
+
+        console.error(`[server-router] error handler failed on ${pathname}:`, errorHandlerResult.error.message)
+        if (!res.headersSent) {
+          sendError(res, { code: ServerErrorCode.INTERNAL_ERROR, message: 'Internal server error', statusCode: 500 })
+        }
         return
       }
       console.error(`[server-router] unhandled error on ${pathname}:`, result.error.message)
