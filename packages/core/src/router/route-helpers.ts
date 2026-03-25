@@ -4,6 +4,7 @@
 
 import { ResultAsync } from '@valencets/resultkit'
 import { initRouter } from './push-state.js'
+import { resolveConfig } from './router-types.js'
 
 export interface NavigateOptions {
   readonly replace?: boolean
@@ -35,6 +36,7 @@ export function navigateTo (
   fetchFn: typeof fetch = globalThis.fetch
 ): void {
   const url = routeUrl(path, params)
+  const config = resolveConfig()
 
   // We delegate to the router's click-based navigation event system.
   // Dispatch valence:before-navigate so any existing router handles it,
@@ -44,6 +46,18 @@ export function navigateTo (
 
   const handle = routerResult.value
   let navigationSettled = false
+  let cleanupTimeoutId: ReturnType<typeof setTimeout> | null = null
+
+  function cleanup (): void {
+    if (navigationSettled) return
+    navigationSettled = true
+    document.removeEventListener('valence:navigated', unlistenNav)
+    if (cleanupTimeoutId !== null) {
+      clearTimeout(cleanupTimeoutId)
+      cleanupTimeoutId = null
+    }
+    handle.destroy()
+  }
 
   const unlistenNav = (e: Event) => {
     if (navigationSettled || opts?.replace !== true) return
@@ -58,6 +72,8 @@ export function navigateTo (
     document.addEventListener('valence:navigated', unlistenNav)
   }
 
+  cleanupTimeoutId = setTimeout(cleanup, config.navigationTimeoutMs)
+
   ResultAsync.fromPromise(
     handle.navigate(url).match(
       () => undefined,
@@ -65,15 +81,7 @@ export function navigateTo (
     ),
     () => null
   ).match(
-    () => {
-      navigationSettled = true
-      document.removeEventListener('valence:navigated', unlistenNav)
-      handle.destroy()
-    },
-    () => {
-      navigationSettled = true
-      document.removeEventListener('valence:navigated', unlistenNav)
-      handle.destroy()
-    }
+    cleanup,
+    cleanup
   )
 }
