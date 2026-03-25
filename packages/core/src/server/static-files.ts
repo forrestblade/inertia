@@ -184,6 +184,12 @@ export function serveStaticFile (
     }
 
     const stat = statResult.value
+    if (stat === undefined) {
+      res.writeHead(404, { 'Content-Length': 0 })
+      res.end()
+      resolve()
+      return
+    }
     const fileSize = Number(stat.size)
 
     const rangeResult = parseRangeHeader(rangeHeader, fileSize)

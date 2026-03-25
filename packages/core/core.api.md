@@ -392,6 +392,8 @@ export type Middleware = (req: IncomingMessage, res: ServerResponse, ctx: Reques
 // @public (undocumented)
 export interface NavigateOptions {
     // (undocumented)
+    readonly handle?: RouterHandle;
+    // (undocumented)
     readonly replace?: boolean;
 }
 
@@ -509,7 +511,7 @@ export interface RateLimitResult {
 }
 
 // @public (undocumented)
-export function readBody(req: IncomingMessage, maxBytes?: number): Promise<string>;
+export function readBody(req: IncomingMessage, maxBytes?: number): ResultAsync<string, Error>;
 
 // @public (undocumented)
 export function renderLayout(config: LayoutConfig): string;

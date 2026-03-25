@@ -53,6 +53,7 @@ export function navigateTo (
     return routerResult.isOk() ? routerResult.value : null
   })()
   if (handle === null) return
+  const activeHandle = handle
 
   const ownsHandle = opts?.handle === undefined
   let navigationSettled = false
@@ -67,7 +68,7 @@ export function navigateTo (
       cleanupTimeoutId = null
     }
     if (ownsHandle) {
-      handle.destroy()
+      activeHandle.destroy()
     }
   }
 
@@ -86,7 +87,7 @@ export function navigateTo (
   cleanupTimeoutId = setTimeout(cleanup, config.navigationTimeoutMs)
 
   ResultAsync.fromPromise(
-    handle.navigate(url).match(
+    activeHandle.navigate(url).match(
       () => undefined,
       () => undefined
     ),
