@@ -92,7 +92,11 @@ describe('readBody', () => {
     const promise = readBody(req)
     req.emit('data', Buffer.from('hello'))
     req.emit('end')
-    expect(await promise).toBe('hello')
+    const result = await promise
+    expect(result.isOk()).toBe(true)
+    if (result.isOk()) {
+      expect(result.value).toBe('hello')
+    }
   })
 
   it('rejects when body exceeds MAX_BODY_BYTES', async () => {
@@ -100,7 +104,11 @@ describe('readBody', () => {
     const promise = readBody(req)
     const oversized = Buffer.alloc(MAX_BODY_BYTES + 1, 'x')
     req.emit('data', oversized)
-    await expect(promise).rejects.toThrow('Body exceeds')
+    const result = await promise
+    expect(result.isErr()).toBe(true)
+    if (result.isErr()) {
+      expect(result.error.message).toContain('Body exceeds')
+    }
   })
 
   it('rejects when cumulative chunks exceed limit', async () => {
@@ -109,21 +117,49 @@ describe('readBody', () => {
     const half = Buffer.alloc(Math.ceil(MAX_BODY_BYTES / 2) + 1, 'x')
     req.emit('data', half)
     req.emit('data', half)
-    await expect(promise).rejects.toThrow('Body exceeds')
+    const result = await promise
+    expect(result.isErr()).toBe(true)
+    if (result.isErr()) {
+      expect(result.error.message).toContain('Body exceeds')
+    }
   })
 
   it('rejects when request emits error', async () => {
     const req = mockReq()
     const promise = readBody(req)
     req.emit('error', new Error('socket failure'))
-    await expect(promise).rejects.toThrow('socket failure')
+    const result = await promise
+    expect(result.isErr()).toBe(true)
+    if (result.isErr()) {
+      expect(result.error.message).toContain('socket failure')
+    }
   })
 
   it('rejects when request is aborted', async () => {
     const req = mockReq()
     const promise = readBody(req)
     req.emit('aborted')
-    await expect(promise).rejects.toThrow('Request body aborted')
+    const result = await promise
+    expect(result.isErr()).toBe(true)
+    if (result.isErr()) {
+      expect(result.error.message).toContain('Request body aborted')
+    }
+  })
+
+  it('returns cached body on a second read without re-consuming the stream', async () => {
+    const req = mockReq()
+    const firstRead = readBody(req)
+    req.emit('data', Buffer.from('cached'))
+    req.emit('end')
+
+    const firstResult = await firstRead
+    expect(firstResult.isOk()).toBe(true)
+
+    const secondResult = await readBody(req)
+    expect(secondResult.isOk()).toBe(true)
+    if (secondResult.isOk()) {
+      expect(secondResult.value).toBe('cached')
+    }
   })
 
   it('exports MAX_BODY_BYTES as a number', () => {

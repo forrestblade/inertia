@@ -195,7 +195,11 @@ describe('createCsrfMiddleware', () => {
     }, [body])
     const res = mockRes()
     const next = vi.fn(async () => {
-      await expect(readBody(req)).resolves.toBe(body)
+      const bodyResult = await readBody(req)
+      expect(bodyResult.isOk()).toBe(true)
+      if (bodyResult.isOk()) {
+        expect(bodyResult.value).toBe(body)
+      }
     })
 
     await middleware(req, res, stubCtx(), next)
