@@ -1,4 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
+import { ResultAsync } from '@valencets/resultkit'
 import { cacheControl } from './cache-control.js'
 import type { ServerError } from './server-types.js'
 
@@ -57,66 +58,69 @@ export function isFragmentRequest (req: IncomingMessage): boolean {
 
 export const MAX_BODY_BYTES = 1_048_576
 
-export function readBody (req: IncomingMessage, maxBytes: number = MAX_BODY_BYTES): Promise<string> {
+export function readBody (req: IncomingMessage, maxBytes: number = MAX_BODY_BYTES): ResultAsync<string, Error> {
   const cachedReq = req as CachedBodyRequest
   if (cachedReq[CACHED_RAW_BODY] !== undefined) {
-    return Promise.resolve(cachedReq[CACHED_RAW_BODY])
+    return ResultAsync.fromSafePromise(Promise.resolve(cachedReq[CACHED_RAW_BODY]))
   }
 
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = []
-    let received = 0
-    let settled = false
+  return ResultAsync.fromPromise(
+    new Promise<string>((resolve, reject) => {
+      const chunks: Buffer[] = []
+      let received = 0
+      let settled = false
 
-    function cleanup (): void {
-      req.removeListener?.('data', onData)
-      req.removeListener?.('end', onEnd)
-      req.removeListener?.('error', onError)
-      req.removeListener?.('aborted', onAborted)
-    }
-
-    function rejectOnce (error: Error): void {
-      if (settled) return
-      settled = true
-      cleanup()
-      reject(error)
-    }
-
-    function resolveOnce (body: string): void {
-      if (settled) return
-      settled = true
-      cleanup()
-      resolve(body)
-    }
-
-    function onData (chunk: Buffer): void {
-      received += chunk.length
-      if (received > maxBytes) {
-        rejectOnce(new Error(`Body exceeds ${maxBytes} bytes`))
-        return
+      function cleanup (): void {
+        req.removeListener?.('data', onData)
+        req.removeListener?.('end', onEnd)
+        req.removeListener?.('error', onError)
+        req.removeListener?.('aborted', onAborted)
       }
-      chunks.push(chunk)
-    }
 
-    function onEnd (): void {
-      const body = Buffer.concat(chunks).toString('utf-8')
-      cachedReq[CACHED_RAW_BODY] = body
-      resolveOnce(body)
-    }
+      function rejectOnce (error: Error): void {
+        if (settled) return
+        settled = true
+        cleanup()
+        reject(error)
+      }
 
-    function onError (error: Error): void {
-      rejectOnce(error)
-    }
+      function resolveOnce (body: string): void {
+        if (settled) return
+        settled = true
+        cleanup()
+        resolve(body)
+      }
 
-    function onAborted (): void {
-      rejectOnce(new Error('Request body aborted'))
-    }
+      function onData (chunk: Buffer): void {
+        received += chunk.length
+        if (received > maxBytes) {
+          rejectOnce(new Error(`Body exceeds ${maxBytes} bytes`))
+          return
+        }
+        chunks.push(chunk)
+      }
 
-    req.on('data', onData)
-    req.on('end', onEnd)
-    req.on('error', onError)
-    req.on('aborted', onAborted)
-  })
+      function onEnd (): void {
+        const body = Buffer.concat(chunks).toString('utf-8')
+        cachedReq[CACHED_RAW_BODY] = body
+        resolveOnce(body)
+      }
+
+      function onError (error: Error): void {
+        rejectOnce(error)
+      }
+
+      function onAborted (): void {
+        rejectOnce(new Error('Request body aborted'))
+      }
+
+      req.on('data', onData)
+      req.on('end', onEnd)
+      req.on('error', onError)
+      req.on('aborted', onAborted)
+    }),
+    (error) => error instanceof Error ? error : new Error(String(error))
+  )
 }
 
 export interface IslandHtmlOptions {
