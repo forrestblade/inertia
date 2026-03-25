@@ -887,6 +887,13 @@ describe('initRouter', () => {
     expect(source).not.toContain('reason as Error & { code?: string }')
   })
 
+  it('does not use Promise.reject inside the ResultAsync navigation fetch path', async () => {
+    const { readFileSync } = await import('node:fs')
+    const source = readFileSync(`${process.cwd()}/src/router/push-state.ts`, 'utf-8')
+
+    expect(source).not.toContain('return Promise.reject(')
+  })
+
   it('rapid sequential navigations: earlier fetches receive abort signal', async () => {
     const receivedSignals: Array<AbortSignal | undefined> = []
     const mockFetch = vi.fn<typeof fetch>().mockImplementation((_url, init) => {
