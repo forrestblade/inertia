@@ -10,9 +10,15 @@ interface CacheStorageData {
   readonly entries: ReadonlyArray<readonly [string, PageCacheEntry]>
 }
 
+type JsonValue = string | number | boolean | null | JsonObject | JsonArray
+interface JsonObject {
+  readonly [key: string]: JsonValue | undefined
+}
+type JsonArray = ReadonlyArray<JsonValue>
+
 // System boundary: sessionStorage is external input
 const parseJson = fromThrowable(
-  (raw: string): CacheStorageData => JSON.parse(raw) as CacheStorageData,
+  (raw: string): JsonValue => JSON.parse(raw) as JsonValue,
   (): RouterError => ({ code: RouterErrorCode.PARSE_FAILED, message: 'Invalid cache storage' })
 )
 
@@ -28,9 +34,25 @@ interface RestoredPageCacheEntryShape {
   readonly title?: string | null | undefined
 }
 
-function isPageCacheEntry (value: unknown): value is PageCacheEntry {
-  if (value === null || typeof value !== 'object') return false
-  const entry = value as RestoredPageCacheEntryShape
+function isJsonObject (value: JsonValue): value is JsonObject {
+  return value !== null && !Array.isArray(value) && typeof value === 'object'
+}
+
+function toRestoredPageCacheEntryShape (value: JsonValue): RestoredPageCacheEntryShape | null {
+  if (!isJsonObject(value)) return null
+
+  return {
+    url: typeof value.url === 'string' ? value.url : undefined,
+    html: typeof value.html === 'string' ? value.html : undefined,
+    timestamp: typeof value.timestamp === 'number' ? value.timestamp : undefined,
+    version: value.version === null || typeof value.version === 'string' ? value.version : undefined,
+    title: value.title === null || typeof value.title === 'string' ? value.title : undefined
+  }
+}
+
+function isPageCacheEntry (value: JsonValue): value is PageCacheEntry {
+  const entry = toRestoredPageCacheEntryShape(value)
+  if (entry === null) return false
   const versionValid = entry.version === null || typeof entry.version === 'string'
   const titleValid = entry.title === null || typeof entry.title === 'string'
 
@@ -73,10 +95,14 @@ export function initPageCache (config: ResolvedRouterConfig): PageCacheHandle {
     const result = parseJson(raw)
     if (result.isErr()) return
     const data = result.value
+    if (!isJsonObject(data)) return
 
-    if (!Array.isArray(data.entries)) return
-    currentVersion = data.version ?? null
-    for (const restored of data.entries) {
+    const version = data.version
+    const entries = data.entries
+    if ((version !== null && typeof version !== 'string') || !Array.isArray(entries)) return
+
+    currentVersion = version ?? null
+    for (const restored of entries) {
       if (cache.size >= config.pageCacheCapacity) break
       if (!Array.isArray(restored) || restored.length !== 2) continue
 

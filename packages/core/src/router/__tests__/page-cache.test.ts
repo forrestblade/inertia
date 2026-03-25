@@ -25,8 +25,8 @@ describe('initPageCache', () => {
     expect(handle.size()).toBe(0)
   })
 
-  it('get returns CACHE_MISS for unknown url', () => {
-    const result = handle.get('/unknown')
+  it('get returns CACHE_MISS for missing url', () => {
+    const result = handle.get('/missing')
     expect(result.isErr()).toBe(true)
     if (result.isErr()) {
       expect(result.error.code).toBe(RouterErrorCode.CACHE_MISS)
@@ -114,9 +114,9 @@ describe('initPageCache', () => {
     expect(handle.get('/b').isOk()).toBe(true)
   })
 
-  it('invalidateUrl is a no-op for unknown url', () => {
+  it('invalidateUrl is a no-op for missing url', () => {
     handle.set('/a', { url: '/a', html: 'a', timestamp: Date.now(), version: null, title: null })
-    handle.invalidateUrl('/unknown')
+    handle.invalidateUrl('/missing')
     expect(handle.size()).toBe(1)
   })
 

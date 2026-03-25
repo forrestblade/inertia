@@ -4,6 +4,7 @@ import {
   initRouter
 } from '../push-state.js'
 import type { RouterHandle } from '../push-state.js'
+import type { NavigationPerformance } from '../router-types.js'
 
 function createMockFetch (html: string, extraHeaders?: Record<string, string>): typeof fetch {
   return vi.fn<typeof fetch>().mockImplementation(() =>
@@ -538,10 +539,10 @@ describe('initRouter', () => {
 
   it('valence:navigated event includes performance metadata', async () => {
     const mockFetch = createMockFetch('<html><head><title>Perf</title></head><body><main><p>Perf</p></main></body></html>')
-    let eventDetail: unknown = null
+    let eventDetail: NavigationPerformance | null = null
 
     document.addEventListener('valence:navigated', ((e: CustomEvent) => {
-      eventDetail = e.detail
+      eventDetail = e.detail as NavigationPerformance
     }) as EventListener, { once: true })
 
     const result = initRouter({}, mockFetch)
@@ -554,7 +555,7 @@ describe('initRouter', () => {
     await handle!.navigate('/perf')
 
     expect(eventDetail).toBeDefined()
-    const detail = eventDetail as { source: string; durationMs: number; fromUrl: string; toUrl: string }
+    const detail = eventDetail as NavigationPerformance
     expect(detail.source).toBe('network')
     expect(typeof detail.durationMs).toBe('number')
     expect(detail.durationMs).toBeGreaterThanOrEqual(0)
