@@ -192,4 +192,12 @@ describe('createAbortableFetch', () => {
     // AbortError should NOT trigger retry — only 1 fetch call
     expect(mockFetch).toHaveBeenCalledTimes(1)
   })
+
+  it('does not use a raw promise catch in fetch retry transport', async () => {
+    const source = await import('node:fs/promises').then(fs =>
+      fs.readFile(`${process.cwd()}/src/router/fetch-retry.ts`, 'utf8')
+    )
+
+    expect(source).not.toMatch(/fetchFn\(url, \{ \.\.\.init, signal \}\)[\s\S]*\.catch\(/)
+  })
 })
