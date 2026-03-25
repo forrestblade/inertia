@@ -265,6 +265,29 @@ describe('buildUserRouteMap', () => {
     expect(map.get('/contact')?.has('POST')).toBe(true)
   })
 
+  it('rejects GET actions that would overwrite a loader handler', () => {
+    const loader = async (_ctx: LoaderContext): Promise<LoaderResult> => ({ data: {} })
+    const action = async (_ctx: ActionContext): Promise<ActionResult> => ({ redirect: '/done' })
+    const routes: readonly RouteConfig[] = [
+      { path: '/contact', method: 'GET', loader, action }
+    ]
+
+    expect(() => buildUserRouteMap(routes, '/fake/dir', pool, cms)).toThrow(
+      'GET action cannot overwrite loader for route: /contact'
+    )
+  })
+
+  it('rejects traversal-shaped route paths during template resolution', () => {
+    const loader = async (_ctx: LoaderContext): Promise<LoaderResult> => ({ data: {} })
+    const routes: readonly RouteConfig[] = [
+      { path: '/../../../etc/passwd', loader }
+    ]
+
+    expect(() => buildUserRouteMap(routes, '/project', pool, cms)).toThrow(
+      'Invalid route path segment in template resolution: ..'
+    )
+  })
+
   it('resolves multi-segment static routes to nested index templates', async () => {
     existsSyncMock.mockImplementation((path: unknown) =>
       typeof path === 'string' && path.endsWith('/src/pages/blog/archive/ui/index.html')
