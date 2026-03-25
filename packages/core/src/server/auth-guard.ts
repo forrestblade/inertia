@@ -37,8 +37,9 @@ export function createAuthGuard (options: AuthGuardOptions): Middleware {
 
     if (!result.authenticated) {
       if (options.redirectTo !== undefined) {
-        const returnTo = safeRedirect(ctx.url.pathname)
-        const location = `${options.redirectTo}?returnTo=${returnTo}`
+        const returnTo = safeRedirect(ctx.url.pathname + ctx.url.search)
+        const encodedReturnTo = encodeURIComponent(returnTo)
+        const location = `${options.redirectTo}?returnTo=${encodedReturnTo}`
 
         if (isFragmentRequest(req)) {
           const body = JSON.stringify({ error: 'Unauthorized' })

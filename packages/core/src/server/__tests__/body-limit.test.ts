@@ -3,6 +3,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import { createBodyLimitMiddleware } from '../body-limit.js'
 import type { RequestContext } from '../middleware-types.js'
 import { EventEmitter } from 'node:events'
+import { readBody } from '../http-helpers.js'
 
 function stubReq (options?: { method?: string, contentType?: string, contentLength?: number }): IncomingMessage {
   const headers: Record<string, string> = {}
@@ -34,6 +35,38 @@ function stubReqWithStream (options: { method?: string, contentType?: string, ch
   })
 
   // Schedule chunks to be emitted after listeners are attached
+  queueMicrotask(() => {
+    for (const chunk of options.chunks) {
+      req.emit('data', chunk)
+    }
+    req.emit('end')
+  })
+
+  return req as unknown as IncomingMessage
+}
+
+function stubReqWithDishonestLength (options: {
+  method?: string
+  contentType?: string
+  contentLength: number
+  chunks: Buffer[]
+}): IncomingMessage {
+  const headers: Record<string, string> = {
+    'content-length': String(options.contentLength)
+  }
+  if (options.contentType !== undefined) {
+    headers['content-type'] = options.contentType
+  }
+
+  const emitter = new EventEmitter()
+  const req = Object.assign(emitter, {
+    method: options.method ?? 'POST',
+    headers,
+    destroy: vi.fn(() => {
+      emitter.emit('close')
+    })
+  })
+
   queueMicrotask(() => {
     for (const chunk of options.chunks) {
       req.emit('data', chunk)
@@ -281,5 +314,56 @@ describe('createBodyLimitMiddleware', () => {
     await middleware(req, stubRes(), stubCtx(), next)
 
     expect(next).toHaveBeenCalledOnce()
+  })
+
+  it('rejects body overflow even when declared Content-Length is under the limit', async () => {
+    const middleware = createBodyLimitMiddleware({ json: 100 })
+    const next = vi.fn(async () => {})
+    const res = stubRes()
+
+    const req = stubReqWithDishonestLength({
+      method: 'POST',
+      contentType: 'application/json',
+      contentLength: 50,
+      chunks: [Buffer.alloc(60, 'a'), Buffer.alloc(60, 'b')]
+    })
+
+    await middleware(req, res, stubCtx(), next)
+
+    expect(res.statusCode).toBe(413)
+    expect(next).not.toHaveBeenCalled()
+  })
+
+  it('keeps validated request bodies readable for downstream handlers', async () => {
+    const middleware = createBodyLimitMiddleware({ json: 200 })
+    const body = '{"ok":true}'
+    const req = stubReqWithDishonestLength({
+      method: 'POST',
+      contentType: 'application/json',
+      contentLength: body.length,
+      chunks: [Buffer.from(body)]
+    })
+    const res = stubRes()
+    const next = vi.fn(async () => {
+      await expect(readBody(req)).resolves.toBe(body)
+    })
+
+    await middleware(req, res, stubCtx(), next)
+
+    expect(next).toHaveBeenCalledOnce()
+  })
+
+  it('rejects oversized DELETE request bodies', async () => {
+    const middleware = createBodyLimitMiddleware({ json: 100 })
+    const next = vi.fn(async () => {})
+    const res = stubRes()
+
+    await middleware(
+      stubReq({ method: 'DELETE', contentType: 'application/json', contentLength: 101 }),
+      res, stubCtx(), next
+    )
+
+    expect(res.statusCode).toBe(413)
+    expect(next).not.toHaveBeenCalled()
   })
 })

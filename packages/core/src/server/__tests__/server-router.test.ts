@@ -105,6 +105,20 @@ describe('createServerRouter', () => {
     expect(res._body).toContain('Not found')
   })
 
+  it('fails closed instead of throwing when Host header is malformed', async () => {
+    const router = createServerRouter()
+    const req = {
+      url: '/hello',
+      method: 'GET',
+      headers: { host: 'bad host' }
+    } as unknown as IncomingMessage
+    const res = mockRes()
+
+    await expect(router.handle(req, res)).resolves.toBeUndefined()
+    expect(res._status).toBe(400)
+    expect(res._body).toContain('Invalid request URL')
+  })
+
   it('returns 405 for wrong method', async () => {
     const router = createServerRouter()
     router.register('/only-get', { GET: async (_req, res) => { res.end('ok') } })
@@ -131,6 +145,74 @@ describe('createServerRouter', () => {
 
     expect(fallback).toHaveBeenCalledOnce()
     expect(res._body).toBe('custom 404')
+  })
+
+  it('runs global middleware for 404 fallback handlers', async () => {
+    const router = createServerRouter()
+    const order: string[] = []
+
+    router.use(async (_req, _res, _ctx, next) => {
+      order.push('mw')
+      await next()
+    })
+
+    router.register('/404', {
+      GET: async (_req, res) => {
+        order.push('404')
+        res.writeHead(404)
+        res.end('custom 404')
+      }
+    })
+
+    await router.handle(mockReq('/missing'), mockRes())
+
+    expect(order).toEqual(['mw', '404'])
+  })
+
+  it('uses router.onError for 404 fallback failures', async () => {
+    const router = createServerRouter()
+    const errorHandler = vi.fn(async (error: Error, _req: IncomingMessage, res: ServerResponse) => {
+      res.writeHead(500)
+      res.end(`custom 404 error: ${error.message}`)
+    })
+
+    router.onError(errorHandler)
+    router.register('/404', {
+      GET: async () => {
+        throw new Error('missing template')
+      }
+    })
+
+    const res = mockRes()
+    await router.handle(mockReq('/missing'), res)
+
+    expect(errorHandler).toHaveBeenCalledOnce()
+    expect(res._body).toBe('custom 404 error: missing template')
+  })
+
+  it('runs global middleware for automatic OPTIONS responses', async () => {
+    const router = createServerRouter()
+
+    router.use(async (_req, res, _ctx, next) => {
+      res.setHeader('Access-Control-Allow-Origin', 'https://example.com')
+      await next()
+    })
+
+    router.register('/resource', {
+      GET: async (_req, res) => {
+        res.writeHead(200)
+        res.end('ok')
+      }
+    })
+
+    const res = mockRes()
+    await router.handle(mockReq('/resource', 'OPTIONS'), res)
+
+    expect(res._status).toBe(204)
+    expect(res._headers['Access-Control-Allow-Origin']).toBe('https://example.com')
+    expect(res._headers.Allow).toContain('GET')
+    expect(res._headers.Allow).toContain('HEAD')
+    expect(res._headers.Allow).toContain('OPTIONS')
   })
 
   it('error boundary: handler that rejects returns 500, server stays alive', async () => {
