@@ -3,7 +3,7 @@ export { IntentType, TelemetryErrorCode, BusinessType, CURRENT_SCHEMA_VERSION, c
 export type { GlobalTelemetryIntent, TelemetryError } from './intent-types.js'
 export { TelemetryObjectPool } from './object-pool.js'
 export { TelemetryRingBuffer } from './ring-buffer.js'
-export { initEventDelegation } from './event-delegation.js'
+export { initEventDelegation, intentTypeMap, leadHrefMap } from './event-delegation.js'
 export type { EventDelegationHandle } from './event-delegation.js'
 export { flushTelemetry, scheduleAutoFlush } from './flush.js'
 export type { FlushHandle } from './flush.js'
