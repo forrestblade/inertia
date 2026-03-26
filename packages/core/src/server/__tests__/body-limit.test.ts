@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { createBodyLimitMiddleware } from '../body-limit.js'
+import { createBodyLimitMiddleware, ContentCategory } from '../body-limit.js'
 import type { RequestContext } from '../middleware-types.js'
 import { EventEmitter } from 'node:events'
 import { readBody } from '../http-helpers.js'
@@ -139,6 +139,12 @@ function stubCtx (): RequestContext {
     params: {}
   }
 }
+
+describe('ContentCategory', () => {
+  it('is frozen and cannot be mutated', () => {
+    expect(Object.isFrozen(ContentCategory)).toBe(true)
+  })
+})
 
 describe('createBodyLimitMiddleware', () => {
   it('passes through GET requests', async () => {

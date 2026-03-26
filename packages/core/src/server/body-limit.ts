@@ -3,13 +3,13 @@ import type { Middleware } from './middleware-types.js'
 import { readBody } from './http-helpers.js'
 import { ResultAsync, ok } from '@valencets/resultkit'
 
-export const ContentCategory = {
+export const ContentCategory = Object.freeze({
   JSON: 'json',
   FORM: 'form',
   MULTIPART: 'multipart',
   BEACON: 'beacon',
   RAW: 'raw'
-} as const
+} as const)
 
 export type ContentCategory = typeof ContentCategory[keyof typeof ContentCategory]
 

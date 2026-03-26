@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { createServerRouter } from '../server-router.js'
+import { createServerRouter, ServerErrorCode } from '../server-router.js'
 import type { RouteHandler } from '../server-types.js'
 import type { Middleware } from '../middleware-types.js'
 
@@ -29,6 +29,12 @@ function mockRes (): ServerResponse & { _body: string; _status: number; _headers
   }
   return res as unknown as ServerResponse & { _body: string; _status: number; _headers: Record<string, string> }
 }
+
+describe('ServerErrorCode', () => {
+  it('is frozen and cannot be mutated', () => {
+    expect(Object.isFrozen(ServerErrorCode)).toBe(true)
+  })
+})
 
 describe('createServerRouter', () => {
   it('dispatches GET handler for registered route', async () => {
