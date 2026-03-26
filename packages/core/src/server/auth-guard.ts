@@ -14,7 +14,7 @@ export type AuthResult =
 
 export type RoleHierarchy = Readonly<Record<string, number>>
 
-export const DefaultRoleHierarchy: RoleHierarchy = { editor: 1, admin: 2 } as const
+export const DefaultRoleHierarchy: RoleHierarchy = Object.freeze({ editor: 1, admin: 2 } as const)
 
 export function hasRole (userRole: string, requiredRole: string, hierarchy: RoleHierarchy): boolean {
   const userLevel = hierarchy[userRole] ?? 0
