@@ -147,7 +147,7 @@ Location: `packages/core/src/telemetry/`
 Every property defined upfront. Identical shape, identical init order. This preserves V8 Inline Cache monomorphism (single hidden class = O(1) property access).
 
 ```typescript
-const IntentType = {
+const IntentType = Object.freeze({
   CLICK: 'CLICK',
   SCROLL: 'SCROLL',
   VIEWPORT_INTERSECT: 'VIEWPORT_INTERSECT',
@@ -158,13 +158,22 @@ const IntentType = {
   INTENT_LEAD: 'INTENT_LEAD',
   LEAD_PHONE: 'LEAD_PHONE',
   LEAD_EMAIL: 'LEAD_EMAIL',
-  LEAD_FORM: 'LEAD_FORM'
-} as const
+  LEAD_FORM: 'LEAD_FORM',
+  PAGEVIEW: 'PAGEVIEW'
+} as const)
 
-const BusinessType = [
-  'barbershop', 'legal', 'hvac', 'medical',
-  'restaurant', 'contractor', 'retail', 'other'
-] as const
+const BusinessType = Object.freeze({
+  BARBERSHOP: 'barbershop',
+  LEGAL: 'legal',
+  HVAC: 'hvac',
+  MEDICAL: 'medical',
+  RESTAURANT: 'restaurant',
+  CONTRACTOR: 'contractor',
+  RETAIL: 'retail',
+  OTHER: 'other'
+} as const)
+
+const CURRENT_SCHEMA_VERSION = 1
 
 interface GlobalTelemetryIntent {
   id: string
