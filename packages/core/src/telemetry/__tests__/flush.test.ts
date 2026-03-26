@@ -268,7 +268,9 @@ describe('scheduleAutoFlush', () => {
 
   it('sets interval and flushes at specified interval', () => {
     buffer.write(IntentType.CLICK, 'a', 0, 0, 1)
-    flushHandle = scheduleAutoFlush(buffer, '/api/t', 5000)
+    const r = scheduleAutoFlush(buffer, '/api/t', 5000)
+    expect(r.isOk()).toBe(true)
+    if (r.isOk()) flushHandle = r.value
 
     vi.advanceTimersByTime(5000)
     expect(navigator.sendBeacon).toHaveBeenCalledTimes(1)
@@ -276,8 +278,9 @@ describe('scheduleAutoFlush', () => {
 
   it('stop clears the interval', () => {
     buffer.write(IntentType.CLICK, 'a', 0, 0, 1)
-    flushHandle = scheduleAutoFlush(buffer, '/api/t', 5000)
-    flushHandle.stop()
+    const r = scheduleAutoFlush(buffer, '/api/t', 5000)
+    if (r.isOk()) flushHandle = r.value
+    flushHandle!.stop()
     flushHandle = null
 
     buffer.write(IntentType.CLICK, 'b', 0, 0, 2)
@@ -287,9 +290,10 @@ describe('scheduleAutoFlush', () => {
 
   it('flushNow triggers immediate flush', () => {
     buffer.write(IntentType.CLICK, 'a', 0, 0, 1)
-    flushHandle = scheduleAutoFlush(buffer, '/api/t', 30000)
+    const r = scheduleAutoFlush(buffer, '/api/t', 30000)
+    if (r.isOk()) flushHandle = r.value
 
-    const result = flushHandle.flushNow()
+    const result = flushHandle!.flushNow()
     expect(result.isOk()).toBe(true)
     if (result.isOk()) {
       expect(result.value).toBe(1)
@@ -299,7 +303,8 @@ describe('scheduleAutoFlush', () => {
 
   it('visibilitychange to hidden triggers flush', () => {
     buffer.write(IntentType.CLICK, 'a', 0, 0, 1)
-    flushHandle = scheduleAutoFlush(buffer, '/api/t', 30000)
+    const r = scheduleAutoFlush(buffer, '/api/t', 30000)
+    if (r.isOk()) flushHandle = r.value
 
     Object.defineProperty(document, 'visibilityState', {
       value: 'hidden',
@@ -321,7 +326,8 @@ describe('scheduleAutoFlush', () => {
     const onFlush = vi.fn()
     buffer.write(IntentType.CLICK, 'a', 0, 0, 1)
     buffer.write(IntentType.CLICK, 'b', 0, 0, 2)
-    flushHandle = scheduleAutoFlush(buffer, '/api/t', 5000, onFlush)
+    const r = scheduleAutoFlush(buffer, '/api/t', 5000, onFlush)
+    if (r.isOk()) flushHandle = r.value
 
     vi.advanceTimersByTime(5000)
     expect(onFlush).toHaveBeenCalledTimes(1)
@@ -330,7 +336,8 @@ describe('scheduleAutoFlush', () => {
 
   it('does not call onFlush when flush has no dirty entries', () => {
     const onFlush = vi.fn()
-    flushHandle = scheduleAutoFlush(buffer, '/api/t', 5000, onFlush)
+    const r = scheduleAutoFlush(buffer, '/api/t', 5000, onFlush)
+    if (r.isOk()) flushHandle = r.value
 
     vi.advanceTimersByTime(5000)
     expect(onFlush).not.toHaveBeenCalled()
@@ -339,7 +346,8 @@ describe('scheduleAutoFlush', () => {
   it('calls onFlush on visibilitychange flush', () => {
     const onFlush = vi.fn()
     buffer.write(IntentType.CLICK, 'a', 0, 0, 1)
-    flushHandle = scheduleAutoFlush(buffer, '/api/t', 30000, onFlush)
+    const r = scheduleAutoFlush(buffer, '/api/t', 30000, onFlush)
+    if (r.isOk()) flushHandle = r.value
 
     Object.defineProperty(document, 'visibilityState', {
       value: 'hidden',
