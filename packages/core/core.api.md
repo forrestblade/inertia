@@ -120,13 +120,13 @@ export function calculateVelocity(x1: number, y1: number, t1: number, x2: number
 export function clearTransitionNames(container: Element): void;
 
 // @public (undocumented)
-export const ContentCategory: {
+export const ContentCategory: Readonly<{
     readonly JSON: "json";
     readonly FORM: "form";
     readonly MULTIPART: "multipart";
     readonly BEACON: "beacon";
     readonly RAW: "raw";
-};
+}>;
 
 // @public (undocumented)
 export type ContentCategory = typeof ContentCategory[keyof typeof ContentCategory];
@@ -690,7 +690,7 @@ export interface RouterError {
 }
 
 // @public (undocumented)
-export const RouterErrorCode: {
+export const RouterErrorCode: Readonly<{
     readonly FETCH_FAILED: "FETCH_FAILED";
     readonly PARSE_FAILED: "PARSE_FAILED";
     readonly SELECTOR_MISS: "SELECTOR_MISS";
@@ -701,7 +701,7 @@ export const RouterErrorCode: {
     readonly CACHE_STALE: "CACHE_STALE";
     readonly VERSION_MISMATCH: "VERSION_MISMATCH";
     readonly AUTH_REDIRECT: "AUTH_REDIRECT";
-};
+}>;
 
 // @public (undocumented)
 export type RouterErrorCode = typeof RouterErrorCode[keyof typeof RouterErrorCode];
@@ -776,14 +776,14 @@ export interface ServerError {
 }
 
 // @public (undocumented)
-export const ServerErrorCode: {
+export const ServerErrorCode: Readonly<{
     readonly NOT_FOUND: "NOT_FOUND";
     readonly METHOD_NOT_ALLOWED: "METHOD_NOT_ALLOWED";
     readonly INTERNAL_ERROR: "INTERNAL_ERROR";
     readonly VALIDATION_ERROR: "VALIDATION_ERROR";
     readonly UNAUTHORIZED: "UNAUTHORIZED";
     readonly RATE_LIMITED: "RATE_LIMITED";
-};
+}>;
 
 // @public (undocumented)
 export type ServerErrorCode = typeof ServerErrorCode[keyof typeof ServerErrorCode];
@@ -921,14 +921,14 @@ export interface TokenBucket {
 export const TRANSITION_PRESETS: Record<string, string>;
 
 // @public (undocumented)
-export const TransitionPreset: {
+export const TransitionPreset: Readonly<{
     readonly fade: "fade";
     readonly 'slide-left': "slide-left";
     readonly 'slide-right': "slide-right";
     readonly 'slide-up': "slide-up";
     readonly 'slide-down': "slide-down";
     readonly none: "none";
-};
+}>;
 
 // @public (undocumented)
 export type TransitionPreset = typeof TransitionPreset[keyof typeof TransitionPreset];
