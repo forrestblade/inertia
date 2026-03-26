@@ -26,6 +26,12 @@ function makeMockCtx (path: string = '/admin'): RequestContext {
   }
 }
 
+describe('DefaultRoleHierarchy', () => {
+  it('is frozen and cannot be mutated', () => {
+    expect(Object.isFrozen(DefaultRoleHierarchy)).toBe(true)
+  })
+})
+
 describe('hasRole', () => {
   it('returns true when user role outranks required role', () => {
     expect(hasRole('admin', 'editor', DefaultRoleHierarchy)).toBe(true)

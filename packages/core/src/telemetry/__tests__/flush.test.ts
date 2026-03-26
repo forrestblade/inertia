@@ -45,7 +45,7 @@ describe('flushTelemetry', () => {
     const [url, payload] = (navigator.sendBeacon as ReturnType<typeof vi.fn>).mock.calls[0] as [string, string]
     expect(url).toBe('/api/telemetry')
 
-    const parsed = JSON.parse(payload) as Array<Record<string, unknown>>
+    const parsed = JSON.parse(payload) as Array<{ type: string; targetDOMNode: string }>
     expect(parsed).toHaveLength(2)
     expect(parsed[0]!.type).toBe('CLICK')
     expect(parsed[0]!.targetDOMNode).toBe('button.cta')
