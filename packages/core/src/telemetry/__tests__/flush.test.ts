@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { flushTelemetry, scheduleAutoFlush } from '../flush.js'
+import { flushTelemetry, scheduleAutoFlush, isValidBeaconUrl } from '../flush.js'
 import { TelemetryRingBuffer } from '../ring-buffer.js'
-import { IntentType } from '../intent-types.js'
+import { IntentType, TelemetryErrorCode } from '../intent-types.js'
 import type { FlushHandle } from '../flush.js'
 
 describe('flushTelemetry', () => {
@@ -18,12 +18,12 @@ describe('flushTelemetry', () => {
       sendBeacon: vi.fn().mockReturnValue(true),
       doNotTrack: null
     })
-    delete (globalThis as Record<string, unknown>).__valence_telemetry_consent
+    Reflect.deleteProperty(globalThis, '__valence_telemetry_consent')
   })
 
   afterEach(() => {
     vi.unstubAllGlobals()
-    delete (globalThis as Record<string, unknown>).__valence_telemetry_consent
+    Reflect.deleteProperty(globalThis, '__valence_telemetry_consent')
   })
 
   it('returns Err(FLUSH_EMPTY) when buffer is empty', () => {
@@ -149,7 +149,7 @@ describe('flushTelemetry', () => {
   })
 
   it('returns Err(FLUSH_CONSENT_DENIED) when consent flag is false', () => {
-    (globalThis as Record<string, unknown>).__valence_telemetry_consent = false
+    Reflect.set(globalThis, '__valence_telemetry_consent', false)
 
     buffer.write(IntentType.CLICK, 'a', 0, 0, 1)
     const result = flushTelemetry(buffer, '/api/t')
@@ -171,6 +171,74 @@ describe('flushTelemetry', () => {
     // Buffer entries should still be dirty since we never attempted to send
     expect(buffer.count).toBe(1)
   })
+
+  it('rejects non-HTTP endpoint URLs', () => {
+    buffer.write(IntentType.CLICK, 'a', 0, 0, 1)
+    const result = flushTelemetry(buffer, 'javascript:alert(1)')
+    expect(result.isErr()).toBe(true)
+    if (result.isErr()) {
+      expect(result.error.code).toBe(TelemetryErrorCode.FLUSH_DISPATCH_FAILED)
+    }
+    expect(navigator.sendBeacon).not.toHaveBeenCalled()
+  })
+
+  it('accepts relative path endpoints', () => {
+    buffer.write(IntentType.CLICK, 'a', 0, 0, 1)
+    const result = flushTelemetry(buffer, '/api/telemetry')
+    expect(result.isOk()).toBe(true)
+  })
+
+  it('accepts HTTPS endpoint URLs', () => {
+    buffer.write(IntentType.CLICK, 'a', 0, 0, 1)
+    const result = flushTelemetry(buffer, 'https://telemetry.example.com/api')
+    expect(result.isOk()).toBe(true)
+  })
+
+  it('propagates markFlushed errors instead of reporting success', () => {
+    buffer.write(IntentType.CLICK, 'a', 0, 0, 1)
+    // Spy on markFlushed to simulate failure
+    const originalMarkFlushed = buffer.markFlushed.bind(buffer)
+    let callCount = 0
+    vi.spyOn(buffer, 'markFlushed').mockImplementation((count: number) => {
+      callCount++
+      if (callCount === 1) {
+        return originalMarkFlushed(9999) // Force overflow error
+      }
+      return originalMarkFlushed(count)
+    })
+
+    const result = flushTelemetry(buffer, '/api/t')
+    expect(result.isErr()).toBe(true)
+    if (result.isErr()) {
+      expect(result.error.code).toBe(TelemetryErrorCode.FLUSH_OVERFLOW)
+    }
+  })
+})
+
+describe('isValidBeaconUrl', () => {
+  it('allows relative paths', () => {
+    expect(isValidBeaconUrl('/api/telemetry')).toBe(true)
+  })
+
+  it('allows https URLs', () => {
+    expect(isValidBeaconUrl('https://example.com/beacon')).toBe(true)
+  })
+
+  it('allows http URLs', () => {
+    expect(isValidBeaconUrl('http://localhost:3000/api')).toBe(true)
+  })
+
+  it('rejects javascript: URLs', () => {
+    expect(isValidBeaconUrl('javascript:alert(1)')).toBe(false)
+  })
+
+  it('rejects data: URLs', () => {
+    expect(isValidBeaconUrl('data:text/html,<script>alert(1)</script>')).toBe(false)
+  })
+
+  it('rejects empty string', () => {
+    expect(isValidBeaconUrl('')).toBe(false)
+  })
 })
 
 describe('scheduleAutoFlush', () => {
@@ -188,14 +256,14 @@ describe('scheduleAutoFlush', () => {
       sendBeacon: vi.fn().mockReturnValue(true),
       doNotTrack: null
     })
-    delete (globalThis as Record<string, unknown>).__valence_telemetry_consent
+    Reflect.deleteProperty(globalThis, '__valence_telemetry_consent')
   })
 
   afterEach(() => {
     if (flushHandle) flushHandle.stop()
     vi.useRealTimers()
     vi.unstubAllGlobals()
-    delete (globalThis as Record<string, unknown>).__valence_telemetry_consent
+    Reflect.deleteProperty(globalThis, '__valence_telemetry_consent')
   })
 
   it('sets interval and flushes at specified interval', () => {
@@ -286,5 +354,15 @@ describe('scheduleAutoFlush', () => {
       writable: true,
       configurable: true
     })
+  })
+
+  it('returns Err for zero interval', () => {
+    const result = scheduleAutoFlush(buffer, '/api/t', 0)
+    expect(result.isErr()).toBe(true)
+  })
+
+  it('returns Err for negative interval', () => {
+    const result = scheduleAutoFlush(buffer, '/api/t', -1000)
+    expect(result.isErr()).toBe(true)
   })
 })
