@@ -363,6 +363,9 @@ importers:
       '@valencets/resultkit':
         specifier: ^0.2.0
         version: 0.2.0
+      '@valencets/store':
+        specifier: workspace:*
+        version: link:../store
       '@valencets/telemetry':
         specifier: workspace:*
         version: link:../telemetry
